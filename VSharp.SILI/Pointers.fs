@@ -5,9 +5,14 @@ open VSharp.Common
 
 module internal Pointers =
 
+    let internal simplifyStringKeyEquality mtd x y =
+        match x.term, y.term with
+        | Concrete(x, String), Concrete(y, String) -> MakeBool ((x :?> string) = (y :?> string)) mtd
+        | _ -> __notImplemented__()
+
     let internal locationEqual mtd addr1 addr2 =
         match TypeOf addr1, TypeOf addr2 with
-        | String, String -> Strings.simplifyEquality mtd addr1 addr2
+        | String, String -> simplifyStringKeyEquality mtd addr1 addr2
         | Numeric _, Numeric _ -> Arithmetics.eq mtd addr1 addr2
         | _ -> __notImplemented__()
 

@@ -7,6 +7,8 @@ open System.Collections.Generic
 open System.Reflection
 open Types.Constructor
 open Types
+open Operators
+open Propositional
 
 type ImplementsAttribute(name : string) =
     inherit System.Attribute()
@@ -63,7 +65,7 @@ module internal Interpreter =
                     | _ -> __unreachable__()))
         dict
 
-    let rec internalCall metadataMethod argsAndThis ((s, h, m, f, p) as state : State.state) k =
+    let rec internalCall metadataMethod argsAndThis ((s, h, m, i, f, p) as state : State.state) k =
         let fullMethodName = DecompilerServices.metadataMethodToString metadataMethod in
         let k' (result, state) = k (result, State.popStack state) in
         let methodInfo = externalImplementations.[fullMethodName] in
@@ -90,10 +92,13 @@ module internal Interpreter =
         match decompiledMethod with
         | DecompilerServices.DecompilationResult.MethodWithoutInitializer decompiledMethod ->
             printfn "DECOMPILED %s:\n%s" qualifiedTypeName (JetBrains.Decompiler.Ast.NodeEx.ToStringDebug(decompiledMethod))
-            reduceDecompiledMethod caller state this parameters decompiledMethod (fun state k' -> k' (NoResult Metadata.empty, state)) k
-        | DecompilerServices.DecompilationResult.MethodWithExplicitInitializer _
-        | DecompilerServices.DecompilationResult.MethodWithImplicitInitializer _
-        | DecompilerServices.DecompilationResult.ObjectConstuctor _
+            Strings.internLiterals state decompiledMethod (fun state ->
+            reduceDecompiledMethod caller state this parameters decompiledMethod (fun state k' -> k' (NoResult Metadata.empty, state)) k)
+        | DecompilerServices.DecompilationResult.MethodWithExplicitInitializer decMethod
+        | DecompilerServices.DecompilationResult.MethodWithImplicitInitializer decMethod
+        | DecompilerServices.DecompilationResult.ObjectConstuctor decMethod ->
+            Strings.internLiterals state decMethod (fun state ->
+            reduceBaseOrThisConstuctorCall caller state this parameters qualifiedTypeName metadataMethod assemblyPath decompiledMethod k)
         | DecompilerServices.DecompilationResult.DefaultConstuctor ->
             reduceBaseOrThisConstuctorCall caller state this parameters qualifiedTypeName metadataMethod assemblyPath decompiledMethod k
         | DecompilerServices.DecompilationResult.DecompilationError ->
@@ -736,14 +741,12 @@ module internal Interpreter =
     and reduceLiteralExpression state (ast : ILiteralExpression) k =
         let mType = FromConcreteMetadataType ast.Value.Type in
         let mtd = State.mkMetadata ast state in
-        let obj = ast.Value.Value in
         match mType with
         | VSharp.String ->
-            let time = Memory.tick() in
-            let stringLength = String.length (obj.ToString()) in
-            Strings.MakeString stringLength obj time |> Memory.allocateInHeap mtd state |> k
+            let hash = Strings.getHashCodeOfLitExp mtd ast
+            k (State.readPoolLocation state hash, state)
         | _ when IsNull mType -> k (Terms.MakeNull Null mtd Memory.ZeroTime, state)
-        | _ -> k (Concrete obj mType mtd, state)
+        | _ -> k (Concrete ast.Value.Value mType mtd, state)
 
     and reduceLocalVariableReferenceExpression state (ast : ILocalVariableReferenceExpression) k =
         let mtd = State.mkMetadata ast state in
@@ -768,10 +771,24 @@ module internal Interpreter =
         | :? IUserDefinedBinaryOperationExpression as userBinOp -> reduceUserDefinedBinaryOperationExpression state userBinOp k
         | _ -> __notImplemented__()
 
+    and reduceNullCoalescing ast state left right k =
+        let mtd = State.mkMetadata ast state in
+        reduceExpression state left (fun (leftTerm, state) ->
+        reduceExpression state right (fun (rightTerm, state) ->
+        reduceConditionalExecution state
+            (fun state k -> k (Pointers.isNull mtd leftTerm, state))
+            (fun state k -> k (Return mtd rightTerm, state))
+            (fun state k -> k (Return mtd leftTerm, state))
+            ControlFlow.mergeResults
+            ControlFlow.merge2Results
+            ControlFlow.throwOrIgnore
+            (fun (result, state) -> k (ControlFlow.resultToTerm result, state))))
+
     and reduceBinaryOperationExpression state (ast : IBinaryOperationExpression) k =
         let op = ast.OperationType in
         match op with
         | OperationType.Assignment -> reduceAssignment ast state ast.LeftArgument ast.RightArgument k
+        | OperationType.NullCoalescing -> reduceNullCoalescing ast state ast.LeftArgument ast.RightArgument k
         | _ when Operations.isOperationAssignment op -> reduceOperationAssignment state ast k
         | _ when Propositional.isConditionalOperation op->
             reduceConditionalOperation state ast.OperationType ast.LeftArgument ast.RightArgument k
@@ -1104,6 +1121,7 @@ module internal Interpreter =
                 let initOneField (name, (typ, expression)) state k =
                     if expression = null then k (NoResult Metadata.empty, state)
                     else
+                        Strings.internLiterals state expression (fun state ->
                         let mtd' = State.mkMetadata expression state in
                         let address, state = Memory.referenceStaticField mtd' state false name t qualifiedTypeName in
                         reduceExpression state expression (fun (value, state) ->
@@ -1121,13 +1139,14 @@ module internal Interpreter =
 //                                let term, state = State.activator.CreateInstance typeof<TypeInitializationException> args state in
                                 k (Throw exn.metadata exn, state))
                             (fun _ _ normal _ k -> mutate mtd' (ControlFlow.resultToTerm (Guarded mtd normal)) k)
-                            k)
+                            k))
                 in
                 let fieldInitializers = Seq.map initOneField fields in
                 reduceSequentially mtd state fieldInitializers (fun (result, state) ->
                 match DecompilerServices.getStaticConstructorOf qualifiedTypeName with
                 | Some constr ->
-                    reduceDecompiledMethod null state None (State.Specified []) constr (fun state k -> k (result, state)) k
+                    Strings.internLiterals state constr (fun state ->
+                    reduceDecompiledMethod null state None (State.Specified []) constr (fun state k -> k (result, state)) k)
                 | None -> k (result, state))
             | Options.SymbolizeStaticFields -> k (NoResult Metadata.empty, state)
 
@@ -1150,11 +1169,12 @@ module internal Interpreter =
                 let fields = DecompilerServices.getDefaultFieldValuesOf false false qualifiedTypeName in
                 let names, typesAndInitializers = List.unzip fields in
                 let types, initializers = List.unzip typesAndInitializers in
+                Cps.List.foldlk Strings.internLiterals state initializers (fun state ->
                 match this with
                 | Some this ->
                     Cps.List.mapFoldk reduceExpression state initializers (fun (values, state) ->
                     mutateFields this names types values initializers state |> snd |> k)
-                | _ -> k state
+                | _ -> k state)
             else k state
         in
         let baseCtorInfo (metadataMethod : IMetadataMethod) =
@@ -1162,7 +1182,7 @@ module internal Interpreter =
             baseQualifiedTypeName, DecompilerServices.getBaseCtorWithoutArgs baseQualifiedTypeName, DecompilerServices.locationOfType baseQualifiedTypeName
         in
         let composeResult result state k (result', state') = ControlFlow.composeSequentially result result' state state' |> k in
-        match decompiledMethod with
+        match decompiledMethod with //TODO: let goes into reduceDecompMethod?
         | DecompilerServices.DecompilationResult.MethodWithExplicitInitializer decompiledMethod ->
             printfn "DECOMPILED MethodWithExplicitInitializer %s:\n%s" qualifiedTypeName (JetBrains.Decompiler.Ast.NodeEx.ToStringDebug(decompiledMethod))
             let initializerMethod = decompiledMethod.Initializer.MethodInstantiation.MethodSpecification.Method in
@@ -1195,9 +1215,10 @@ module internal Interpreter =
 
     and reduceObjectCreation (caller : LocationBinding) state constructedType objectInitializerList collectionInitializerList (constructorSpecification : MethodSpecification) invokeArguments k =
         let qualifiedTypeName = DecompilerServices.assemblyQualifiedName constructedType in
-        let fields = DecompilerServices.getDefaultFieldValuesOf false true qualifiedTypeName in
+        let fields = DecompilerServices.getDefaultFieldValuesOf false true qualifiedTypeName in //TODO: intern or not to intern?
         let names, typesAndInitializers = List.unzip fields in
-        let types, _ = List.unzip typesAndInitializers in
+        let types, init = List.unzip typesAndInitializers in
+        Cps.List.foldlk Strings.internLiterals state init (fun state ->
         let time = Memory.tick() in
         let mtd = State.mkMetadata caller state in
         let fields = List.map (fun t -> Memory.defaultOf time mtd (FromUniqueSymbolicMetadataType t), time, time) types
@@ -1239,7 +1260,7 @@ module internal Interpreter =
             else
                 invokeArguments state (fun (arguments, state) ->
                 let assemblyPath = DecompilerServices.locationOfType qualifiedTypeName in
-                decompileAndReduceMethod caller state (Some reference) (State.Specified arguments) qualifiedTypeName constructorSpecification.Method assemblyPath (invokeInitializers result state)))
+                decompileAndReduceMethod caller state (Some reference) (State.Specified arguments) qualifiedTypeName constructorSpecification.Method assemblyPath (invokeInitializers result state))))
 
 
     and reduceObjectCreationExpression state (ast : IObjectCreationExpression) k =
@@ -1418,7 +1439,7 @@ type Activator() =
         member x.CreateInstance mtd exceptionType arguments state =
             let assemblyQualifiedName = exceptionType.AssemblyQualifiedName in
             let assemblyLocation = exceptionType.Assembly.Location in
-            let decompiledClass = DecompilerServices.decompileClass (DecompilerServices.jetBrainsFileSystemPath assemblyLocation) assemblyQualifiedName in
+            let decompiledClass = DecompilerServices.decompileClass (DecompilerServices.jetBrainsFileSystemPath assemblyLocation) assemblyQualifiedName in //TODO: intern or not to intern?
             let methods = decompiledClass.TypeInfo.GetMethods() in
             let invokeArguments state k = k (arguments, state) in
             let argumentsLength = List.length arguments in
@@ -1444,10 +1465,10 @@ type SymbolicInterpreter() =
     interface Functions.UnboundedRecursionExplorer.IInterpreter with
 
         member x.Initialize state k =
-            let time = Memory.tick() in
             let mtd = Metadata.empty in
             let stringTypeName = typeof<string>.AssemblyQualifiedName in
-            let emptyString, state = Strings.MakeString 0 "" time |> Memory.allocateInHeap Metadata.empty state in
+            let emptyString, state = Strings.makeString mtd 0 "" |> Memory.allocateInHeap mtd state in
+            let state = Strings.allocateInInternPool mtd state emptyString
             Interpreter.initializeStaticMembersIfNeed null state stringTypeName (fun (result, state) ->
             let emptyFieldRef, state = Memory.referenceStaticField mtd state false "System.String.Empty" VSharp.String stringTypeName in
             Memory.mutate mtd state emptyFieldRef emptyString |> snd |> k)

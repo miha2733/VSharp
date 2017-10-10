@@ -3,6 +3,8 @@
 open VSharp.State
 open Types
 open Types.Constructor
+open Operators
+open Propositional
 
 module internal Memory =
 
@@ -341,22 +343,22 @@ module internal Memory =
     let internal newStackFrame state metadata funcId frame = State.newStackFrame (tick()) metadata state funcId frame
     let internal newScope state frame = State.newScope (tick()) state frame
 
-    let internal allocateOnStack metadata ((s, h, m, (f, sh), p) as state : state) key term : state =
+    let internal allocateOnStack metadata ((s, h, m, i, (f, sh), p) as state : state) key term : state =
         let time = tick() in
         let frameMetadata, oldFrame, frameTime = Stack.peak f in
-        (pushToCurrentStackFrame state key (term, time, time), h, m, (Stack.updateHead f (frameMetadata, (key, metadata, None)::oldFrame, frameTime), sh), p)
+        (pushToCurrentStackFrame state key (term, time, time), h, m, i, (Stack.updateHead f (frameMetadata, (key, metadata, None)::oldFrame, frameTime), sh), p)
 
-    let internal allocateInHeap metadata ((s, h, m, f, p) : state) term : Term * state =
+    let internal allocateInHeap metadata ((s, h, m, i, f, p) : state) term : Term * state =
         let address = Concrete (freshAddress()) pointerType metadata in
         Metadata.addMisc address AddressMarker
         let time = tick() in
         let pointer = HeapRef ((address, Terms.TypeOf term), []) time metadata in
-        (pointer, (s, h.Add(address, (term, time, time)), m, f, p))
+        (pointer, (s, h.Add(address, (term, time, time)), m, i, f, p))
 
-    let internal allocateInStaticMemory metadata ((s, h, m, f, p) : state) typeName term =
+    let internal allocateInStaticMemory metadata ((s, h, m, i, f, p) : state) typeName term =
         let time = tick() in
         let address = Terms.MakeConcreteString typeName metadata in
-        (s, h, m.Add(address, (term, time, time)), f, p)
+        (s, h, m.Add(address, (term, time, time)), i, f, p)
 
     let internal allocateSymbolicInstance metadata state t =
         match t with

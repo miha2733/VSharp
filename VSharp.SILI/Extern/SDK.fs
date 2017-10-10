@@ -46,3 +46,10 @@ module ExternSDK =
     module VSharp =
         module Array =
             let length term = VSharp.Array.length (m()) term
+
+    module Strings =
+        let getHashCode (state : State.state) term = Strings.getHashCode state term (m())
+        let stringIsInterned state term = Strings.IsInterned (m()) state term
+
+    module Thread =
+        let getDomainInternal time source name typ = Memory.makeSymbolicInstance (m()) time source name typ

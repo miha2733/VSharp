@@ -18,7 +18,7 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
+    <Optimize>true</Optimize>
     <Tailcalls>false</Tailcalls>
     <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
@@ -63,17 +63,19 @@
     <Compile Include="Merging.fs" />
     <Compile Include="Common.fs" />
     <Compile Include="Arithmetics.fs" />
-    <Compile Include="Strings.fs" />
     <Compile Include="Pointers.fs" />
     <Compile Include="Operators.fs" />
     <Compile Include="Array.fs" />
     <Compile Include="Memory.fs" />
+    <Compile Include="Strings.fs" />
     <Compile Include="Transformations.fs" />
     <Compile Include="ControlFlow.fs" />
     <Compile Include="Functions.fs" />
     <Compile Include="CallGraph.fs" />
     <Compile Include="Interpreter.fs" />
     <Compile Include="Extern\SDK.fs" />
+    <Compile Include="Extern\System\Thread.fsi" />
+    <Compile Include="Extern\System\Thread.fs" />
     <Compile Include="Extern\System\String.fsi" />
     <Compile Include="Extern\System\String.fs" />
     <Compile Include="Extern\System\SystemArray.fsi" />
