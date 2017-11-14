@@ -32,3 +32,10 @@ module internal Operators =
         | Numeric t -> Arithmetics.simplifyUnaryOperation mtd op state arg isChecked t k
         | String -> __notImplemented__()
         | _ -> __notImplemented__()
+
+    let structuralEquality mtd x y =
+        let equal acc t1 t2 k =
+            ksimplifyEquality mtd t1 t2 (fun res ->
+            simplifyAnd mtd acc res k)
+        in
+        Common.unify equal (Terms.MakeFalse mtd) x y (Terms.MakeTrue mtd) id

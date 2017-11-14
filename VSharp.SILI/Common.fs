@@ -118,3 +118,9 @@ module internal Common =
         | _, _, (Terms.ErrorT _ as e) -> k (errorHandler e, conditionState)
         | _, _, UnionT gvs -> Merging.commonGuardedErroredMapk execution errorHandler gvs conditionState merge k
         | _ -> execution conditionState condition k)
+
+    let unify (f : 'a -> Term -> Term -> ('a -> 'c) -> 'c) unmatched (x : Term) (y : Term) (acc : 'a) (k : 'a -> 'd) =
+        simplifyGenericBinary "unification" State.empty x y k f (fun x y _ k ->
+        match x, y with
+        |)
+//        __notImplemented__()
