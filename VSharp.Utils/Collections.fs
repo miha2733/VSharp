@@ -6,7 +6,13 @@ module public Seq =
                 match mapper x with
                 | Some y -> yield y
                 | None -> () }
-    
+
+    let foldi f st xs =
+        let i = ref (-1)
+        Seq.fold (fun s t ->
+            i := !i + 1
+            f s !i t) st xs
+
     let public (|Cons|Empty|) s =
         if Seq.isEmpty s then Empty
         else Cons (Seq.head s, Seq.tail s)
@@ -46,6 +52,8 @@ module public List =
             | Some z -> z::(filterMap2 mapper xs ys)
             | None -> (filterMap2 mapper xs ys)
         | _ -> internalfail "filterMap2 expects lists of equal lengths"
+
+    let public exceptLast xs =  xs |> List.rev |> List.tail |> List.rev
 
 module public Map =
     let public add2 (map : Map<'a, 'b>) key value = map.Add(key, value)

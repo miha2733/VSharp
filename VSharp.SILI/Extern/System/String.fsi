@@ -5,7 +5,7 @@ open VSharp
 
 // ------------------------------- mscorelib.System.String -------------------------------
 
-module String =
+module internal String =
 
     [<Implements("System.Void System.String..ctor(this, System.Char[])")>]
     val ctorOfCharArray : State.state -> Term list -> StatementResult * State.state
@@ -15,3 +15,9 @@ module String =
 
     [<Implements("System.String System.AppDomain.IsStringInterned(this, System.String)")>]
     val IsStringInterned : State.state -> Term list -> StatementResult * State.state
+
+    [<Implements("System.String System.AppDomain.StringIntern(this, System.String)")>]
+    val InternString : State.state -> Term list -> StatementResult * State.state
+
+    [<Implements("System.String System.String.InternalIsInterned(System.String)")>]
+    val InternalIsInterned : State.state -> Term list -> StatementResult * State.state

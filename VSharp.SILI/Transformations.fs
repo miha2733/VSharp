@@ -149,18 +149,18 @@ module Transformations =
         callStatement
 
     let isInlinedCall (statement : IExpressionStatement) =
-        statement.Expression :? IDelegateCallExpression && DecompilerServices.getPropertyOfNode statement "InlinedCall" false :?> bool
+        statement.Expression :? IDelegateCallExpression && DecompilerServices.getPropertyOfNode<bool> statement "InlinedCall" false
 
     let isContinueConsumer (node : INode) =
-        node <> null && DecompilerServices.getPropertyOfNode node "ContinueConsumer" false :?> bool
+        node <> null && DecompilerServices.getPropertyOfNode<bool> node "ContinueConsumer" false
 
     let inlinedCallTarget (node : INode) =
-        DecompilerServices.getPropertyOfNode node "InlinedCallTarget" null :?> IExpression |> function
+        DecompilerServices.getPropertyOfNode<IExpression> node "InlinedCallTarget" null |> function
         | null -> None
         | expression -> Some expression
 
     let isInlinedSignatureCall (signature : IFunctionSignature) =
-        if signature <> null then DecompilerServices.getPropertyOfNode signature "InlinedCall" false :?> bool |> not
+        if signature <> null then DecompilerServices.getPropertyOfNode<bool> signature "InlinedCall" false |> not
         else false
 
     let extractExceptionFilter (ast : IBlockStatement) =

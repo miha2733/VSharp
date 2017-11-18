@@ -65,7 +65,7 @@ module internal Interpreter =
                     | _ -> __unreachable__()))
         dict
 
-    let rec internalCall metadataMethod argsAndThis ((s, h, m, i, f, p) as state : State.state) k =
+    let rec internalCall metadataMethod argsAndThis (s : State.state) k =
         let fullMethodName = DecompilerServices.metadataMethodToString metadataMethod in
         let k' (result, state) = k (result, State.popStack state) in
         let methodInfo = externalImplementations.[fullMethodName] in
@@ -77,8 +77,8 @@ module internal Interpreter =
         let parameters : obj[] =
             // Sometimes F# compiler merges tuple with the rest arguments!
             match methodInfo.GetParameters().Length with
-            | 2 -> [| state; argsAndThis |]
-            | 6 -> [| s; h; m; f; p; argsAndThis |]
+            | 2 -> [| s; argsAndThis |]
+            | 6 -> [| s.stack; s.heap; s.statics; s.frames; s.pc; argsAndThis |]
             | _ -> __notImplemented__()
         let result = methodInfo.Invoke(null, parameters) in
         match result with
@@ -481,23 +481,8 @@ module internal Interpreter =
 
 // ------------------------------- Conditional operations -------------------------------
 
-    and reduceConditionalExecution state conditionInvocation thenBranch elseBranch merge merge2 errorHandler k =
-        let execution conditionState condition k =
-            thenBranch (State.withPathCondition conditionState condition) (fun (thenResult, thenState) ->
-            elseBranch (State.withPathCondition conditionState !!condition) (fun (elseResult, elseState) ->
-            let result = merge2 condition !!condition thenResult elseResult in
-            let state = Merging.merge2States condition !!condition (State.popPathCondition thenState) (State.popPathCondition elseState) in
-            k (result, state)))
-        in
-        conditionInvocation state (fun (condition, conditionState) ->
-        match condition with
-        | Terms.True ->  thenBranch conditionState k
-        | Terms.False -> elseBranch conditionState k
-        | UnionT gvs -> Merging.commonGuardedErroredMapk execution errorHandler gvs conditionState merge k
-        | _ -> execution conditionState condition k)
-
     and reduceConditionalStatements state conditionInvocation thenBranch elseBranch k =
-         reduceConditionalExecution state conditionInvocation thenBranch elseBranch ControlFlow.mergeResults ControlFlow.merge2Results ControlFlow.throwOrIgnore k
+         Common.statedConditionalExecution state conditionInvocation thenBranch elseBranch ControlFlow.mergeResults ControlFlow.merge2Results ControlFlow.throwOrIgnore k
 
     and npeOrInvokeStatement caller state isStatic reference statement k =
         if isStatic then statement state k
@@ -523,7 +508,7 @@ module internal Interpreter =
             k
 
     and reduceConditionalExpression state (ast : IConditionalExpression) k =
-        reduceConditionalExecution state
+        Common.statedConditionalExecution state
             (fun state k -> reduceExpression state ast.Condition k)
             (fun state k -> reduceExpression state ast.Then k)
             (fun state k -> reduceExpression state ast.Else k)
@@ -566,8 +551,8 @@ module internal Interpreter =
     and reduceThrowStatement state (ast : IThrowStatement) k =
         let mtd = State.mkMetadata ast state in
         reduceExpression state ast.Argument (fun (arg, state) ->
-        match arg.term with
-        | HeapRef(((z, _), []), _) when z.term = TermNode.Concrete(0, pointerType) ->
+        match arg with
+        | Null ->
             let term, state = State.activator.CreateInstance mtd typeof<NullReferenceException> [] state in
             k (Throw mtd term, state)
         | _ -> k (Throw mtd arg, state))
@@ -628,7 +613,7 @@ module internal Interpreter =
     and reduceRethrowStatement state (ast : IRethrowStatement) k =
         let rec findException (node : INode) =
             if node = null then internalfail "exception register not found for rethowing!"
-            match DecompilerServices.getPropertyOfNode node "Thrown" null with
+            match DecompilerServices.getPropertyOfNode<obj> node "Thrown" null with
             | null -> findException node.Parent
             | exn -> exn :?> Term
         in
@@ -665,7 +650,7 @@ module internal Interpreter =
     and reduceExpressionToRef state followHeapRefs (ast : IExpression) k =
         let mtd = State.mkMetadata ast state in
         match ast with
-        | null -> k (Concrete null Null mtd, state)
+        | null -> k (MakeNullRef Null mtd Memory.ZeroTime, state)
         | :? ILocalVariableReferenceExpression as expression ->
             k (Memory.referenceLocalVariable mtd state (expression.Variable.Name, getTokenBy (Choice2Of2 expression.Variable)) followHeapRefs, state)
         | :? IParameterReferenceExpression as expression ->
@@ -743,9 +728,9 @@ module internal Interpreter =
         let mtd = State.mkMetadata ast state in
         match mType with
         | VSharp.String ->
-            let hash = Strings.getHashCodeOfLitExp mtd ast
-            k (State.readPoolLocation state hash, state)
-        | _ when IsNull mType -> k (Terms.MakeNull Null mtd Memory.ZeroTime, state)
+            let key = MakeConcreteString (ast.Value.Value.ToString()) mtd
+            k (State.readPoolLocation state key, state)
+        | _ when IsNull mType -> k (Terms.MakeNullRef Null mtd Memory.ZeroTime, state)
         | _ -> k (Concrete ast.Value.Value mType mtd, state)
 
     and reduceLocalVariableReferenceExpression state (ast : ILocalVariableReferenceExpression) k =
@@ -775,7 +760,7 @@ module internal Interpreter =
         let mtd = State.mkMetadata ast state in
         reduceExpression state left (fun (leftTerm, state) ->
         reduceExpression state right (fun (rightTerm, state) ->
-        reduceConditionalExecution state
+        Common.statedConditionalExecution state
             (fun state k -> k (Pointers.isNull mtd leftTerm, state))
             (fun state k -> k (Return mtd rightTerm, state))
             (fun state k -> k (Return mtd leftTerm, state))
@@ -798,7 +783,7 @@ module internal Interpreter =
 
     and reduceUserDefinedBinaryOperationExpression state (ast : IUserDefinedBinaryOperationExpression) k =
         let mtd = State.mkMetadata ast state in
-        let reduceTarget state k = k (Terms.MakeNull (FromGlobalSymbolicDotNetType typedefof<obj>) mtd Memory.ZeroTime, state) in
+        let reduceTarget state k = k (Terms.MakeNullRef (FromGlobalSymbolicDotNetType typedefof<obj>) mtd Memory.ZeroTime, state) in
         let reduceLeftArg state k = reduceExpression state ast.LeftArgument k in
         let reduceRightArg state k = reduceExpression state ast.RightArgument k in
         reduceMethodCall ast state reduceTarget ast.MethodSpecification.Method [reduceLeftArg; reduceRightArg] k
@@ -957,31 +942,23 @@ module internal Interpreter =
 
     //TODO: make with generic
     and doCast mtd state term targetType =
+        let isUpCast l r =
+            match l, r with
+            | ComplexType(t1, _, _), ComplexType(t2, _, _) -> t1.Is t2
+            | Func _, Func _ -> false
+            | _ -> __notImplemented__()
+        in
         match term.term with
-        | HeapRef _
-        | StackRef _
-        | StaticRef _ -> Return mtd term, state
-        | _ ->
-            let leftType = Terms.TypeOf term in
-            let rec isUpCast l r =
-                match l, r with
-                | ComplexType(t1, _, _), ComplexType(t2, _, _) -> t1.Is t2
-                | Func _, Func _ -> false
-                | ArrayType _, _ -> true
-                | _ -> __notImplemented__()
-            in
-            let result =
-                match isUpCast leftType targetType with
-                | true -> term
-                | false ->
-                    match term.term with
-                    | Concrete(value, _) -> Concrete value targetType term.metadata
-                    | Constant(name, source, _) -> Terms.Constant name source targetType term.metadata
-                    | Expression(operation, operands, _) -> Expression operation operands targetType term.metadata
-                    | Struct(m, _) -> Struct m targetType term.metadata
-                    | _ -> __notImplemented__()
-            in
-            Return mtd result, state
+        | HeapRef(((x, t), []), time) ->
+            if isUpCast t targetType
+                then Return mtd term, state
+                else Return mtd <| HeapRef ((x, targetType), []) time term.metadata, state
+        | HeapRef((xt    , xs), time) ->
+            let (x, t), xs' = List.last xs, xs |> List.rev |> List.tail in
+            if isUpCast t targetType
+                then Return mtd term, state
+                else Return mtd <| HeapRef (xt, (x, targetType) :: xs' |> List.rev) time term.metadata, state
+        | _ -> __notImplemented__()
 
     and throwInvalidCastException mtd state term targetType =
         let result, state =
@@ -1003,12 +980,12 @@ module internal Interpreter =
             match term.term with
             | Error _ -> term, state
             | Nop -> internalfailf "Internal error: casting void to %O!" targetType
-            | _ -> Terms.MakeNull targetType mtd Memory.ZeroTime, state
+            | _ -> Terms.MakeNullRef targetType mtd Memory.ZeroTime, state
         in
         ControlFlow.throwOrReturn result, state
 
     and reduceUserDefinedTypeCastExpression state (ast : IUserDefinedTypeCastExpression) k =
-        let reduceTarget state k = k (Memory.NullRefOf (FromGlobalSymbolicDotNetType typedefof<obj>), state) in
+        let reduceTarget state k = k (MakeNullRef (FromGlobalSymbolicDotNetType typedefof<obj>) Metadata.empty Memory.ZeroTime, state) in
         let reduceArg state k = reduceExpression state ast.Argument k in
         reduceMethodCall ast state reduceTarget ast.MethodSpecification.Method [reduceArg] k
 
@@ -1049,8 +1026,8 @@ module internal Interpreter =
         let rec primitiveCast state term targetType =
             match term.term with
             | Error _ -> term, state
-            | HeapRef(((z, _), []), _) when z.term = TermNode.Concrete(0, pointerType) -> Terms.MakeNull targetType mtd Memory.ZeroTime, state
             | Nop -> internalfailf "casting void to %O!" targetType
+            | _ when Terms.IsNull term -> Terms.MakeNullRef targetType mtd Memory.ZeroTime, state
             | Concrete(value, _) ->
                 if Terms.IsFunction term && Types.IsFunction targetType
                 then (Concrete value targetType term.metadata, state)
@@ -1105,8 +1082,8 @@ module internal Interpreter =
         reduceExpressionList state ast.Initializer (fun (initializer, state) ->
         let result =
             match initializer.term with
-            | Concrete(null, _) -> Array.makeDefault mtd dimensions typ (Array.zeroLowerBound mtd dimensions.Length)
-            | _ -> Array.fromInitializer mtd (Memory.tick()) (int ast.ArrayType.Rank) typ initializer
+            | Concrete(null, _) -> Arrays.makeDefault mtd dimensions typ
+            | _ -> Arrays.fromInitializer mtd (Memory.tick()) (int ast.ArrayType.Rank) typ initializer
         Memory.allocateInHeap mtd state result |> k))
 
     and initializeStaticMembersIfNeed (caller : LocationBinding) state qualifiedTypeName k =
@@ -1218,7 +1195,7 @@ module internal Interpreter =
         let fields = DecompilerServices.getDefaultFieldValuesOf false true qualifiedTypeName in //TODO: intern or not to intern?
         let names, typesAndInitializers = List.unzip fields in
         let types, init = List.unzip typesAndInitializers in
-        Cps.List.foldlk Strings.internLiterals state init (fun state ->
+        //Cps.List.foldlk Strings.internLiterals state init (fun state ->
         let time = Memory.tick() in
         let mtd = State.mkMetadata caller state in
         let fields = List.map (fun t -> Memory.defaultOf time mtd (FromUniqueSymbolicMetadataType t), time, time) types
@@ -1260,7 +1237,7 @@ module internal Interpreter =
             else
                 invokeArguments state (fun (arguments, state) ->
                 let assemblyPath = DecompilerServices.locationOfType qualifiedTypeName in
-                decompileAndReduceMethod caller state (Some reference) (State.Specified arguments) qualifiedTypeName constructorSpecification.Method assemblyPath (invokeInitializers result state))))
+                decompileAndReduceMethod caller state (Some reference) (State.Specified arguments) qualifiedTypeName constructorSpecification.Method assemblyPath (invokeInitializers result state)))
 
 
     and reduceObjectCreationExpression state (ast : IObjectCreationExpression) k =
@@ -1434,12 +1411,12 @@ module internal Interpreter =
         __notImplemented__()
 
 
-type Activator() =
+type internal Activator() =
     interface State.IActivator with
         member x.CreateInstance mtd exceptionType arguments state =
             let assemblyQualifiedName = exceptionType.AssemblyQualifiedName in
             let assemblyLocation = exceptionType.Assembly.Location in
-            let decompiledClass = DecompilerServices.decompileClass (DecompilerServices.jetBrainsFileSystemPath assemblyLocation) assemblyQualifiedName in //TODO: intern or not to intern?
+            let decompiledClass = DecompilerServices.decompileClass (DecompilerServices.jetBrainsFileSystemPath assemblyLocation) assemblyQualifiedName in
             let methods = decompiledClass.TypeInfo.GetMethods() in
             let invokeArguments state k = k (arguments, state) in
             let argumentsLength = List.length arguments in
@@ -1461,13 +1438,13 @@ type Activator() =
             let caller = (Metadata.firstOrigin mtd).location in
             Interpreter.reduceObjectCreation caller state (DecompilerServices.resolveType exceptionType) null null methodSpecification invokeArguments id
 
-type SymbolicInterpreter() =
+type internal SymbolicInterpreter() =
     interface Functions.UnboundedRecursionExplorer.IInterpreter with
 
         member x.Initialize state k =
             let mtd = Metadata.empty in
             let stringTypeName = typeof<string>.AssemblyQualifiedName in
-            let emptyString, state = Strings.makeString mtd 0 "" |> Memory.allocateInHeap mtd state in
+            let emptyString, state = Strings.makeString mtd state "" ||> Memory.allocateInHeap mtd in
             let state = Strings.allocateInInternPool mtd state emptyString
             Interpreter.initializeStaticMembersIfNeed null state stringTypeName (fun (result, state) ->
             let emptyFieldRef, state = Memory.referenceStaticField mtd state false "System.String.Empty" VSharp.String stringTypeName in

@@ -9,6 +9,7 @@ module public Prelude =
 
     let public toString x = x.ToString()
     let public apply f x = f x
+    let public applyToFst f (x, y) = (f x, y) 
     let public join s (ss : seq<string>) = System.String.Join(s, ss)
 
     let public id1 x _ = x
