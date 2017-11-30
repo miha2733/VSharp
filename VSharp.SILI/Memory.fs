@@ -271,7 +271,7 @@ module internal Memory =
         | HeapRef(((addr, t) as location, path), time, None) ->
             let mkFirstLocation location = HeapRef ((location, t), []) time term.metadata in
             let firstLocation = HeapRef (location, []) time term.metadata in
-            Common.reduceConditionalExecution state
+            Common.statedConditionalExecution state
                 (fun state k -> k (Arithmetics.simplifyEqual metadata addr (Concrete 0 pointerType metadata) id, state))
                 (fun state k -> k (actionNull metadata state t))
                 (fun state k ->
@@ -387,7 +387,7 @@ module internal Memory =
             match term.term with
             | Error _ -> (term, state)
             | Array(dimension, _, _, _, _, _, ArrayType(elementType, _)) ->
-                Common.reduceConditionalExecution state
+                Common.statedConditionalExecution state
                     (fun state k -> checkIndices metadata state arrayRef dimension indices k)
                     (fun state k ->
                         let location = Arrays.makeIntegerArray metadata (fun i -> indices.[i]) indices.Length in

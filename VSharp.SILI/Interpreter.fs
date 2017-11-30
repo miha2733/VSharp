@@ -14,6 +14,7 @@ type ImplementsAttribute(name : string) =
     member x.Name = name
 
 module internal Interpreter =
+    open ControlFlow
 
 // ------------------------------- Environment -------------------------------
 
@@ -478,7 +479,7 @@ module internal Interpreter =
 // ------------------------------- Conditional operations -------------------------------
 
     and reduceConditionalStatements state conditionInvocation thenBranch elseBranch k =
-         Common.reduceConditionalExecution state conditionInvocation thenBranch elseBranch ControlFlow.mergeResults ControlFlow.merge2Results ControlFlow.throwOrIgnore k
+         Common.statedConditionalExecution state conditionInvocation thenBranch elseBranch ControlFlow.mergeResults ControlFlow.merge2Results ControlFlow.throwOrIgnore k
 
     and npeOrInvokeStatement caller state isStatic reference statement k =
         if isStatic then statement state k
@@ -504,7 +505,7 @@ module internal Interpreter =
             k
 
     and reduceConditionalExpression state (ast : IConditionalExpression) k =
-        Common.reduceConditionalExecution state
+        Common.statedConditionalExecution state
             (fun state k -> reduceExpression state ast.Condition k)
             (fun state k -> reduceExpression state ast.Then k)
             (fun state k -> reduceExpression state ast.Else k)

@@ -81,7 +81,7 @@ module internal Common =
         | leftType, (SubType(t, _, _, name) as termType) -> subTypeIs t termType name leftType
         | _ -> Terms.MakeFalse metadata
 
-    let internal simpleConditionalExecution conditionInvocation thenBranch elseBranch merge merge2 k =
+    let internal statelessConditionalExecution conditionInvocation thenBranch elseBranch merge merge2 k =
         let execution condition k =
             thenBranch (fun thenResult ->
             elseBranch (fun elseResult ->
@@ -95,7 +95,7 @@ module internal Common =
         | UnionT gvs -> Merging.commonGuardedMapk execution gvs merge k
         | _ -> execution condition k)
 
-    let internal reduceConditionalExecution (state : State.state) conditionInvocation thenBranch elseBranch merge merge2 errorHandler k =
+    let internal statedConditionalExecution (state : State.state) conditionInvocation thenBranch elseBranch merge merge2 errorHandler k =
         let execution conditionState condition k =
             thenBranch (State.withPathCondition conditionState condition) (fun (thenResult, thenState) ->
             elseBranch (State.withPathCondition conditionState !!condition) (fun (elseResult, elseState) ->
