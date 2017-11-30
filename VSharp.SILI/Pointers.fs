@@ -5,9 +5,21 @@ open VSharp.Common
 
 module internal Pointers =
 
-    let internal locationEqual mtd addr1 addr2 =
+    let internal simplifyStringKeyEquality simplifyArraysEq mtd x y =
+        match x.term, y.term with
+        | Concrete(x, String), Concrete(y, String) -> MakeBool ((x :?> string) = (y :?> string)) mtd
+        | Struct(fieldsOfX, String), Struct(fieldsOfY, String) ->
+            let stringLength1 = fieldsOfX.[MakeStringKey "System.String.m_StringLength"].value in
+            let stringLength2 = fieldsOfY.[MakeStringKey "System.String.m_StringLength"].value in
+            let string1Array  = fieldsOfX.[MakeStringKey "System.String.m_FirstChar"].value in
+            let string2Array  = fieldsOfY.[MakeStringKey "System.String.m_FirstChar"].value in
+            simplifyEqual mtd stringLength1 stringLength2 (fun lengthEq ->
+            simplifyAnd mtd lengthEq (simplifyArraysEq mtd string1Array string2Array) id)
+        | _ -> __notImplemented__()
+
+    let internal locationEqual simplifyArraysEq mtd addr1 addr2 =
         match TypeOf addr1, TypeOf addr2 with
-        | String, String -> Strings.simplifyEquality mtd addr1 addr2
+        | String, String -> simplifyStringKeyEquality simplifyArraysEq mtd addr1 addr2
         | Numeric _, Numeric _ -> Arithmetics.eq mtd addr1 addr2
         | ArrayType _, ArrayType _ -> Arrays.equalsArrayIndices mtd addr1 addr2 |> fst
         | _ -> __notImplemented__()
@@ -16,7 +28,7 @@ module internal Pointers =
         if List.length path1 <> List.length path2 then
             Terms.MakeFalse mtd
         else
-            List.map2 (fun (x, _) (y, _) -> locationEqual mtd x y) path1 path2 |> conjunction mtd
+            List.map2 (fun (x, _) (y, _) -> locationEqual (fun _ _ -> __unreachable__()) mtd x y) path1 path2 |> conjunction mtd
 
     let rec internal simplifyReferenceEquality mtd x y k =
         simplifyGenericBinary "reference comparison" State.empty x y (fst >> k)

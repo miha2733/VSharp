@@ -117,7 +117,7 @@ module internal Memory =
         // TODO: what if locationType is Null?
         if locationTime > pointerTime then Terms.MakeFalse mtd
         else
-            let addrEqual = Pointers.locationEqual mtd locationAddr pointerAddr in
+            let addrEqual = Pointers.locationEqual Operators.simplifyArraysEquality mtd locationAddr pointerAddr in
             let typeSuits v =
                 let locationType = TypeOf v in
                 Common.is mtd locationType pointerType &&& Common.is mtd pointerType locationType
