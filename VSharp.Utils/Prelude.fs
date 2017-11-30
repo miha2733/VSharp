@@ -8,6 +8,7 @@ module public Prelude =
     let public __unreachable__() = internalfail "unreachable branch hit!"
 
     let inline public toString x = x.ToString()
+    let public applyToFst f (x, y) = (f x, y)
     let inline public join s (ss : seq<string>) = System.String.Join(s, ss)
 
     let public always x _ = x

@@ -5,6 +5,25 @@ open JetBrains.Decompiler.Ast
 [<AutoOpen>]
 module internal Operators =
 
+    let rec internal simplifyConcatenation mtd state x y k = __notImplemented__()
+
+    let rec simplifyStringsEq mtd state x y k = __notImplemented__()
+
+    let internal simplifyStringOperation mtd state op x y k =
+        match op with
+        | OperationType.Add -> simplifyConcatenation mtd state x y k
+        | OperationType.Equal -> simplifyStringsEq mtd state x y k
+        | OperationType.NotEqual -> simplifyStringsEq mtd state x y (applyToFst(!!) >> k)
+        | _ -> __notImplemented__()
+
+    let internal isStringOperation op t1 t2 =
+        (t1 = Reference String || Types.IsBottom t1) && (t2 = Reference String || Types.IsBottom t2) &&
+        match op with
+        | OperationType.Add
+        | OperationType.Equal
+        | OperationType.NotEqual -> true
+        | _ -> false
+
     let rec internal refToInt term =
         match term.term with
         | Error _ -> term
@@ -28,8 +47,8 @@ module internal Operators =
             Propositional.simplifyBinaryConnective mtd op left right (withSnd state >> k)
         | op when Arithmetics.isArithmeticalOperation op t1 t2 ->
             Arithmetics.simplifyBinaryOperation mtd op state left right isChecked t k
-        | op when Strings.isStringOperation op t1 t2 ->
-            Strings.simplifyOperation mtd op left right |> (withSnd state >> k)
+        | op when isStringOperation op t1 t2 ->
+            simplifyStringOperation mtd state op left right k
         | op when Pointers.isPointerOperation op t1 t2 ->
             Pointers.simplifyBinaryOperation mtd op state left right k
         | _ -> __notImplemented__()
