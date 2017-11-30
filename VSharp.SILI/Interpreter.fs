@@ -728,7 +728,7 @@ module internal Interpreter =
         | VSharp.String ->
             let time = Memory.tick() in
             let stringLength = String.length (obj.ToString()) in
-            Strings.MakeString stringLength obj time |> Memory.allocateInHeap mtd state |> k
+            Strings.makeString mtd (obj.ToString()) |> Memory.allocateInHeap mtd state |> k
         | _ when IsNull mType -> k (Terms.MakeNullRef Null mtd, state)
         | _ -> k (Concrete obj mType mtd, state)
 
@@ -1420,7 +1420,7 @@ type internal SymbolicInterpreter() =
             let time = Memory.tick() in
             let mtd = Metadata.empty in
             let stringTypeName = typeof<string>.AssemblyQualifiedName in
-            let emptyString, state = Strings.MakeString 0 "" time |> Memory.allocateInHeap Metadata.empty state in
+            let emptyString, state = Strings.makeString mtd "" |> Memory.allocateInHeap Metadata.empty state in
             Interpreter.initializeStaticMembersIfNeed null state stringTypeName (fun (result, state) ->
             let emptyFieldRef, state = Memory.referenceStaticField mtd state false "System.String.Empty" VSharp.String stringTypeName in
             Memory.mutate mtd state emptyFieldRef emptyString |> snd |> k)
