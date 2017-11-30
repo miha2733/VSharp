@@ -753,10 +753,21 @@ module internal Interpreter =
         | :? IUserDefinedBinaryOperationExpression as userBinOp -> reduceUserDefinedBinaryOperationExpression state userBinOp k
         | _ -> __notImplemented__()
 
+    and reduceNullCoalescing ast state left right k =
+        let mtd = State.mkMetadata ast state in
+        reduceExpression state left (fun (leftTerm, state) ->
+        reduceExpression state right (fun (rightTerm, state) ->
+        reduceConditionalStatements state
+            (fun state k -> k (Pointers.isNull mtd leftTerm, state))
+            (fun state k -> k (Return mtd rightTerm, state))
+            (fun state k -> k (Return mtd leftTerm, state))
+            (k << applyToFst resultToTerm)))
+
     and reduceBinaryOperationExpression state (ast : IBinaryOperationExpression) k =
         let op = ast.OperationType in
         match op with
         | OperationType.Assignment -> reduceAssignment ast state ast.LeftArgument ast.RightArgument k
+        | OperationType.NullCoalescing -> reduceNullCoalescing ast state ast.LeftArgument ast.RightArgument k
         | _ when Operations.isOperationAssignment op -> reduceOperationAssignment state ast k
         | _ when Propositional.isConditionalOperation op->
             reduceConditionalOperation state ast.OperationType ast.LeftArgument ast.RightArgument k
