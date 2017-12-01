@@ -1,6 +1,7 @@
 ﻿namespace VSharp
 
 open JetBrains.Decompiler.Ast
+open Types.Constructor
 open MemoryCell
 open Memory
 open Arrays
@@ -86,3 +87,40 @@ module internal Strings =
         let time = tick() in
         snd <| getKeyOfString metadata state term (fun state key ->
         key, { state with iPool = state.iPool.Add(key, { value = term; created = time; modified = time }) })
+
+    let inline private inInternPool (s : state) string = Heap.contains string s.iPool
+
+    let internal internLiterals state ast k =
+
+        let rec internLiteralsHelper state acc (ast : INode) k =
+
+            let makeAndInternString mtd state stringLiteral =
+                let time = tick() in
+                let stringStruct = makeString mtd stringLiteral in
+                let string, s = allocateInHeap mtd state stringStruct in
+                { s with iPool = s.iPool.Add (stringStruct, { value = string; created = time; modified = time }) }
+
+            if ast = null
+            then k (state, List.empty)
+            else
+                let mtd = State.mkMetadata ast state in
+                let empty : list<string> = [] in
+                let interned = DecompilerServices.getPropertyOfNode<string list> ast "InternedLiterals" empty
+                if not <| List.isEmpty interned
+                then k (List.fold (fun state x -> if inInternPool state <| makeString mtd x then state else makeAndInternString mtd state x) state interned, List.append acc interned)
+                else
+                    let newState, acc =
+                        match ast with
+                        | :? ILiteralExpression as ast
+                            when FromConcreteMetadataType ast.Value.Type = String && ast.Value.Value.ToString() |> makeString mtd |> inInternPool state |> not ->
+                                let stringLiteral = ast.Value.Value.ToString() in
+                                makeAndInternString mtd state stringLiteral, stringLiteral :: acc
+                        | _ -> state, acc
+                    in
+                    Cps.Seq.foldlk (fun (state, acc) x k -> internLiteralsHelper state acc x k) (newState, List.empty) ast.Children (fun (state, interned) -> //goes here
+                    k (state, List.append acc interned))
+
+        internLiteralsHelper state List.empty ast (fun (state, interned) ->
+        if ast <> null
+        then do DecompilerServices.setPropertyOfNode ast "InternedLiterals" interned //this
+        k state)
