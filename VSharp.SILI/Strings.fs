@@ -19,3 +19,7 @@ module internal Strings =
                               MakeStringKey "System.String.m_FirstChar", { value = array; created = time; modified = time } ])
         in
         Struct fields VSharp.String metadata
+
+    let internal getKeyOfString mtd state term k =
+        deref mtd state term
+        ||> Common.unionHandler k
