@@ -23,3 +23,11 @@ module internal Strings =
     let internal getKeyOfString mtd state term k =
         deref mtd state term
         ||> Common.unionHandler k
+
+    let (|ConcreteStringArray|_|) = function
+        | Array({term = Concrete(one, _)}, {term = Concrete (length, _)}, lower, [_, DefaultInstantiator(_, termType)], contents, _, ArrayType (typex, ConcreteDimension 1))
+            when
+                let zero = MakeZeroAddress Metadata.empty in
+                one :?> int = 1 && lower.[zero].value = zero && termType = Numeric typedefof<char> && typex = Numeric typedefof<char> ->
+              Some(ConcreteStringArray(unbox length, contents))
+        | _ -> None
