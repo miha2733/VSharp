@@ -727,14 +727,12 @@ module internal Interpreter =
     and reduceLiteralExpression state (ast : ILiteralExpression) k =
         let mType = FromConcreteMetadataType ast.Value.Type in
         let mtd = State.mkMetadata ast state in
-        let obj = ast.Value.Value in
         match mType with
         | VSharp.String ->
-            let time = Memory.tick() in
-            let stringLength = String.length (obj.ToString()) in
-            Strings.makeString mtd (obj.ToString()) |> Memory.allocateInHeap mtd state |> k
+            let key = Strings.makeString mtd <| ast.Value.Value.ToString() in
+            k (State.readPoolLocation state key, state)
         | _ when IsNull mType -> k (Terms.MakeNullRef Null mtd, state)
-        | _ -> k (Concrete obj mType mtd, state)
+        | _ -> k (Concrete ast.Value.Value mType mtd, state)
 
     and reduceLocalVariableReferenceExpression state (ast : ILocalVariableReferenceExpression) k =
         let mtd = State.mkMetadata ast state in
