@@ -118,3 +118,9 @@ module internal Common =
         | _, _, (Terms.ErrorT _ as e) -> k (errorHandler e, conditionState)
         | _, _, UnionT gvs -> Merging.commonGuardedErroredMapk execution errorHandler gvs conditionState merge k
         | _ -> execution conditionState condition k)
+
+    let internal unionHandler mapper term state =
+        match term.term with
+        | Error e -> term, state
+        | Union gvs -> Merging.guardedErroredMap mapper id gvs state
+        | _ -> mapper state term
