@@ -23,15 +23,15 @@ module internal DecompilerServices =
         assembly.ReferencedAssembliesNames |> Seq.iter (fun reference -> loadAssemblyByName reference.FullName)
         assembly
 
-    let public getPropertyOfNode (node : INode) key defaultValue =
+    let public getPropertyOfNode<'a> (node : INode) key defaultValue =
         // node.Data.TryGetValue is poorly implemented (it checks for reference equality of keys), so searching manually...
-        node.Data |> Seq.tryPick (fun keyValue -> if (keyValue.Key.ToString() = key) then Some(keyValue.Value) else None) |?? defaultValue
+        node.Data |> Seq.tryPick (fun keyValue -> if (keyValue.Key.ToString() = key) then Some(keyValue.Value) else None) |?? defaultValue :?> 'a
 
     let public setPropertyOfNode (node : INode) property value =
         node.Data.SetValue(JetBrains.Decompiler.Utils.DataKey<obj>(property), box value)
 
     let public getTypeOfNode (node : INode) =
-        getPropertyOfNode node "Type" null :?> JetBrains.Metadata.Reader.API.IMetadataType
+        getPropertyOfNode<JetBrains.Metadata.Reader.API.IMetadataType> node "Type" null
 
     let public setTypeOfNode (node : INode) (t : JetBrains.Metadata.Reader.API.IMetadataType) =
         node.Data.SetValue(JetBrains.Decompiler.Utils.DataKey<JetBrains.Metadata.Reader.API.IMetadataType>("Type"), t)

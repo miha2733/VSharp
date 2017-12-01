@@ -610,7 +610,7 @@ module internal Interpreter =
     and reduceRethrowStatement state (ast : IRethrowStatement) k =
         let rec findException (node : INode) =
             if node = null then internalfail "exception register not found for rethowing!"
-            match DecompilerServices.getPropertyOfNode node "Thrown" null with
+            match DecompilerServices.getPropertyOfNode<obj> node "Thrown" null with
             | null -> findException node.Parent
             | exn -> exn :?> Term
         in
