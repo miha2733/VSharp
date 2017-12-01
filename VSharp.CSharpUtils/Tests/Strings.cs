@@ -9,5 +9,33 @@ namespace VSharp.CSharpUtils.Tests
         {
             return String.Empty;
         }
+
+        public static string Interned()
+        {
+            String a = "interned";
+            return String.IsInterned(a);
+        }
+
+        public static string Intern()
+        {
+            string a = new string(new char[] {'a', 'b', 'c'});
+            return String.Intern(a);
+        }
+
+        public static Object NotInterned()
+        {
+            string a = new string(new char[] {'a', 'b', 'c'});
+            return String.IsInterned(a);
+        }
+
+        public static string NotSurelyInterned(string a)
+        {
+            return String.IsInterned(a);
+        }
+
+        public static string NotSurelyIntern(string a)
+        {
+            return String.Intern(a);
+        }
     }
 }
