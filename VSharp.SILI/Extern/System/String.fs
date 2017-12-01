@@ -9,3 +9,18 @@ module internal String =
 
     let ctorOfCharArray (state : State.state) (args : Term list) =
         Return <| __notImplemented__(), state
+
+    let InternalMarvin32HashString (state : State.state) (args : Term list) =
+        applyToFst Return <| ExternSDK.Strings.getHashCode state (args.Head)
+
+    let IsStringInterned (state : State.state) (args : Term list) =
+        applyToFst Return <| ExternSDK.Strings.stringIsInterned state (args.Item(1))
+
+    let InternalIsInterned (state : State.state) (args : Term list) =
+        applyToFst Return <| ExternSDK.Strings.stringIsInterned state (args.Head)
+
+    let InternString (state : State.state) (args : Term list) =
+        applyToFst Return <| ExternSDK.Strings.internString state (args.Item(1))
+
+    let InternalIntern (state : State.state) (args : Term list) =
+        applyToFst Return <| ExternSDK.Strings.internString state (args.Head)

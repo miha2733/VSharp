@@ -45,6 +45,11 @@ module ExternSDK =
         let referenceArrayLength arrayRef index = Memory.referenceArrayLength (m()) arrayRef index
         let referenceArrayLowerBound arrayRef index = Memory.referenceArrayLowerBound (m()) arrayRef index
 
+    module internal Strings =
+        let getHashCode state term = Strings.getHashCode (m()) state term
+        let stringIsInterned state term = Strings.IsInterned (m()) state term
+        let internString state term = Strings.Intern (m()) state term
+
     module VSharp =
         module Arrays =
             let length term = Arrays.length (m()) term
