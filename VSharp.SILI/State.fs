@@ -15,11 +15,11 @@ module internal State =
     type internal stackFrame = { func : (FunctionIdentifier * pathCondition) option; entries : list<entry> ; time : Timestamp }
     type internal frames = { f : Stack.stack<stackFrame>; sh : StackHash }
     type internal miscellaneous = ImmutableHashSet<obj>
-    type internal state = { stack : stack; heap : heap; statics : staticMemory; frames : frames; pc : pathCondition; misc : miscellaneous }
+    type internal state = { stack : stack; heap : heap; statics : staticMemory; iPool : heap; frames : frames; pc : pathCondition; misc : miscellaneous }
 
 // ------------------------------- Primitives -------------------------------
 
-    let internal empty : state = { stack = MappedStack.empty; heap = SymbolicHeap.empty; statics = SymbolicHeap.empty; frames = { f = Stack.empty; sh = List.empty }; pc = List.empty; misc = miscellaneous.Empty}
+    let internal empty : state = { stack = MappedStack.empty; heap = SymbolicHeap.empty; statics = SymbolicHeap.empty; iPool = SymbolicHeap.empty; frames = { f = Stack.empty; sh = List.empty }; pc = List.empty; misc = miscellaneous.Empty}
 
     type internal 'a SymbolicValue =
         | Specified of 'a
@@ -39,6 +39,7 @@ module internal State =
     let internal readStackLocation (s : state) key = MappedStack.find key s.stack
     let internal readHeapLocation (s : state) key = s.heap.[key].value
     let internal readStaticLocation (s : state) key = s.statics.[key].value
+    let internal readPoolLocation (s : state) key = s.iPool.[key].value
 
     let internal isAllocatedOnStack (s : state) key = MappedStack.containsKey key s.stack
     let internal staticMembersInitialized (s : state) typeName =
@@ -113,6 +114,7 @@ module internal State =
     let private stackOf (s : state) = s.stack
     let internal heapOf (s : state) = s.heap
     let internal staticsOf (s : state) = s.statics
+    let internal poolOf (s : state) = s.iPool
     let private framesOf (s : state) = s.frames
     let private framesHashOf (s : state) = s.frames.sh
     let internal pathConditionOf (s : state) = s.pc
@@ -160,8 +162,9 @@ module internal State =
         let mergedStack = MappedStack.merge2 s1.stack s2.stack resolve (stackLazyInstantiator s1) in
         let mergedHeap = Heap.merge2 s1.heap s2.heap resolve in
         let mergedStatics = Heap.merge2 s1.statics s2.statics resolve in
+        let mergedPool = Heap.merge2 s1.iPool s2.iPool resolve in
         let mergedMisc = s1.misc.Union s2.misc in
-        { s1 with stack = mergedStack; heap = mergedHeap; statics = mergedStatics; misc = mergedMisc }
+        { s1 with stack = mergedStack; heap = mergedHeap; statics = mergedStatics; iPool = mergedPool; misc = mergedMisc }
 
     let internal merge guards states resolve : state =
         assert(List.length states > 0)
@@ -173,5 +176,6 @@ module internal State =
         let mergedStack = MappedStack.merge guards (List.map stackOf states) resolve (stackLazyInstantiator first) in
         let mergedHeap = Heap.merge guards (List.map heapOf states) resolve in
         let mergedStatics = Heap.merge guards (List.map staticsOf states) resolve in
+        let mergedPool = Heap.merge guards (List.map poolOf states) resolve in
         let mergedMisc = states |> List.tail |> List.fold (fun (acc : miscellaneous) s -> acc.Union s.misc) first.misc in
-        { stack = mergedStack; heap = mergedHeap; statics = mergedStatics; frames = frames; pc = path; misc = mergedMisc }
+        { stack = mergedStack; heap = mergedHeap; statics = mergedStatics; iPool = mergedPool; frames = frames; pc = path; misc = mergedMisc }
