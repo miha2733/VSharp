@@ -8,7 +8,7 @@ open VSharp
 module internal String =
 
     let ctorOfCharArray (state : State.state) (args : Term list) =
-        Return <| __notImplemented__(), state
+        applyToFst Return <| ExternSDK.Strings.ctorOfCharArray state (args.Head) (args.Item(1))
 
     let InternalMarvin32HashString (state : State.state) (args : Term list) =
         applyToFst Return <| ExternSDK.Strings.getHashCode state (args.Head)

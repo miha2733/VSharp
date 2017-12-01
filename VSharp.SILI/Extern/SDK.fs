@@ -46,6 +46,7 @@ module ExternSDK =
         let referenceArrayLowerBound arrayRef index = Memory.referenceArrayLowerBound (m()) arrayRef index
 
     module internal Strings =
+        let ctorOfCharArray state this term = Strings.ctorOfCharArray (m()) state this term
         let getHashCode state term = Strings.getHashCode (m()) state term
         let stringIsInterned state term = Strings.IsInterned (m()) state term
         let internString state term = Strings.Intern (m()) state term

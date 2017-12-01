@@ -140,3 +140,23 @@ module internal Strings =
     let internal Intern mtd state term = internCommon (fun key cell -> state.iPool.Add(key, cell)) term mtd state term
 
     let internal IsInterned mtd state term = internCommon (fun _ _ -> state.iPool) (MakeNullRef String mtd) mtd state term
+
+    let internal ctorOfCharArray mtd state this term =
+        deref mtd state term
+        ||> Common.unionHandler (fun state ->
+            Terms.term >> function
+            | Array({term = Concrete(one, _)}, length, lower, instantiator, contents, lengths, ArrayType (typex, _))
+                when one :?> int = 1 && typex = Numeric typedefof<char> ->
+                    let time = tick() in
+                    let one = MakeNumber 1 mtd in
+                    let arrLength = add mtd length one in
+                    let indexLength = makeIntegerArray mtd (always <| length) 1 in
+                    let contentsWithZero = Heap.add indexLength { value = MakeNumber '\000' mtd; created = time; modified = time } contents in
+                    let stringArray = makeArray mtd arrLength contentsWithZero instantiator typex
+                    let fields =
+                        let time = tick() in
+                        Heap.ofSeq (seq [ MakeStringKey "System.String.m_StringLength", { value = length; created = time; modified = time };
+                                          MakeStringKey "System.String.m_FirstChar", { value = stringArray; created = time; modified = time } ])
+                    in
+                    this, Struct fields VSharp.String mtd |> mutate mtd state this |> snd
+            | _ -> internalfail "invalid char array!")
