@@ -92,10 +92,13 @@ module internal Interpreter =
         match decompiledMethod with
         | DecompilerServices.DecompilationResult.MethodWithoutInitializer decompiledMethod ->
             printfn "DECOMPILED %s:\n%s" qualifiedTypeName (JetBrains.Decompiler.Ast.NodeEx.ToStringDebug(decompiledMethod))
-            reduceDecompiledMethod caller state this parameters decompiledMethod (fun state k' -> k' (NoResult Metadata.empty, state)) k
-        | DecompilerServices.DecompilationResult.MethodWithExplicitInitializer _
-        | DecompilerServices.DecompilationResult.MethodWithImplicitInitializer _
-        | DecompilerServices.DecompilationResult.ObjectConstuctor _
+            Strings.internLiterals state decompiledMethod (fun state ->
+            reduceDecompiledMethod caller state this parameters decompiledMethod (fun state k' -> k' (NoResult Metadata.empty, state)) k)
+        | DecompilerServices.DecompilationResult.MethodWithExplicitInitializer decMethod
+        | DecompilerServices.DecompilationResult.MethodWithImplicitInitializer decMethod
+        | DecompilerServices.DecompilationResult.ObjectConstuctor decMethod ->
+            Strings.internLiterals state decMethod (fun state ->
+            reduceBaseOrThisConstuctorCall caller state this parameters qualifiedTypeName metadataMethod assemblyPath decompiledMethod k)
         | DecompilerServices.DecompilationResult.DefaultConstuctor ->
             reduceBaseOrThisConstuctorCall caller state this parameters qualifiedTypeName metadataMethod assemblyPath decompiledMethod k
         | DecompilerServices.DecompilationResult.DecompilationError ->
@@ -1086,6 +1089,7 @@ module internal Interpreter =
                 let initOneField (name, (typ, expression)) state k =
                     if expression = null then k (NoResult Metadata.empty, state)
                     else
+                        Strings.internLiterals state expression (fun state ->
                         let mtd' = State.mkMetadata expression state in
                         let address, state = Memory.referenceStaticField mtd' state false name t qualifiedTypeName in
                         reduceExpression state expression (fun (value, state) ->
@@ -1103,13 +1107,14 @@ module internal Interpreter =
 //                                let term, state = State.activator.CreateInstance typeof<TypeInitializationException> args state in
                                 k (Throw exn.metadata exn, state))
                             (fun _ _ normal _ k -> mutate mtd' (ControlFlow.resultToTerm (Guarded mtd normal)) k)
-                            k)
+                            k))
                 in
                 let fieldInitializers = Seq.map initOneField fields in
                 reduceSequentially mtd state fieldInitializers (fun (result, state) ->
                 match DecompilerServices.getStaticConstructorOf qualifiedTypeName with
                 | Some constr ->
-                    reduceDecompiledMethod null state None (State.Specified []) constr (fun state k -> k (result, state)) k
+                    Strings.internLiterals state constr (fun state ->
+                    reduceDecompiledMethod null state None (State.Specified []) constr (fun state k -> k (result, state)) k)
                 | None -> k (result, state))
             | Options.SymbolizeStaticFields -> k (NoResult Metadata.empty, state)
 
@@ -1132,11 +1137,12 @@ module internal Interpreter =
                 let fields = DecompilerServices.getDefaultFieldValuesOf false false qualifiedTypeName in
                 let names, typesAndInitializers = List.unzip fields in
                 let types, initializers = List.unzip typesAndInitializers in
+                Cps.List.foldlk Strings.internLiterals state initializers (fun state ->
                 match this with
                 | Some this ->
                     Cps.List.mapFoldk reduceExpression state initializers (fun (values, state) ->
                     mutateFields this names types values initializers state |> snd |> k)
-                | _ -> k state
+                | _ -> k state)
             else k state
         in
         let baseCtorInfo (metadataMethod : IMetadataMethod) =
@@ -1429,10 +1435,11 @@ type internal SymbolicInterpreter() =
     interface Functions.UnboundedRecursionExplorer.IInterpreter with
 
         member x.Initialize state k =
-            let time = Memory.tick() in
             let mtd = Metadata.empty in
             let stringTypeName = typeof<string>.AssemblyQualifiedName in
-            let emptyString, state = Strings.makeString mtd "" |> Memory.allocateInHeap Metadata.empty state in
+            let emptyStringStruct = Strings.makeString mtd "" in
+            let emptyString, state = Memory.allocateInHeap mtd state emptyStringStruct in
+            let state = Strings.allocateInInternPool mtd state emptyString
             Interpreter.initializeStaticMembersIfNeed null state stringTypeName (fun (result, state) ->
             let emptyFieldRef, state = Memory.referenceStaticField mtd state false "System.String.Empty" VSharp.String stringTypeName in
             Memory.mutate mtd state emptyFieldRef emptyString |> snd |> k)
