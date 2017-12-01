@@ -4,6 +4,7 @@ open JetBrains.Decompiler.Ast
 open MemoryCell
 open Memory
 open Arrays
+open State
 
 module internal Strings =
 
@@ -80,3 +81,8 @@ module internal Strings =
                 | Array(_, _, _, _, _, _, _) -> refToInt term, state
                 | _ -> internalfail "wrong string!"
             | _ -> internalfail "not a string!")
+
+    let internal allocateInInternPool metadata state term =
+        let time = tick() in
+        snd <| getKeyOfString metadata state term (fun state key ->
+        key, { state with iPool = state.iPool.Add(key, { value = term; created = time; modified = time }) })
