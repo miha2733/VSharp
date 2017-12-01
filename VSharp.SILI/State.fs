@@ -151,8 +151,9 @@ module internal State =
     let internal dumpMemory (s : state) =
         let sh = Heap.dump s.heap toString in
         let mh = Heap.dump s.statics staticKeyToString in
+        let iph = Heap.dump s.iPool toString in
         let separator = if System.String.IsNullOrWhiteSpace(sh) then "" else "\n"
-        sh + separator + mh
+        sh + separator + mh + separator + iph
 
 // ------------------------------- Merging -------------------------------
 
