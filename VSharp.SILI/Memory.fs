@@ -91,6 +91,14 @@ module internal Memory =
         | SubType _
         | ClassType _ as t -> Struct Heap.empty t metadata
         | ArrayType(e, d) as t -> Arrays.makeSymbolic metadata source d e t name
+        | String ->
+            let e, d = Numeric typedefof<char>, ConcreteDimension 1 in
+            let array = Arrays.makeSymbolic metadata source d e (ArrayType (e, d)) <| IdGenerator.startingWith("m_FirstChar") in
+            let length = Constant (IdGenerator.startingWith("m_StringLength")) source (Numeric typedefof<int>) metadata in
+            let fields = Heap.ofSeq (seq [ MakeStringKey "System.String.m_StringLength", { value = length; created = time; modified = time };
+                                           MakeStringKey "System.String.m_FirstChar", { value = array; created = time; modified = time } ])
+            in
+            Struct fields VSharp.String metadata
         | _ -> __notImplemented__()
 
     let internal genericLazyInstantiator =
