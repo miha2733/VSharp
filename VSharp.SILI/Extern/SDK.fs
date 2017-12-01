@@ -50,6 +50,9 @@ module ExternSDK =
         let stringIsInterned state term = Strings.IsInterned (m()) state term
         let internString state term = Strings.Intern (m()) state term
 
+    module Thread =
+        let getDomainInternal time source name typ = Memory.makeSymbolicInstance (m()) time source name typ
+
     module VSharp =
         module Arrays =
             let length term = Arrays.length (m()) term
