@@ -121,6 +121,7 @@ module internal State =
 
     let internal withHeap (s : state) h' = { s with heap = h' }
     let internal withStatics (s : state) m' = { s with statics = m' }
+    let internal withPool (s : state) i' = { s with iPool = i' }
 
     let private staticKeyToString = term >> function
         | Concrete(typeName, String) -> System.Type.GetType(typeName :?> string).FullName

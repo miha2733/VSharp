@@ -117,10 +117,26 @@ module internal Strings =
                                 makeAndInternString mtd state stringLiteral, stringLiteral :: acc
                         | _ -> state, acc
                     in
-                    Cps.Seq.foldlk (fun (state, acc) x k -> internLiteralsHelper state acc x k) (newState, List.empty) ast.Children (fun (state, interned) -> //goes here
+                    Cps.Seq.foldlk (fun (state, acc) x k -> internLiteralsHelper state acc x k) (newState, List.empty) ast.Children (fun (state, interned) ->
                     k (state, List.append acc interned))
 
         internLiteralsHelper state List.empty ast (fun (state, interned) ->
         if ast <> null
-        then do DecompilerServices.setPropertyOfNode ast "InternedLiterals" interned //this
+        then do DecompilerServices.setPropertyOfNode ast "InternedLiterals" interned
         k state)
+
+    let private internCommon heapAction value mtd state term =
+        let lambda state string =
+            getKeyOfString mtd state string (fun state key ->
+            let time = tick() in
+            let cell = { value = value; created = time; modified = time } in
+            let lazyInstatiator = fun () -> cell, heapAction key cell in
+            let gvas, iPool = heapDeref mtd time lazyInstatiator state.iPool key (Reference String) System.UInt32.MaxValue in
+            let gvs = List.map (fun (g, _, v) -> (g, v.value)) gvas in
+            Merging.merge gvs, withPool state iPool)
+        in
+        Common.unionHandler lambda term state
+
+    let internal Intern mtd state term = internCommon (fun key cell -> state.iPool.Add(key, cell)) term mtd state term
+
+    let internal IsInterned mtd state term = internCommon (fun _ _ -> state.iPool) (MakeNullRef String mtd) mtd state term

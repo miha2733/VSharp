@@ -151,7 +151,7 @@ module internal Memory =
         assert(List.length baseGvs <= 1)
         List.tryHead baseGvs, restGvs
 
-    let rec private heapDeref metadata time instantiateLazy h ptr ptrType ptrTime =
+    let rec internal heapDeref metadata time instantiateLazy h ptr ptrType ptrTime =
         let exists = Heap.contains ptr h in
         if IsConcrete ptr && exists then
             [(MakeTrue metadata, ptr, Heap.find ptr h)], h
@@ -161,9 +161,7 @@ module internal Memory =
             let baseAddr, baseValue, h' =
                 match baseGav with
                 | None ->
-                    let lazyValue = instantiateLazy() in
-                    let baseCell = { value = lazyValue; created = time; modified = time} in
-                    let h' = h.Add(ptr, baseCell) in
+                    let baseCell, h' = instantiateLazy() in
                     ptr, baseCell, h'
                 | Some(_, a, v) -> a, v, h
             (baseGuard, baseAddr, baseValue)::restGavs, h'
@@ -239,6 +237,8 @@ module internal Memory =
                 internalfailf "expected complex type, but got %O" t
 
     and private accessHeap metadata guard update h time mkCtx lazyInstantiator ptr ptrType ptrTime path =
+        let cell = { value = lazyInstantiator(); created = time; modified = time } in
+        let lazyInstantiator = fun () -> cell, h.Add(ptr, cell) in
         let gvas, h = heapDeref metadata time lazyInstantiator h ptr ptrType ptrTime in
         let gvs, (h', newTime) = gvas |> ((h, ZeroTime) |> List.mapFold (fun (h, maxTime) (guard', addr, cell) ->
             let ctx = mkCtx addr in
