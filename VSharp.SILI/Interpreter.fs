@@ -942,12 +942,22 @@ module internal Interpreter =
         | _ -> __notImplemented__()
 
     //TODO: make with generic
-    and doCast mtd state term targetType =
+    and doCast mtd term targetType =
+        let changeLast = List.rev >> NonEmptyList.ofList >> (fun ((addr, typ), xs) -> (addr, targetType)::xs) >> List.rev in
+        let isUpCast l r =
+            match l, r with
+            | ComplexType(t1, _, _), ComplexType(t2, _, _) -> t1.Is t2
+            | _ -> false
+        in
         match term.term with
         | HeapRef _
         | StackRef _
-        | StaticRef _
-        | _ -> Return mtd term, state
+        | StaticRef _ when isUpCast (TypeOf term) (Reference targetType) -> Return mtd term
+        | HeapRef (addrs, t, None) ->
+            Return mtd <| HeapRef (addrs |> NonEmptyList.toList |> changeLast |> NonEmptyList.ofList) t mtd
+        | StackRef (key, list, None) -> Return mtd <| StackRef key (changeLast list) mtd
+        | StaticRef (key, list, None) -> Return mtd <| StaticRef key (changeLast list) mtd
+        | _ -> __unreachable__()
 
     and throwInvalidCastException mtd state term targetType =
         let result, state =
@@ -986,7 +996,7 @@ module internal Interpreter =
         let mapper state term targetType =
             reduceConditionalStatements state
                 (fun state k -> k (isCasted state term))
-                (fun state k -> k (doCast mtd state term targetType))
+                (fun state k -> k (doCast mtd term targetType, state))
                 (fun state k -> k (ifNotCasted mtd state term targetType))
                 (fun (statementResult, state) -> (ControlFlow.resultToTerm statementResult, state))
         in
@@ -1008,7 +1018,7 @@ module internal Interpreter =
         let hierarchyCast state term targetType =
             reduceConditionalStatements state
                 (fun state k -> k (isCasted state term))
-                (fun state k -> k (doCast mtd state term targetType))
+                (fun state k -> k (doCast mtd term targetType, state))
                 (fun state k -> k (throwInvalidCastException mtd state term targetType))
                 (fun (statementResult, state) -> (ControlFlow.resultToTerm statementResult, state))
         in
