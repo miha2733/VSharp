@@ -14,12 +14,11 @@ module internal State =
     type internal entry = { key : StackKey; mtd : TermMetadata; typ : TermType option }
     type internal stackFrame = { func : (FunctionIdentifier * pathCondition) option; entries : list<entry> ; time : Timestamp }
     type internal frames = { f : Stack.stack<stackFrame>; sh : StackHash }
-    type internal miscellaneous = ImmutableHashSet<obj>
-    type internal state = { stack : stack; heap : heap; statics : staticMemory; iPool : heap; frames : frames; pc : pathCondition; misc : miscellaneous }
+    type internal state = { stack : stack; heap : heap; statics : staticMemory; iPool : heap; frames : frames; pc : pathCondition }
 
 // ------------------------------- Primitives -------------------------------
 
-    let internal empty : state = { stack = MappedStack.empty; heap = SymbolicHeap.empty; statics = SymbolicHeap.empty; iPool = SymbolicHeap.empty; frames = { f = Stack.empty; sh = List.empty }; pc = List.empty; misc = miscellaneous.Empty}
+    let internal empty : state = { stack = MappedStack.empty; heap = SymbolicHeap.empty; statics = SymbolicHeap.empty; iPool = SymbolicHeap.empty; frames = { f = Stack.empty; sh = List.empty }; pc = List.empty }
 
     type internal 'a SymbolicValue =
         | Specified of 'a
@@ -165,8 +164,7 @@ module internal State =
         let mergedHeap = Heap.merge2 s1.heap s2.heap resolve in
         let mergedStatics = Heap.merge2 s1.statics s2.statics resolve in
         let mergedPool = Heap.merge2 s1.iPool s2.iPool resolve in
-        let mergedMisc = s1.misc.Union s2.misc in
-        { s1 with stack = mergedStack; heap = mergedHeap; statics = mergedStatics; iPool = mergedPool; misc = mergedMisc }
+        { s1 with stack = mergedStack; heap = mergedHeap; statics = mergedStatics; iPool = mergedPool }
 
     let internal merge guards states resolve : state =
         assert(List.length states > 0)
@@ -179,5 +177,4 @@ module internal State =
         let mergedHeap = Heap.merge guards (List.map heapOf states) resolve in
         let mergedStatics = Heap.merge guards (List.map staticsOf states) resolve in
         let mergedPool = Heap.merge guards (List.map poolOf states) resolve in
-        let mergedMisc = states |> List.tail |> List.fold (fun (acc : miscellaneous) s -> acc.Union s.misc) first.misc in
-        { stack = mergedStack; heap = mergedHeap; statics = mergedStatics; iPool = mergedPool; frames = frames; pc = path; misc = mergedMisc }
+        { stack = mergedStack; heap = mergedHeap; statics = mergedStatics; iPool = mergedPool; frames = frames; pc = path }
