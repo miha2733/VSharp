@@ -37,5 +37,11 @@ namespace VSharp.CSharpUtils.Tests
         {
             return String.Intern(a);
         }
+
+        public static void TestHeap(int l, string a)
+        {
+            if (l > 0)
+                String.Intern(a);
+        }
     }
 }
