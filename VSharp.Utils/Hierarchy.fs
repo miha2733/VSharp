@@ -29,8 +29,7 @@ module public Hierarchy =
         member x.Equals (r : System.Type) = x.Inheritor = r
         new (typ : System.Type) = Hierarchy(make typ)
         override x.ToString() = x.Name
-        override x.GetHashCode() =
-            Microsoft.FSharp.Core.LanguagePrimitives.PhysicalHash(x.Hierarchy)
+        override x.GetHashCode() = hierarchy.GetHashCode()
         override x.Equals(o : obj) =
             match o with
             | :? Hierarchy as other -> x.GetHashCode() = other.GetHashCode()
