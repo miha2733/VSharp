@@ -728,7 +728,7 @@ module internal Interpreter =
         let mType = FromConcreteMetadataType ast.Value.Type in
         let mtd = State.mkMetadata ast state in
         match mType with
-        | VSharp.String ->
+        | StringType ->
             let key = Strings.makeString mtd <| ast.Value.Value.ToString() in
             k (State.readPoolLocation state key, state)
         | _ when IsNull mType -> k (Terms.MakeNullRef Null mtd, state)
@@ -1449,7 +1449,7 @@ type internal SymbolicInterpreter() =
             let emptyString, state = Memory.allocateInHeap mtd state emptyStringStruct in
             let state = Strings.allocateInInternPool mtd state emptyString
             Interpreter.initializeStaticMembersIfNeed null state stringTypeName (fun (result, state) ->
-            let emptyFieldRef, state = Memory.referenceStaticField mtd state false "System.String.Empty" VSharp.String stringTypeName in
+            let emptyFieldRef, state = Memory.referenceStaticField mtd state false "System.String.Empty" stringType stringTypeName in
             Memory.mutate mtd state emptyFieldRef emptyString |> snd |> k)
 
         member x.InitializeStaticMembers state qualifiedTypeName k =

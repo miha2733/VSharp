@@ -17,7 +17,7 @@ module internal Operators =
         | _ -> __notImplemented__()
 
     let internal isStringOperation op t1 t2 =
-        (t1 = Reference String || Types.IsBottom t1) && (t2 = Reference String || Types.IsBottom t2) &&
+        (t1 = Reference Types.stringType || Types.IsBottom t1) && (t2 = Reference Types.stringType || Types.IsBottom t2) &&
         match op with
         | OperationType.Add
         | OperationType.Equal
@@ -66,7 +66,7 @@ module internal Operators =
         match t with
         | Bool -> Propositional.simplifyUnaryConnective mtd op arg (withSnd state >> k)
         | Numeric t -> Arithmetics.simplifyUnaryOperation mtd op state arg isChecked t k
-        | String -> __notImplemented__()
+        | Types.StringType -> __notImplemented__()
         | _ -> __notImplemented__()
 
     let simplifyHeapPointwiseEquality mtd h1 h2 =

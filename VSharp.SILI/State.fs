@@ -123,7 +123,7 @@ module internal State =
     let internal withPool (s : state) i' = { s with iPool = i' }
 
     let private staticKeyToString = term >> function
-        | Concrete(typeName, String) -> System.Type.GetType(typeName :?> string).FullName
+        | Concrete(typeName, StringType) -> System.Type.GetType(typeName :?> string).FullName
         | t -> toString t
 
     let internal mkMetadata location state =

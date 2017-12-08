@@ -24,7 +24,6 @@ type public TermType =
     | Null
     | Bool
     | Numeric of System.Type
-    | String
     | StructType of Hierarchy * TermTypeRef list * TermType list // some value type with generic argument and interfaces
     | ClassType of Hierarchy * TermTypeRef list * TermType list // some reference type with generic argument and interfaces
     | SubType of Hierarchy * TermTypeRef list * TermType list * string //some symbolic type with generic argument, interfaces and constraint
@@ -40,7 +39,6 @@ type public TermType =
         | Null -> "<nullType>"
         | Bool -> "bool"
         | Numeric t -> t.Name.ToLower()
-        | String -> "string"
         | Func(domain, range) -> String.Join(" -> ", List.append domain [range])
         | StructType(t, _, _)
         | ClassType (t, _, _) -> toString t
@@ -105,10 +103,6 @@ module public Types =
         | Bool -> true
         | _ -> false
 
-    let public IsString = function
-        | String -> true
-        | _ -> false
-
     let public IsFunction = function
         | Func _ -> true
         | _ -> false
@@ -162,7 +156,6 @@ module public Types =
         | t -> internalfailf "expected array type, but got %O" t
 
     let public IsReferenceType = function
-        | String
         | ClassType _
         | ArrayType _
         | Func _
@@ -179,7 +172,6 @@ module public Types =
         match t with
         | Null -> null
         | Bool -> typedefof<bool>
-        | String -> typedefof<string>
         | Numeric t
         | StructType(t, _, _)
         | ClassType(t, _, _)
@@ -323,7 +315,6 @@ module public Types =
             | v when v.FullName = "System.Void" -> Void
             | b when b.Equals(typedefof<bool>) -> Bool
             | n when numericTypes.Contains(n) -> Numeric n
-            | s when s.Equals(typedefof<string>) -> String
             | e when e.IsEnum -> Numeric e
             | a when a.IsArray ->
                 ArrayType(
@@ -389,7 +380,7 @@ module public Types =
             | SymbolicType -> fromDotNetTypeToSymbolic typeKind dotNetType
 
         and private fromDotNetTypeRef (typeKind : TypeKind) dotNetType =
-            let key = dotNetType, typeKind in
+            let key = dotNetType, typeKind in //TODO: for different keys can be the same values
             let res =
                 if TypesCache.Contains key then TypesCache.Find key
                 else
@@ -443,7 +434,6 @@ module public Types =
             | _ -> None
 
         let (|ReferenceType|_|) = function
-            | String -> Some(ReferenceType(Hierarchy typedefof<string>, [], getInterfaces Global typedefof<string>))
             | TermType.ClassType(t, genArg, interfaces) -> Some(ReferenceType(t, genArg, interfaces))
             | TermType.ArrayType(_, Vector)
             | TermType.ArrayType (_, ConcreteDimension _) as arr ->
@@ -458,6 +448,12 @@ module public Types =
             | _ -> None
 
     open Constructor
+
+    let public stringType = FromConcreteDotNetType typedefof<string>
+
+    let (|StringType|_|) = function
+        | typ when typ = stringType -> Some()
+        | _ -> None
 
     let public IsPrimitive t =
         let dotNetType = ToDotNetType t in

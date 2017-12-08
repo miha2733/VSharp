@@ -377,7 +377,6 @@ module public Terms =
     let public IsInteger =              TypeOf >> Types.IsInteger
     let public IsReal =                 TypeOf >> Types.IsReal
     let public IsNumeric =              TypeOf >> Types.IsNumeric
-    let public IsString =               TypeOf >> Types.IsString
     let public IsFunction =             TypeOf >> Types.IsFunction
     let public IsPrimitive =            TypeOf >> Types.IsPrimitive
     let public DomainOf =               TypeOf >> Types.DomainOf
@@ -421,7 +420,7 @@ module public Terms =
         Concrete n (Numeric(n.GetType())) metadata
 
     let public MakeConcreteString (s : string) metadata =
-        Concrete s VSharp.String metadata
+        Concrete s Types.stringType metadata
 
     let public MakeBinary operation x y isChecked t metadata =
         assert(Operations.isBinary operation)

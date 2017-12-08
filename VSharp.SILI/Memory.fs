@@ -48,7 +48,7 @@ module internal Memory =
         | Bool -> MakeFalse metadata
         | Numeric t when t.IsEnum -> CastConcrete (System.Activator.CreateInstance(t)) t metadata
         | Numeric t -> CastConcrete 0 t metadata
-        | String -> Terms.MakeNullRef String metadata
+        | StringType -> Terms.MakeNullRef stringType metadata
         | Reference t -> Terms.MakeNullRef t metadata
         | ClassType _ as t ->Terms.MakeNullRef t metadata
         | ArrayType _ as t -> Terms.MakeNullRef t metadata
@@ -87,18 +87,18 @@ module internal Memory =
             let constant = Constant name source' pointerType metadata in
             HeapRef ((constant, t), []) time metadata
         | t when Types.IsPrimitive t || Types.IsFunction t -> Constant name source t metadata
-        | StructType _
-        | SubType _
-        | ClassType _ as t -> Struct Heap.empty t metadata
         | ArrayType(e, d) as t -> Arrays.makeSymbolic metadata source d e t name
-        | String ->
+        | StringType ->
             let e, d = Numeric typedefof<char>, ConcreteDimension 1 in
             let array = Arrays.makeSymbolic metadata source d e (ArrayType (e, d)) <| IdGenerator.startingWith("m_FirstChar") in
             let length = Constant (IdGenerator.startingWith("m_StringLength")) source (Numeric typedefof<int>) metadata in
             let fields = Heap.ofSeq (seq [ MakeStringKey "System.String.m_StringLength", { value = length; created = time; modified = time };
                                            MakeStringKey "System.String.m_FirstChar", { value = array; created = time; modified = time } ])
             in
-            Struct fields VSharp.String metadata
+            Struct fields stringType metadata
+        | StructType _
+        | SubType _
+        | ClassType _ as t -> Struct Heap.empty t metadata
         | _ -> __notImplemented__()
 
     let internal genericLazyInstantiator =
@@ -268,7 +268,7 @@ module internal Memory =
             accessedValue, newState
         | StaticRef(location, path, None) ->
             let firstLocation = Terms.term >> function
-                | Concrete(location, String) -> StaticRef (location :?> string) [] term.metadata
+                | Concrete(location, StringType) -> StaticRef (location :?> string) [] term.metadata
                 | _ -> __notImplemented__()
             in
             let addr = Terms.MakeStringKey location in
@@ -465,9 +465,9 @@ module internal Memory =
         | Concrete(a1, t1), Concrete(a2, t2) ->
             match t1, t2 with
             | _ when t1 = t2 && t1 = pointerType -> compare (a1 :?> int) (a2 :?> int)
-            | String, String -> compare (a1 :?> string) (a2 :?> string)
-            | _, String when t1 = pointerType -> -1
-            | String, _ when t2 = pointerType -> 1
+            | StringType, StringType -> compare (a1 :?> string) (a2 :?> string)
+            | _, StringType when t1 = pointerType -> -1
+            | StringType, _ when t2 = pointerType -> 1
             | _ -> __notImplemented__()
         | Constant(name1, _, _), Constant(name2, _, _) -> compare name1 name2
         | Concrete _, _ -> -1

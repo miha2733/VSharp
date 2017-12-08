@@ -1,7 +1,8 @@
 ﻿namespace VSharp
 
 open JetBrains.Decompiler.Ast
-open Types.Constructor
+open Types
+open Constructor
 open MemoryCell
 open Memory
 open Arrays
@@ -21,7 +22,7 @@ module internal Strings =
             Heap.ofSeq (seq [ MakeStringKey "System.String.m_StringLength", { value = stringTermLength; created = time; modified = time };
                               MakeStringKey "System.String.m_FirstChar", { value = array; created = time; modified = time } ])
         in
-        Struct fields VSharp.String metadata
+        Struct fields stringType metadata
 
     let internal getKeyOfString mtd state term k =
         deref mtd state term
@@ -56,7 +57,7 @@ module internal Strings =
 
         getKeyOfString metadata state term (fun state ->
             Terms.term >> function
-            | Struct(fields, String) ->
+            | Struct(fields, StringType) ->
                 match Terms.term fields.[MakeStringKey "System.String.m_FirstChar"].value with
                 //Almost concrete string
                 | ConcreteStringArray(length, contents) ->
@@ -112,7 +113,7 @@ module internal Strings =
                     let newState, acc =
                         match ast with
                         | :? ILiteralExpression as ast
-                            when FromConcreteMetadataType ast.Value.Type = String && ast.Value.Value.ToString() |> makeString mtd |> inInternPool state |> not ->
+                            when FromConcreteMetadataType ast.Value.Type = stringType && ast.Value.Value.ToString() |> makeString mtd |> inInternPool state |> not ->
                                 let stringLiteral = ast.Value.Value.ToString() in
                                 makeAndInternString mtd state stringLiteral, stringLiteral :: acc
                         | _ -> state, acc
@@ -131,7 +132,7 @@ module internal Strings =
             let time = tick() in
             let cell = { value = value; created = time; modified = time } in
             let lazyInstatiator = fun () -> cell, heapAction key cell in
-            let gvas, iPool = heapDeref mtd time lazyInstatiator state.iPool key (Reference String) System.UInt32.MaxValue in
+            let gvas, iPool = heapDeref mtd time lazyInstatiator state.iPool key (Reference stringType) System.UInt32.MaxValue in
             let gvs = List.map (fun (g, _, v) -> (g, v.value)) gvas in
             Merging.merge gvs, withPool state iPool)
         in
@@ -139,7 +140,7 @@ module internal Strings =
 
     let internal Intern mtd state term = internCommon (fun key cell -> state.iPool.Add(key, cell)) term mtd state term
 
-    let internal IsInterned mtd state term = internCommon (fun _ _ -> state.iPool) (MakeNullRef String mtd) mtd state term
+    let internal IsInterned mtd state term = internCommon (fun _ _ -> state.iPool) (MakeNullRef stringType mtd) mtd state term
 
     let internal ctorOfCharArray mtd state this term =
         deref mtd state term
@@ -158,5 +159,5 @@ module internal Strings =
                         Heap.ofSeq (seq [ MakeStringKey "System.String.m_StringLength", { value = length; created = time; modified = time };
                                           MakeStringKey "System.String.m_FirstChar", { value = stringArray; created = time; modified = time } ])
                     in
-                    this, Struct fields VSharp.String mtd |> mutate mtd state this |> snd
+                    this, Struct fields stringType mtd |> mutate mtd state this |> snd
             | _ -> internalfail "invalid char array!")

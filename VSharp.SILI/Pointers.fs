@@ -2,13 +2,14 @@ namespace VSharp
 
 open JetBrains.Decompiler.Ast
 open VSharp.Common
+open Types
 
 module internal Pointers =
 
     let internal simplifyStringKeyEquality simplifyArraysEq mtd x y =
         match x.term, y.term with
-        | Concrete(x, String), Concrete(y, String) -> MakeBool ((x :?> string) = (y :?> string)) mtd
-        | Struct(fieldsOfX, String), Struct(fieldsOfY, String) ->
+        | Concrete(x, StringType), Concrete(y, StringType) -> MakeBool ((x :?> string) = (y :?> string)) mtd
+        | Struct(fieldsOfX, StringType), Struct(fieldsOfY, StringType) ->
             let stringLength1 = fieldsOfX.[MakeStringKey "System.String.m_StringLength"].value in
             let stringLength2 = fieldsOfY.[MakeStringKey "System.String.m_StringLength"].value in
             let string1Array  = fieldsOfX.[MakeStringKey "System.String.m_FirstChar"].value in
@@ -19,7 +20,7 @@ module internal Pointers =
 
     let internal locationEqual simplifyArraysEq mtd addr1 addr2 =
         match TypeOf addr1, TypeOf addr2 with
-        | String, String -> simplifyStringKeyEquality simplifyArraysEq mtd addr1 addr2
+        | StringType, StringType -> simplifyStringKeyEquality simplifyArraysEq mtd addr1 addr2
         | Numeric _, Numeric _ -> Arithmetics.eq mtd addr1 addr2
         | ArrayType _, ArrayType _ -> Arrays.equalsArrayIndices mtd addr1 addr2 |> fst
         | _ -> __notImplemented__()
