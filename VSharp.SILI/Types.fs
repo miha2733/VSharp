@@ -380,7 +380,7 @@ module public Types =
             | SymbolicType -> fromDotNetTypeToSymbolic typeKind dotNetType
 
         and private fromDotNetTypeRef (typeKind : TypeKind) dotNetType =
-            let key = dotNetType, typeKind in //TODO: for different keys can be the same values
+            let key = dotNetType, typeKind in
             let res =
                 if TypesCache.Contains key then TypesCache.Find key
                 else
@@ -393,7 +393,8 @@ module public Types =
             | ArrayType(e, SymbolicDimension _) -> ref <| ArrayType(e, SymbolicDimension <| getIdFromDotNetType typeKind dotNetType)
             | _ -> res
 
-        let private FromDotNetType termTypeParameter dotNetType = ! (fromDotNetTypeRef termTypeParameter dotNetType)
+        let private FromDotNetType termTypeParameter (dotNetType : Type) =
+            if dotNetType.IsSealed then ! (fromDotNetTypeRef Concrete dotNetType) else ! (fromDotNetTypeRef termTypeParameter dotNetType)
 
         let rec private FromMetadataType typeKind (t : IMetadataType) =
             match t with
