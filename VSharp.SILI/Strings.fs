@@ -26,7 +26,7 @@ module internal Strings =
 
     let internal getKeyOfString mtd state term k =
         deref mtd state term
-        ||> Common.unionHandler k
+        ||> Common.guardedErroredApply k
 
     let (|ConcreteStringArray|_|) = function
         | Array({term = Concrete(one, _)}, {term = Concrete (length, _)}, lower, [_, DefaultInstantiator(_, termType)], contents, _, ArrayType (typex, ConcreteDimension 1))
@@ -136,7 +136,7 @@ module internal Strings =
             let gvs = List.map (fun (g, _, v) -> (g, v.value)) gvas in
             Merging.merge gvs, withPool state iPool)
         in
-        Common.unionHandler lambda term state
+        Common.guardedErroredApply lambda term state
 
     let internal Intern mtd state term = internCommon (fun key cell -> state.iPool.Add(key, cell)) term mtd state term
 
@@ -144,7 +144,7 @@ module internal Strings =
 
     let internal ctorOfCharArray mtd state this term =
         deref mtd state term
-        ||> Common.unionHandler (fun state ->
+        ||> Common.guardedErroredApply (fun state ->
             Terms.term >> function
             | Array({term = Concrete(one, _)}, length, lower, instantiator, contents, lengths, ArrayType (typex, _))
                 when one :?> int = 1 && typex = Numeric typedefof<char> ->
