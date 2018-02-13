@@ -1,8 +1,7 @@
-namespace VSharp
+namespace VSharp.Core
 
-open JetBrains.Decompiler.Ast
-open VSharp.Common
-open Types
+open VSharp
+open VSharp.Core.Common
 
 module internal Pointers =
 
@@ -18,39 +17,43 @@ module internal Pointers =
             simplifyAnd mtd lengthEq (simplifyArraysEq mtd string1Array string2Array) id)
         | _ -> __notImplemented__()
 
-    let internal locationEqual simplifyArraysEq mtd addr1 addr2 =
-        match TypeOf addr1, TypeOf addr2 with
+    let locationEqual simplifyArraysEq mtd addr1 addr2 =
+        match typeOf addr1, typeOf addr2 with
+        | String, String -> Strings.simplifyEquality mtd addr1 addr2
         | StringType, StringType -> simplifyStringKeyEquality simplifyArraysEq mtd addr1 addr2
-        | Numeric _, Numeric _ -> Arithmetics.eq mtd addr1 addr2
+        | Numeric _, Numeric _ ->
+            if addr1 = addr2 then makeTrue mtd
+            elif isConcrete addr1 && isConcrete addr2 then makeFalse mtd
+            else makeBinary OperationType.Equal addr1 addr2 false Bool mtd
         | ArrayType _, ArrayType _ -> Arrays.equalsArrayIndices mtd addr1 addr2 |> fst
         | _ -> __notImplemented__()
 
-    let internal comparePath mtd path1 path2 =
+    let comparePath mtd path1 path2 =
         if List.length path1 <> List.length path2 then
-            Terms.MakeFalse mtd
+            makeFalse mtd
         else
             List.map2 (fun (x, _) (y, _) -> locationEqual (fun _ _ -> __unreachable__()) mtd x y) path1 path2 |> conjunction mtd
 
-    let rec internal simplifyReferenceEquality mtd x y k =
+    let rec simplifyReferenceEquality mtd x y k =
         simplifyGenericBinary "reference comparison" State.empty x y (fst >> k)
             (fun _ _ _ _ -> __unreachable__())
             (fun x y s k ->
-                let k = withSnd s >> k in
+                let k = withSnd s >> k
                 match x.term, y.term with
-                | _ when x = y -> MakeTrue mtd |> k
+                | _ when x = y -> makeTrue mtd |> k
                 | HeapRef(xpath, _, None), HeapRef(ypath, _, None) ->
                     comparePath mtd (NonEmptyList.toList xpath) (NonEmptyList.toList ypath) |> k
                 | StackRef(key1, path1, None), StackRef(key2, path2, None) ->
-                    MakeBool (key1 = key2) mtd &&& comparePath mtd path1 path2 |> k
+                    makeBool (key1 = key2) mtd &&& comparePath mtd path1 path2 |> k
                 | StaticRef(key1, path1, None), StaticRef(key2, path2, None) ->
-                    MakeBool (key1 = key2) mtd &&& comparePath mtd path1 path2 |> k
-                | _ -> MakeFalse mtd |> k)
+                    makeBool (key1 = key2) mtd &&& comparePath mtd path1 path2 |> k
+                | _ -> makeFalse mtd |> k)
             (fun x y state k -> simplifyReferenceEquality mtd x y (withSnd state >> k))
 
-    let internal isNull mtd ptr =
-        simplifyReferenceEquality mtd ptr (MakeNullRef Null mtd) id
+    let isNull mtd ptr =
+        simplifyReferenceEquality mtd ptr (makeNullRef Null mtd) id
 
-    let internal simplifyBinaryOperation metadata op state x y k =
+    let simplifyBinaryOperation metadata op state x y k =
         match op with
         | OperationType.Add
         | OperationType.Subtract -> __notImplemented__()
@@ -60,12 +63,18 @@ module internal Pointers =
             Propositional.simplifyNegation metadata e (withSnd state >> k))
         | _ -> internalfailf "%O is not a binary arithmetical operator" op
 
-    let internal isPointerOperation op t1 t2 =
-        (Types.IsPointer t1 || Types.IsReference t1 || Types.IsBottom t1) &&
-        (Types.IsPointer t2 || Types.IsReference t2 || Types.IsBottom t2) &&
+    let isPointerOperation op t1 t2 =
+        (Types.isPointer t1 || Types.isReference t1 || Types.isBottom t1) &&
+        (Types.isPointer t2 || Types.isReference t2 || Types.isBottom t2) &&
         match op with
         | OperationType.Add
         | OperationType.Subtract
         | OperationType.Equal
         | OperationType.NotEqual -> true
         | _ -> false
+
+    let rec topLevelLocation t =
+        match t.term with
+        | HeapRef(((a, _), []), _, _) -> a
+        | Union gvs -> Merging.guardedMap topLevelLocation gvs
+        | _ -> __notImplemented__()

@@ -1,6 +1,6 @@
-namespace VSharp
+namespace VSharp.Core
 
-open JetBrains.Decompiler.Ast
+open VSharp
 
 [<AutoOpen>]
 module internal Operators =
@@ -24,17 +24,24 @@ module internal Operators =
         | OperationType.NotEqual -> true
         | _ -> false
 
-    let rec internal refToInt term =
+    let rec refToInt term =
         match term.term with
         | Error _ -> term
-        | Concrete(null, _) -> Concrete 0 Types.pointerType term.metadata
+        | Concrete(null, _) -> Concrete term.metadata 0 Types.pointerType
         | HeapRef(((addr, _), _), _, _) -> addr
         | Union gvs -> Merging.guardedMap refToInt gvs
         | _ -> term
 
+    let rec referenceEqual mtd p1 p2 =
+        let addr1 = refToInt p1
+        let addr2 = refToInt p2
+        if not(Terms.isInteger addr1 || Terms.isInteger addr2) then
+            internalfail "reference comparing non-reference types"
+        Arithmetics.simplifyEqual mtd addr1 addr2 id
+
     let simplifyBinaryOperation mtd op isChecked state t left right k =
-        let t1 = Terms.TypeOf left in
-        let t2 = Terms.TypeOf right in
+        let t1 = Terms.typeOf left
+        let t2 = Terms.typeOf right
         match op with
         | op when Propositional.isLogicalOperation op t1 t2 ->
             Propositional.simplifyBinaryConnective mtd op left right (withSnd state >> k)
@@ -47,7 +54,7 @@ module internal Operators =
         | _ -> __notImplemented__()
 
     let ksimplifyEquality mtd x y k =
-        simplifyBinaryOperation mtd JetBrains.Decompiler.Ast.OperationType.Equal false State.empty typeof<bool> x y (fst >> k)
+        simplifyBinaryOperation mtd OperationType.Equal false State.empty typeof<bool> x y (fst >> k)
 
     let simplifyEquality mtd x y =
         ksimplifyEquality mtd x y id
@@ -63,10 +70,10 @@ module internal Operators =
         | _ -> __notImplemented__()
 
     let simplifyHeapPointwiseEquality mtd h1 h2 =
-        Heap.unify (Terms.MakeTrue mtd) h1 h2 (fun s k v1 v2 ->
+        Heap.unify (makeTrue mtd) h1 h2 (fun s _ v1 v2 ->
             match v1, v2 with
             | Some v1, Some v2 -> simplifyAnd mtd s (simplifyEquality mtd v1.value v2.value) id
-            | None, Some v2 -> s
+            | None, Some _ -> s
             | _ -> __notImplemented__())
 
     let simplifyArraysEquality mtd x y =
@@ -82,14 +89,14 @@ module internal Operators =
                 | DefaultInstantiator(term1, typ1), LazyInstantiator(term2, typ2)
                 | LazyInstantiator(term1, typ1), DefaultInstantiator(term2, typ2) ->
                     eqTypes mtd typ1 typ2 (fun equalTypes ->
-                    simplifyAnd mtd equalTypes (MakeBinary (OperationType.Equal) term1 term2 false Bool mtd) k)
+                    simplifyAnd mtd equalTypes (makeBinary (OperationType.Equal) term1 term2 false Bool mtd) k)
 
             List.fold (fun acc (g1, instor1) ->
                 simplifyOr mtd acc (List.fold (fun acc (g2, instor2) ->
                     simplifyAnd mtd g1 g2 (fun guardsEq ->
                     instorEq mtd instor1 instor2 (fun instantiatorEq ->
-                    simplifyAnd mtd acc (implies guardsEq instantiatorEq mtd) id))) (Terms.MakeTrue mtd) gInstor2) id)
-                (Terms.MakeTrue mtd)
+                    simplifyAnd mtd acc (implies guardsEq instantiatorEq mtd) id))) (makeTrue mtd) gInstor2) id)
+                (makeTrue mtd)
                 gInstor1
 
         match x.term, y.term with
