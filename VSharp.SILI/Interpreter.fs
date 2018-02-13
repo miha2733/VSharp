@@ -709,7 +709,7 @@ module internal Interpreter =
         let obj = ast.Value.Value
         match mType with
         | Core.String ->
-            let key = Core.Strings.makeString mtd <| obj.ToString() in
+            let key = Core.Strings.makeString mtd <| obj.ToString()
             k (State.readPoolLocation state key, state)
         | Core.Null -> k (Terms.MakeNullRef Null, state)
         | _ -> k (Concrete obj mType, state)
@@ -735,7 +735,7 @@ module internal Interpreter =
         | _ -> __notImplemented__()
 
     and reduceNullCoalescing ast state left right k =
-        let mtd = Core.State.mkMetadata ast state in
+        let mtd = Core.State.mkMetadata ast state
         reduceExpression state left (fun (leftTerm, state) ->
         reduceExpression state right (fun (rightTerm, state) ->
         BranchStatements state

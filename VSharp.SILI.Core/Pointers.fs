@@ -9,10 +9,10 @@ module internal Pointers =
         match x.term, y.term with
         | Concrete(x, StringType), Concrete(y, StringType) -> MakeBool ((x :?> string) = (y :?> string)) mtd
         | Struct(fieldsOfX, StringType), Struct(fieldsOfY, StringType) ->
-            let stringLength1 = fieldsOfX.[MakeStringKey "System.String.m_StringLength"].value in
-            let stringLength2 = fieldsOfY.[MakeStringKey "System.String.m_StringLength"].value in
-            let string1Array  = fieldsOfX.[MakeStringKey "System.String.m_FirstChar"].value in
-            let string2Array  = fieldsOfY.[MakeStringKey "System.String.m_FirstChar"].value in
+            let stringLength1 = fieldsOfX.[MakeStringKey "System.String.m_StringLength"].value
+            let stringLength2 = fieldsOfY.[MakeStringKey "System.String.m_StringLength"].value
+            let string1Array  = fieldsOfX.[MakeStringKey "System.String.m_FirstChar"].value
+            let string2Array  = fieldsOfY.[MakeStringKey "System.String.m_FirstChar"].value
             simplifyEqual mtd stringLength1 stringLength2 (fun lengthEq ->
             simplifyAnd mtd lengthEq (simplifyArraysEq mtd string1Array string2Array) id)
         | _ -> __notImplemented__()
