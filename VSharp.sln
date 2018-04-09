@@ -22,6 +22,8 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "VSharp.Solver", "VSharp.Sol
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VSharp.Runner", "VSharp.Runner\VSharp.Runner.csproj", "{F5192FC8-FD87-41F8-978D-28DB3A82F61C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Demo", "Demo\Demo.csproj", "{B4E7B56B-0462-4D9B-8507-6BA4A83FAA78}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -56,6 +58,10 @@ Global
 		{F5192FC8-FD87-41F8-978D-28DB3A82F61C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F5192FC8-FD87-41F8-978D-28DB3A82F61C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F5192FC8-FD87-41F8-978D-28DB3A82F61C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B4E7B56B-0462-4D9B-8507-6BA4A83FAA78}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B4E7B56B-0462-4D9B-8507-6BA4A83FAA78}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B4E7B56B-0462-4D9B-8507-6BA4A83FAA78}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B4E7B56B-0462-4D9B-8507-6BA4A83FAA78}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
