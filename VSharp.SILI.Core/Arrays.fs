@@ -17,7 +17,7 @@ module internal Arrays =
     let makeArray mtd length contents instantiator elemTyp =
         let zero = makeZeroAddress mtd
         let lowerBound = Heap.add zero { value = zero; created = Timestamp.zero; modified = Timestamp.zero } Heap.empty
-        let typ = ArrayType(elemTyp, ConcreteDimension 1)
+        let typ = ArrayType(elemTyp, Vector)
         let lengths = Heap.add zero { value = length; created = Timestamp.zero; modified = Timestamp.zero } Heap.empty
         Array mtd (makeNumber 1 mtd) length lowerBound instantiator contents lengths typ
 
@@ -27,7 +27,7 @@ module internal Arrays =
             |> Seq.init length
             |> Seq.foldi (fun h i v -> Heap.add (keyMaker i mtd) { value = v; created = Timestamp.zero; modified = Timestamp.zero } h) Heap.empty
         let length = makeNumber length mtd
-        let constant = Constant mtd defaultArrayName (DefaultArray()) (ArrayType(lengthTermType, ConcreteDimension 1))
+        let constant = Constant mtd defaultArrayName (DefaultArray()) (ArrayType(elemTyp, Vector))
         let instantiator = [makeTrue mtd, DefaultInstantiator(constant, elemTyp)]
         makeArray mtd length contents instantiator elemTyp
 
