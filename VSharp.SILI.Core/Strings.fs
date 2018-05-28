@@ -28,6 +28,11 @@ module internal Strings =
             makeStringOfFields metadata time length stringArray
         | t -> internalfailf "expected char array, but got %O" t)
 
+    let length = Merging.map (term >> function
+        | Struct(fields, StringType) -> fields.[makeStringKey "System.String.m_StringLength"].value
+        | t -> internalfailf "expected string struct, but got %O" t)
+
+
     let simplifyEquality mtd x y =
         match x.term, y.term with
         | Concrete(x, StringType), Concrete(y, StringType) -> makeBool ((x :?> string) = (y :?> string)) mtd
