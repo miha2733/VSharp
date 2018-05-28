@@ -179,6 +179,12 @@ module API =
         let ArrayLengthByDimension state arrayRef index = Memory.referenceArrayLength arrayRef index |> Memory.deref m.Value state
         let ArrayLowerBoundByDimension state arrayRef index = Memory.referenceArrayLowerBound arrayRef index |> Memory.deref m.Value state
 
+        let StringCtorOfCharArray state arrayRef =
+            BranchExpressionsOnNull state arrayRef
+                (fun state k -> k (Strings.makeString m.Value (Memory.tick()) "", state))
+                (fun state k -> Dereference state arrayRef |> mapfst (Strings.ctorOfCharArray m.Value (Memory.tick())) |> k)
+                id
+
     module RuntimeExceptions =
         let NullReferenceException state thrower =
             let term, state = Memory.npe m.Value state

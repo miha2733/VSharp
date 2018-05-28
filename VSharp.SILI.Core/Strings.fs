@@ -6,16 +6,27 @@ open Types
 
 module internal Strings =
 
-    let makeString metadata time (str : string) =
-        let fields =
-            let stringTermLength = Concrete metadata str.Length lengthTermType
-            let arraySource = (str + "\000").ToCharArray()
-            let valMaker i = makeNumber arraySource.[i] metadata
-            let keyMaker i mtd = makeIntegerArray metadata (fun _ -> makeNumber i mtd) 1
-            let array = makeLinearConcreteArray metadata keyMaker valMaker (str.Length + 1) (Numeric typedefof<char>)
-            Heap.ofSeq (seq [ makeStringKey "System.String.m_StringLength", { value = stringTermLength; created = time; modified = time };
-                              makeStringKey "System.String.m_FirstChar", { value = array; created = time; modified = time } ])
+    let makeStringOfFields metadata time length array =
+        let fields = Heap.ofSeq (seq [ makeStringKey "System.String.m_StringLength", { value = length; created = time; modified = time };
+                                       makeStringKey "System.String.m_FirstChar", { value = array; created = time; modified = time } ])
         Struct metadata fields String
+
+    let makeString metadata time (str : string) =
+        let length = Concrete metadata str.Length lengthTermType
+        let arraySource = (str + "\000").ToCharArray()
+        let valMaker i = makeNumber arraySource.[i] metadata
+        let keyMaker i mtd = makeIntegerArray metadata (fun _ -> makeNumber i mtd) 1
+        let array = makeLinearConcreteArray metadata keyMaker valMaker (str.Length + 1) (Numeric typedefof<char>)
+        makeStringOfFields metadata time length array
+
+    let ctorOfCharArray metadata time = Merging.map (function
+        | VectorT(length, instor, contents, elType) when elType = Numeric typedefof<char> ->
+            let arrLength = add metadata length <| makeNumber 1 metadata
+            let indexLength = makeIntegerArray metadata (always <| length) 1
+            let contentsWithZero = Heap.add indexLength { value = makeNumber '\000' metadata; created = time; modified = time } contents
+            let stringArray = makeArray metadata arrLength contentsWithZero instor elType
+            makeStringOfFields metadata time length stringArray
+        | t -> internalfailf "expected char array, but got %O" t)
 
     let simplifyEquality mtd x y =
         match x.term, y.term with
