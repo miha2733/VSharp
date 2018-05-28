@@ -3,6 +3,7 @@
 open VSharp
 open Arrays
 open Types
+open Common
 
 module internal Strings =
 
@@ -32,31 +33,42 @@ module internal Strings =
         | Struct(fields, StringType) -> fields.[makeStringKey "System.String.m_StringLength"].value
         | t -> internalfailf "expected string struct, but got %O" t)
 
+    //TODO: string comparasion
 
-    let simplifyEquality mtd x y =
+    let private simplifyConcreteEquality mtd _ state _ (xval:obj) (yval:obj) =
+        makeBool ((xval :?> string) = (yval :?> string)) mtd, state
+
+    let private simplifyStructEq mtd x y k =
         match x.term, y.term with
-        | Concrete(x, StringType), Concrete(y, StringType) -> makeBool ((x :?> string) = (y :?> string)) mtd
         | Struct(fieldsOfX, StringType), Struct(fieldsOfY, StringType) ->
             let str1Len = fieldsOfX.[makeStringKey "System.String.m_StringLength"].value
             let str2Len = fieldsOfY.[makeStringKey "System.String.m_StringLength"].value
             let str1Arr = fieldsOfX.[makeStringKey "System.String.m_FirstChar"].value
             let str2Arr = fieldsOfY.[makeStringKey "System.String.m_FirstChar"].value
             simplifyEqual mtd str1Len str2Len (fun lengthEq ->
-            simplifyAnd mtd lengthEq (Arrays.equalsArrayIndices mtd str1Arr str2Arr) id)
+            simplifyAnd mtd lengthEq (Arrays.equalsArrayIndices mtd str1Arr str2Arr) k)
         | _ -> __notImplemented__()
 
-    let simplifyConcatenation mtd x y =
-        match x.term, y.term with
-        | Concrete(xval, _), Concrete(yval, _) ->
-            let mtd' = Metadata.combine3 mtd x.metadata y.metadata
-            makeConcreteString (VSharp.CSharpUtils.Calculator.Add(xval, yval, typedefof<string>) :?> string) mtd'
-        | _ -> Terms.makeBinary OperationType.Add x y false String mtd
+    let rec simplifyEquality mtd x y k =
+        simplifyGenericBinary "equality" State.empty x y (fst >> k)
+            (simplifyConcreteBinary simplifyConcreteEquality mtd false Bool)
+            (fun x y state k -> simplifyStructEq mtd x y (withSnd state >> k))
+            (fun x y state k -> simplifyEquality mtd x y (withSnd state >> k))
 
-    let simplifyOperation mtd op x y =
+    let private simplifyConcreteConcatenation mtd _ state _ xval yval =
+        makeConcreteString (VSharp.CSharpUtils.Calculator.Add(xval, yval, typedefof<string>) :?> string) mtd, state
+
+    let rec simplifyConcatenation mtd x y k =
+        simplifyGenericBinary "concatenation" State.empty x y (fst >> k)
+            (simplifyConcreteBinary simplifyConcreteConcatenation mtd false typedefof<string>)
+            (fun x y state k -> k (Terms.makeBinary OperationType.Add x y false String mtd, state))
+            (fun x y state k -> simplifyConcatenation mtd x y (withSnd state >> k))
+
+    let simplifyOperation mtd op x y k =
         match op with
-        | OperationType.Add -> simplifyConcatenation mtd x y
-        | OperationType.Equal -> simplifyEquality mtd x y
-        | OperationType.NotEqual -> !! (simplifyEquality mtd x y)
+        | OperationType.Add -> simplifyConcatenation mtd x y k
+        | OperationType.Equal -> simplifyEquality mtd x y k
+        | OperationType.NotEqual -> simplifyEquality mtd x y ((!!) >> k)
         | _ -> __notImplemented__()
 
     let isStringOperation op t1 t2 =
