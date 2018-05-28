@@ -155,13 +155,13 @@ module internal Arrays =
         Array mtd (makeNumber rank mtd) length (zeroLowerBound mtd rank) [Terms.True, DefaultInstantiator(constant, elemTyp)] contents lengths typ
 
     let (|VectorT|_|) = term >> function
-        | Array(ConcreteT(one, _), length, lower, instor, contents, lengths, ArrayType (elemTyp, ConcreteDimension 1))
-            when one :?> int = 1 -> Some(VectorT (length, lower, instor, contents, lengths, elemTyp))
+        | Array(ConcreteT(one, _), length, lower, instor, contents, _, ArrayType (elemTyp, Vector))
+            when one :?> int = 1 && lower = zeroLowerBound Metadata.empty 1 -> Some(VectorT (length, instor, contents, elemTyp))
         | _ -> None
 
     let (|Index|_|) = function
-        | VectorT(ConcreteT(length, _), lower, [_, DefaultInstantiator _], contents, _, _)
-            when length :?> int = 1 && lower = zeroLowerBound Metadata.empty 1 -> Some(contents.[makeZeroAddress Metadata.empty])
+        | VectorT(ConcreteT(length, _), [_, DefaultInstantiator _], contents, _)
+            when length :?> int = 1 -> Some(contents.[makeZeroAddress Metadata.empty].value)
         | _ -> None
 
     type LengthExtractor() =
