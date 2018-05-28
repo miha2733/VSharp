@@ -21,7 +21,7 @@ type generalizedHeap =
     | Merged of (term * generalizedHeap) list
 and staticMemory = generalizedHeap
 and typeVariables = mappedStack<typeId, termType> * typeId list stack
-and state = { stack : stack; heap : generalizedHeap; statics : staticMemory; frames : frames; pc : pathCondition; typeVariables : typeVariables }
+and state = { stack : stack; heap : generalizedHeap; statics : staticMemory; iPool : generalizedHeap; frames : frames; pc : pathCondition; typeVariables : typeVariables }
 
 type IActivator =
     abstract member CreateInstance : locationBinding -> System.Type -> term list -> state -> (term * state)
@@ -58,6 +58,7 @@ module internal State =
         stack = MappedStack.empty;
         heap = Defined false SymbolicHeap.empty;
         statics = Defined false SymbolicHeap.empty;
+        iPool = Defined false SymbolicHeap.empty;
         frames = { f = Stack.empty; sh = List.empty };
         pc = List.empty;
         typeVariables = (MappedStack.empty, Stack.empty)
@@ -67,6 +68,7 @@ module internal State =
         stack = MappedStack.empty;
         heap = Defined true SymbolicHeap.empty;
         statics = Defined true SymbolicHeap.empty;
+        iPool = Defined false SymbolicHeap.empty;
         frames = { f = Stack.empty; sh = List.empty };
         pc = List.empty;
         typeVariables = (MappedStack.empty, Stack.empty)
@@ -164,12 +166,14 @@ module internal State =
     let stackOf (s : state) = s.stack
     let heapOf (s : state) = s.heap
     let staticsOf (s : state) = s.statics
+    let poolOf (s: state) = s.iPool
     let framesOf (s : state) = s.frames
     let framesHashOf (s : state) = s.frames.sh
     let pathConditionOf (s : state) = s.pc
 
     let withHeap (s : state) h' = { s with heap = h' }
     let withStatics (s : state) m' = { s with statics = m' }
+    let withPool (s : state) i' = { s with iPool = i' }
 
     let stackLocationToReference state location =
         StackRef (metadataOfStackLocation state location) location []

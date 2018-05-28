@@ -615,12 +615,16 @@ module internal Memory =
     and composeStaticsOf ctx state statics =
         composeGeneralizedHeaps fillAndMutateStatics ctx staticsOf withStatics state statics
 
+    and composePoolsOf ctx state pool =
+        composeGeneralizedHeaps fillAndMutateHeap ctx poolOf withPool state pool
+
     and composeStates ctx state state' =
         let stack = composeStacksOf ctx state state'
         let heap = composeHeapsOf ctx state state'.heap
         let statics = composeStaticsOf ctx state state'.statics
+        let pool = composePoolsOf ctx state state'.iPool
         assert(state'.typeVariables |> snd |> Stack.isEmpty)
-        { stack = stack; heap = heap; statics = statics; frames = state.frames; pc = state.pc; typeVariables = state.typeVariables }
+        { stack = stack; heap = heap; statics = statics; iPool = pool; frames = state.frames; pc = state.pc; typeVariables = state.typeVariables }
 
 // ------------------------------- High-level read/write -------------------------------
 
