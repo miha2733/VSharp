@@ -199,10 +199,23 @@ module internal Memory =
                 Heap.empty, Heap.empty, length, makeSymbolicArrayRank metadata source arrayName
         Array metadata dim arrayLength lowerBound instantiator Heap.empty arrayLengths typ
 
+    let private makeSymbolicString metadata time (source : extractingSymbolicConstantSource) stringName =
+        let makeSymbolicStringField key t makeField =
+            match source.source with
+            | :? lazyInstantiation as liSource ->
+                let ref = referenceSubLocation (key, t) ArrayContents liSource.location
+                makeField {source with source = {liSource with location = ref}} t
+            | _ -> __notImplemented__()
+        let e, d = Numeric typedefof<char>, Vector
+        let length = makeSymbolicStringField (makeStringKey "System.String.m_StringLength") Arrays.lengthTermType (fun source t -> Constant metadata (sprintf "%s.m_StringLength" stringName) source t)
+        let array = makeSymbolicStringField (makeStringKey "System.String.m_FirstChar") (ArrayType (e, d)) (fun source t -> makeSymbolicArray metadata source d e t (sprintf "%s.m_FirstChar" stringName))
+        Strings.makeStringOfFields metadata time length array
+
     let makeSymbolicInstance metadata time (source : extractingSymbolicConstantSource) name = function
         | Pointer typ -> makeSymbolicHeapReference metadata time source name typ <| fun mtd path _ time typ -> HeapPtr mtd path time typ
         | Reference typ -> makeSymbolicHeapReference metadata time source name typ HeapRef
         | t when Types.isPrimitive t || Types.isFunction t -> Constant metadata name source t
+        | StringType -> makeSymbolicString metadata time source name
         | StructType _ // TODO: initialize all fields of struct symbolicly (via mkStruct). Warning: `source` should be updated!
         | TypeVariable _
         | ClassType _ as t -> Struct metadata Heap.empty t
