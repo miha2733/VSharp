@@ -33,6 +33,35 @@ module internal Strings =
         | Struct(fields, StringType) -> fields.[makeStringKey "System.String.m_StringLength"].value
         | t -> internalfailf "expected string struct, but got %O" t)
 
+    let (|ConcreteStringArray|_|) = function
+        | VectorT (ConcreteT(length, _), _, contents, Char) -> Some(ConcreteStringArray(unbox length, contents))
+        | _ -> None
+
+    let private contentIsConcrete xs =
+        Cps.Seq.foldlk (fun acc (key, cell) k ->
+            match key, cell.value with
+            | Index (ConcreteT(x, _)), ConcreteT(y, _) -> k <| (unbox x, unbox y) :: acc
+            | _ -> None)
+            List.empty xs Some
+
+    let private complementArray length xs =
+        let value = unbox <| System.Activator.CreateInstance(typedefof<char>)
+        let indices = List.except (List.map fst xs) [0 .. length - 1]
+        xs @ List.map (withSnd value) indices
+
+    let private contentArrayToString xs =
+        List.sortBy fst xs |> List.discardLast |> List.map snd |> List.toArray |> System.String
+
+    let getHashCode metadata addr = Merging.map (term >> function
+        | Struct(fields, StringType) ->
+            match fields.[makeStringKey "System.String.m_FirstChar"].value with
+            | ConcreteStringArray(length, contents) ->
+                let content = contentIsConcrete <| Heap.toSeq contents
+                Option.fold (fun _ xs -> complementArray length xs |> contentArrayToString |> hash |> makeNumber <| metadata) addr content
+            | {term = Array _} -> addr
+            | t -> internalfailf "expected char array, but got %O" t
+        | t -> internalfailf "expected string struct, but got %O" t)
+
     //TODO: string comparasion
 
     let private simplifyConcreteEquality mtd _ state _ (xval:obj) (yval:obj) =

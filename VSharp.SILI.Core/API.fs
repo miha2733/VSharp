@@ -179,6 +179,9 @@ module API =
         let ArrayLengthByDimension state arrayRef index = Memory.referenceArrayLength arrayRef index |> Memory.deref m.Value state
         let ArrayLowerBoundByDimension state arrayRef index = Memory.referenceArrayLowerBound arrayRef index |> Memory.deref m.Value state
 
+        let StringHashCode state strRef =
+            let strStruct, state = Dereference state strRef
+            Strings.getHashCode m.Value (refToInt strRef) strStruct, state
         let StringLength state strRef =
             let strStruct, state = Dereference state strRef
             Strings.length strStruct, state

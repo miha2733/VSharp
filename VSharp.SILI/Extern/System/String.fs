@@ -18,3 +18,8 @@ module internal String =
         assert(List.length args = 1)
         let length, state = Memory.StringLength state (List.head args)
         ControlFlow.ThrowOrReturn length, state
+
+    let InternalMarvin32HashString (state : state) (args : term list) =
+        assert(List.length args = 1)
+        let hash, state = Memory.StringHashCode state (args.Head)
+        ControlFlow.ThrowOrReturn hash, state
