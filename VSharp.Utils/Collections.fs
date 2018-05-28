@@ -54,6 +54,12 @@ module public List =
         assert(tail = ys)
         result
 
+    let rec public discardLast xs =
+        let cons x = function
+            | [] as x -> x
+            | xs -> x :: xs
+        List.foldBack cons xs []
+
     let rec public changeLast f xs =
         let cons x = function
             | [] -> [f x]
