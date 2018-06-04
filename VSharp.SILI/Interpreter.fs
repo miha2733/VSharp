@@ -442,15 +442,15 @@ module internal Interpreter =
         Cps.Seq.mapFoldk reduceExpression state ast.Arguments (fun (args, state) ->
         let curDelegate = Transformations.inlinedCallTarget ast |?? ast.Delegate
         reduceExpression state curDelegate (fun (deleg, state) ->
-        let rec invoke state deleg k =
-            let k = Enter ast state k
+        let k = Enter ast state k
+        let rec invoke state deleg = GuardedApplyStatement state deleg (fun state deleg k ->
             match deleg.term with
                 | HeapRef _ ->
                     let term, state = Memory.Dereference state deleg
                     invoke state term k
                 | Lambda(lambda) -> lambda ast state (Specified args) k
-                | _ -> __notImplemented__()
-        GuardedApplyStatement state deleg invoke k))
+                | _ -> __notImplemented__())
+        invoke state deleg k))
 
     and reduceDelegateCreationExpression state (ast : IDelegateCreationExpression) k =
         reduceTypeVariablesSubsitution state ast.MethodInstantiation.MethodSpecification.OwnerType (fun subst ->
@@ -1110,18 +1110,18 @@ module internal Interpreter =
                         let address, state = Memory.ReferenceStaticField state false name (MetadataTypes.fromMetadataType state typ) qualifiedTypeName
                         reduceExpression state expression (fun (value, state) ->
                         let statementResult = ControlFlow.ThrowOrIgnore value
-                        let mutate value k =
+                        let mutate state value k =
                             let term, state = Memory.Mutate state address value
                             k (ControlFlow.ThrowOrIgnore term, state)
                         failOrInvoke
                             statementResult
                             state
-                            (fun k -> mutate value k)
+                            (fun k -> mutate state value k)
                             (fun _ exn _ state k ->
                                 // TODO: uncomment it when ref and out will be Implemented
                                 (* RuntimeExceptions.TypeInitializerException qualifiedTypeName exn state Throw |> k*)
                                 k (Throw exn, state))
-                            (fun _ _ normal _ k -> mutate (ControlFlow.ResultToTerm (Guarded normal)) k)
+                            (fun _ _ normal state k -> mutate state (ControlFlow.ResultToTerm (Guarded normal)) k)
                             k)
                 let fieldInitializers = Seq.map initOneField fieldInitializerExpressions
                 reduceSequentially state fieldInitializers (fun (result, state) ->
