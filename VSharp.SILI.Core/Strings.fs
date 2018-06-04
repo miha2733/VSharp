@@ -8,8 +8,8 @@ open Common
 module internal Strings =
 
     let makeStringOfFields metadata time length array =
-        let fields = Heap.ofSeq (seq [ makeStringKey "System.String.m_StringLength", { value = length; created = time; modified = time };
-                                       makeStringKey "System.String.m_FirstChar", { value = array; created = time; modified = time } ])
+        let fields = Heap.ofSeq (seq [ makeStringKey "System.String.m_StringLength", { value = length; created = time; modified = time; typ = lengthTermType };
+                                       makeStringKey "System.String.m_FirstChar", { value = array; created = time; modified = time; typ = String } ])
         Struct metadata fields String
 
     let makeString metadata time (str : string) =
@@ -24,7 +24,7 @@ module internal Strings =
         | VectorT(length, instor, contents, elType) when elType = Numeric typedefof<char> ->
             let arrLength = add metadata length <| makeNumber 1 metadata
             let indexLength = makeIntegerArray metadata (always <| length) 1
-            let contentsWithZero = Heap.add indexLength { value = makeNumber '\000' metadata; created = time; modified = time } contents
+            let contentsWithZero = Heap.add indexLength { value = makeNumber '\000' metadata; created = time; modified = time; typ = Numeric typedefof<char> } contents
             let stringArray = makeArray metadata arrLength contentsWithZero instor elType
             makeStringOfFields metadata time length stringArray
         | t -> internalfailf "expected char array, but got %O" t)
