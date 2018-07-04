@@ -327,7 +327,7 @@ module internal Memory =
             | False -> None
             | _ -> Some(guard, k, cell)
         let gvs = h |> Heap.toSeq |> List.ofSeq |> List.choose filterMapKey
-        let baseGvs, restGvs = gvs |> List.partition (fst3 >> isTrue)
+        let baseGvs, restGvs = gvs |> List.partition (fst3 >> isTrue) |> mapfst (List.map (fun (_, a, v) -> a, v))
         assert(List.length baseGvs <= 1)
         List.tryHead baseGvs, restGvs
 
@@ -377,8 +377,13 @@ module internal Memory =
                 | ArrayLowerBounds ->
                     let result, newLower, newTime = newHeap lower lazyInstantiator
                     result, Array term.metadata dimension length newLower constant contents lengths arrTyp, newTime
-            | Union _ ->
-                internalfail "unexpected union of complex types! Probably merge function implemented incorrectly."
+            | Union gvs ->
+                let internalMerge gvs =
+                    let gs, (vs, newVs, times) = (List.unzip >> (mapsnd List.unzip3)) gvs
+                    (Merging.merge <| List.zip gs vs, Merging.merge <| List.zip gs newVs, List.max times)
+                Merging.commonGuardedMapk (Cps.ret <| accessTerm read metadata groundHeap guard update keyMapper valueMapper lazyInstantiator created modified ptrTime path arrayMode) gvs internalMerge id
+
+//                internalfail "unexpected union of complex types! Probably merge function implemented incorrectly."
             | t ->
                 internalfailf "expected complex type, but got %O" t
 
@@ -410,7 +415,7 @@ module internal Memory =
                 let lv = if shouldLazyInstantiate then Some(baseGuard, lazyValue) else None
                 let h = if shouldLazyInstantiate then h else h.Add(ptr.location, baseCell)
                 accessRec gavs lv h
-            | Some(g, a, v) -> accessRec ((g, a, v)::restGavs) None h
+            | Some(a, v) -> accessRec [(makeTrue metadata, a, v)] None h
 
     let private commonHierarchicalStackAccess read update metadata state location path =
         let stackLazyInstantiator = instantiationFactory.TopLevelStackInstantiator state location

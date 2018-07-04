@@ -89,7 +89,7 @@ module internal Merging =
                 | t -> internalfailf "Expected struct, got %O" t
             let fss = vs |> List.map extractFields
             let merged = Heap.merge fss (resolveCells instantiator.GoDeeperToStruct (mergeCells gs))
-            [(True, Struct g.metadata merged t)]
+            [(disjunction g.metadata gs, Struct g.metadata merged t)]
 
     and private arrayMerge (instantiator : State.ILazyInstantiator) = function
         | [] -> []
@@ -97,8 +97,8 @@ module internal Merging =
             match g with
             | True -> gvs
             | _ -> [propagateGuard g v]
-        | (x :: _) as gvs ->
-            let t = x |> snd |> typeOf
+        | ((g, v) :: _) as gvs ->
+            let t = typeOf v
             assert(gvs |> Seq.map (snd >> typeOf) |> Seq.forall ((=) t))
             let gs, vs = List.unzip gvs
             let extractArrayInfo = term >> function
@@ -114,7 +114,7 @@ module internal Merging =
             let mergedLower = Heap.merge lows (resolveCells (instantiator.GoDeeperToArray ArrayLowerBounds mergedInit Timestamp.zero) (mergeCells gs))
             let mergedContents = Heap.merge contents (resolveCells (instantiator.GoDeeperToArray ArrayContents mergedInit Timestamp.zero) (mergeCells gs))
             let mergedLengths = Heap.merge lengths (resolveCells (instantiator.GoDeeperToArray ArrayLengths mergedInit Timestamp.zero) (mergeCells gs))
-            [(True, Array Metadata.empty d l mergedLower mergedInit mergedContents mergedLengths t)]
+            [(disjunction g.metadata gs, Array Metadata.empty d l mergedLower mergedInit mergedContents mergedLengths t)] //TODO: disjunc
 
     and private simplify (|Unguard|_|) gvs =
         let rec loop gvs out =
@@ -152,17 +152,17 @@ module internal Merging =
         | ArrayMerge -> arrayMerge instantiator gvs
         | DefaultMerge -> gvs
 
-    and private propagateGuard g v =
+    and private propagateGuard g v = //TODO: #merge: added g instead of True
         match v.term with
         | Struct(contents, t) ->
             let contents' = Heap.map' (fun _ cell -> { cell with value = merge [(g, cell.value)] }) contents
-            (Terms.True, Struct v.metadata contents' t)
+            (g, Struct v.metadata contents' t)
         | Array(dimension, len, lower, init, contents, lengths, t) ->
             let contents' = Heap.map' (fun _ cell -> { cell with value = merge [(g, cell.value)] }) contents
             let lower' = Heap.map' (fun _ cell -> { cell with value = merge [(g, cell.value)] }) lower
             let lengths' = Heap.map' (fun _ cell -> { cell with value = merge [(g, cell.value)] }) lengths
             let init' = List.map (fun (gi, i) -> gi &&& g, i) init
-            (Terms.True, Array v.metadata dimension len lower' init' contents' lengths' t)
+            (g, Array v.metadata dimension len lower' init' contents' lengths' t)
         | _ -> (g, v)
 
     and private compress instantiator = function
