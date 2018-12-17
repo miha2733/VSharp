@@ -45,16 +45,15 @@ module internal Arrays =
     let makeSymbolicIndexArray mtd length symbolicValue =
         makeLinearSymbolicArray mtd length symbolicValue lengthTermType
 
-
-    let simplifyHeapPointwiseEquality mtd h1 h2 eq instantiate1 instantiate2 =
-        // TODO: make comparison finish when acc is false
-        Heap.unify (makeTrue mtd) h1 h2
-            (fun acc _ v1 v2 -> acc &&& eq mtd v1.value v2.value)
-            (fun acc key v1 -> acc &&& eq mtd v1.value (instantiate2 key))
-            (fun acc key v2 -> acc &&& eq mtd (instantiate1 key) v2.value)
-
-    let simplifyArraysEquality mtd x y eq instantiate1 instantiate2 =
-        let simplifyGInstantiatorEquality mtd gInstor1 gInstor2 =
+    let simplifyArraysEquality mtd x y indecesEq eq =
+        let createCell v = {value = v; created = Timestamp.zero; modified = Timestamp.zero}
+        let simplifyHeapPointwiseEquality h1 h2 eq =
+            let unifier acc =
+                let resolve v1 v2 = acc &&& eq mtd v1.value v2.value
+                Merging.keysResolver2 false (createCell x) (createCell y) (State.readTerm mtd) getFQLOfKey resolve
+            // TODO: make comparison finish when acc is false
+            Heap.unify2 (makeTrue mtd) h1 h2 unifier
+        let simplifyGInstantiatorEquality gInstor1 gInstor2 =
             let instorEq mtd x y =
                 match x, y with
                 | DefaultInstantiator(_, typ1), DefaultInstantiator(_, typ2) -> makeBool (typ1 = typ2) mtd
@@ -75,24 +74,28 @@ module internal Arrays =
                 seq[
                     fun() -> Arithmetics.simplifyEqual mtd dim1 dim2 id;
                     fun() -> Arithmetics.simplifyEqual mtd len1 len2 id;
-                    fun() -> simplifyHeapPointwiseEquality mtd lb1 lb2 eq instantiate1 instantiate2;
-                    fun() -> simplifyGInstantiatorEquality mtd instor1 instor2;
-                    fun() -> simplifyHeapPointwiseEquality mtd content1 content2 eq instantiate1 instantiate2;
-                    fun() -> simplifyHeapPointwiseEquality mtd l1 l2 eq instantiate1 instantiate2
+                    fun() -> simplifyHeapPointwiseEquality lb1 lb2 eq;
+                    fun() -> simplifyGInstantiatorEquality instor1 instor2;
+                    fun() -> simplifyHeapPointwiseEquality content1 content2 indecesEq;
+                    fun() -> simplifyHeapPointwiseEquality l1 l2 eq
                 ]
         | term1, term2 -> internalfailf "expected array and array but %O and %O got!" term1 term2
 
     let equalsIndicesArrays mtd addr1 addr2 =
         simplifyArraysEquality mtd addr1 addr2
             (fun mtd x y -> Arithmetics.simplifyEqual mtd x y id)
-            (fun _ -> __notImplemented__())
-            (fun _ -> __notImplemented__())
+            (fun mtd x y -> Arithmetics.simplifyEqual mtd x y id)
 
     let equalsArrayIndices mtd addr1 addr2 =
         match typeOf addr1, typeOf addr2 with
         | Numeric _, Numeric _ -> fastNumericCompare mtd addr1 addr2
         | ArrayType _, ArrayType _ -> equalsIndicesArrays mtd addr1 addr2
         | _ -> __notImplemented__()
+
+    let equals mtd addr1 addr2 =
+        simplifyArraysEquality mtd addr1 addr2
+            equalsArrayIndices
+            (fun mtd x y -> Arithmetics.simplifyEqual mtd x y id)
 
     let zeroLowerBound metadata dimension fql =
         let bound = { value = Concrete metadata 0 lengthTermType; created = Timestamp.zero; modified = Timestamp.zero }

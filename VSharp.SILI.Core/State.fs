@@ -281,6 +281,15 @@ module internal State =
         let fql = TopLevelStack key, []
         { value = genericLazyInstantiator metadata fql t (); created = time; modified = time }
 
+    let mutable readHeap : termMetadata -> bool -> heap<term, term, fql> -> term -> termType -> term memoryCell =
+        fun _ _ _ -> internalfail "read heap is not ready"
+
+    let mutable readStatics : termMetadata -> bool -> heap<termType, term, fql> -> termType -> termType -> term memoryCell =
+        fun _ _ _ -> internalfail "read heap is not ready"
+
+    let mutable readTerm : termMetadata -> bool -> term memoryCell -> fql -> termType -> term memoryCell =
+        fun _ _ _ -> internalfail "read heap is not ready"
+
 // ------------------------------- Pretty-printing -------------------------------
 
     let private compositionToString s1 s2 =

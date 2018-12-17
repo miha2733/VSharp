@@ -8,3 +8,7 @@ type public 'a memoryCell when 'a : equality =
         match y with
         | :? memoryCell<'a> as other -> x.value = other.value
         | _ -> false
+
+module public MemoryCell =
+
+    let getValue cell = cell.value
