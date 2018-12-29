@@ -170,7 +170,7 @@ module API =
         let AllocateInHeap state term = Memory.allocateInHeap m.Value state term
         let AllocateDefaultStatic state termType qualifiedTypeName = Memory.mkDefaultStruct m.Value Timestamp.zero true termType |> Memory.allocateInStaticMemory m.Value state qualifiedTypeName
         let MakeDefaultStruct termType = Memory.mkDefaultStruct m.Value Timestamp.zero false termType
-        let AllocateString str state = Strings.makeString m.Value (Memory.tick()) str |> Memory.allocateInHeap m.Value state
+            let AllocateString str state = Strings.makeConcreteStringStruct m.Value (Memory.tick()) str |> Memory.allocateInHeap m.Value state
 
         let IsTypeNameInitialized qualifiedTypeName state = Memory.typeNameInitialized m.Value qualifiedTypeName state
         let Dump state = State.dumpMemory state
@@ -187,9 +187,14 @@ module API =
             Strings.length strStruct, state
         let StringCtorOfCharArray state arrayRef =
             BranchExpressionsOnNull state arrayRef
-                (fun state k -> k (Strings.makeString m.Value (Memory.tick()) "", state))
+                (fun state k -> k (Strings.makeConcreteStringStruct m.Value (Memory.tick()) "", state))
                 (fun state k -> Dereference state arrayRef |> mapfst (Strings.ctorOfCharArray m.Value (Memory.tick())) |> k)
                 id
+
+        let InternString state strRef = Interning.intern m.Value state strRef
+        let IsInternedString state strRef = Interning.isInterned m.Value state strRef
+        let IsInternedLiteral state str = Interning.isInternedLiteral m.Value (Memory.tick()) state str
+        let InternLiterals state strList = Interning.internLiterals m.Value state strList
 
     module RuntimeExceptions =
         let NullReferenceException state thrower =

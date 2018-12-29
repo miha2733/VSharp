@@ -158,3 +158,8 @@ module API =
         val StringHashCode : state -> term -> term * state
         val StringLength : state -> term -> term * state
         val StringCtorOfCharArray : state -> term -> term * state
+
+        val InternString : state -> term -> term * state
+        val IsInternedString : state -> term -> term * state
+        val IsInternedLiteral : state -> string -> term * state
+        val InternLiterals : state -> string list -> state

@@ -1,5 +1,6 @@
 ﻿namespace VSharp.Core
 
+open System
 open VSharp
 open System.Text
 open System.Collections.Generic
@@ -85,7 +86,7 @@ module internal State =
         { mtd = c1.mtd; addr = decomposeAddresses c1.addr c2.addr; time = Timestamp.decompose c1.time c2.time }
 
     let nameOfLocation = term >> function
-        | HeapRef(((_, t), []), _, _, _) -> toString t
+        | HeapRef(((a, _), []), _, _, _) -> toString a
         | StackRef((name, _), [], _) -> name
         | StaticRef(name, [], _) -> System.Type.GetType(name).FullName
         | HeapRef(path, _, _, _) ->
@@ -296,7 +297,8 @@ module internal State =
     and private dumpMemoryRec s n concrete ids =
         let sh, n, concrete = dumpGeneralizedHeap heapKeyToString "h" n concrete ids s.heap
         let mh, n, concrete = dumpGeneralizedHeap staticKeyToString "s" n concrete ids s.statics
-        (sprintf "{ heap = %s, statics = %s }" sh mh, n, concrete)
+        let ph, n, concrete = dumpGeneralizedHeap toString "p" n concrete ids s.iPool
+        (sprintf "{ heap = %s, statics = %s, pool = %s }" sh mh ph, n, concrete)
 
     let dumpMemory (s : state) =
         let dump, _, concrete = dumpMemoryRec s 0 (new StringBuilder()) (new Dictionary<symbolicHeap, string>())

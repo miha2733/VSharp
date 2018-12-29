@@ -12,7 +12,7 @@ module internal Strings =
                                        makeStringKey "System.String.m_FirstChar", { value = array; created = time; modified = time; typ = String } ])
         Struct metadata fields String
 
-    let makeString metadata time (str : string) =
+    let makeConcreteStringStruct metadata time (str : string) =
         let length = Concrete metadata str.Length lengthTermType
         let arraySource = (str + "\000").ToCharArray()
         let valMaker i = makeNumber arraySource.[i] metadata
@@ -20,12 +20,15 @@ module internal Strings =
         let array = makeLinearConcreteArray metadata keyMaker valMaker (str.Length + 1) (Numeric typedefof<char>)
         makeStringOfFields metadata time length array
 
+    let makeStringArray metadata time length instor (contents : symbolicHeap) elType =
+        let arrLength = add metadata length <| makeNumber 1 metadata
+        let indexLength = makeIntegerArray metadata (always <| length) 1
+        let contentsWithZero = Heap.add indexLength { value = makeNumber '\000' metadata; created = time; modified = time; typ = char } contents
+        makeArray metadata arrLength contentsWithZero instor elType
+
     let ctorOfCharArray metadata time = Merging.map (function
-        | VectorT(length, instor, contents, elType) when elType = Numeric typedefof<char> ->
-            let arrLength = add metadata length <| makeNumber 1 metadata
-            let indexLength = makeIntegerArray metadata (always <| length) 1
-            let contentsWithZero = Heap.add indexLength { value = makeNumber '\000' metadata; created = time; modified = time; typ = Numeric typedefof<char> } contents
-            let stringArray = makeArray metadata arrLength contentsWithZero instor elType
+        | VectorT(length, instor, contents, Char) ->
+            let stringArray = makeStringArray metadata time length instor contents Types.char
             makeStringOfFields metadata time length stringArray
         | t -> internalfailf "expected char array, but got %O" t)
 
@@ -75,7 +78,7 @@ module internal Strings =
             let str1Arr = fieldsOfX.[makeStringKey "System.String.m_FirstChar"].value
             let str2Arr = fieldsOfY.[makeStringKey "System.String.m_FirstChar"].value
             simplifyEqual mtd str1Len str2Len (fun lengthEq ->
-            simplifyAnd mtd lengthEq (Arrays.equalsArrayIndices mtd str1Arr str2Arr) k)
+            simplifyAnd mtd lengthEq (Arrays.equalsStringArrays mtd (__notImplemented__()) str1Arr str2Arr) k)
         | _ -> __notImplemented__()
 
     let rec simplifyEquality mtd x y k =

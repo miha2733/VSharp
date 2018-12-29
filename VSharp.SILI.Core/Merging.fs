@@ -109,7 +109,7 @@ module internal Merging =
                 |> Seq.map extractArrayInfo
                 |> fun info -> Seq.foldBack (fun (d, l, lw, i, c, ls) (da, la, lwa, ia, ca, lsa) -> (d::da, l::la, lw::lwa, i::ia, c::ca, ls::lsa)) info ([], [], [], [], [], [])
             let d = List.unique ds
-            let l = List.unique lens
+            let l = merge <| List.zip gs lens
             let mergedInit = inits |> Seq.map2 (fun ng init -> Seq.map (fun (g, v) -> (ng &&& g, v)) init) gs |> Seq.concat |> List.ofSeq |> mergeSame
             let mergedLower = Heap.merge lows (resolveCells (instantiator.GoDeeperToArray ArrayLowerBounds mergedInit Timestamp.zero) (mergeCells gs))
             let mergedContents = Heap.merge contents (resolveCells (instantiator.GoDeeperToArray ArrayContents mergedInit Timestamp.zero) (mergeCells gs))

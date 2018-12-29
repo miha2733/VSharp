@@ -95,6 +95,7 @@ module internal Types =
     let ClassType t g = ClassType(t, g)
     let InterfaceType t g = InterfaceType(t, g)
 
+    let char = Numeric typedefof<char>
     let pointerType = Numeric typedefof<int>
 
     let isNumeric = function

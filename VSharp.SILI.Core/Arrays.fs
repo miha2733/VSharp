@@ -82,6 +82,11 @@ module internal Arrays =
             (fun _ _ -> __notImplemented__())
             (fun _ _ -> __notImplemented__())
 
+    let equalsStringArrays mtd instantiate x y =
+        simplifyArraysEquality mtd x y
+            (fun mtd x y -> Arithmetics.simplifyEqual mtd x y id)
+            instantiate instantiate
+
     let zeroLowerBound metadata dimension =
         let bound = { value = Concrete metadata 0 lengthTermType; created = Timestamp.zero; modified = Timestamp.zero; typ = lengthTermType }
         Seq.fold (fun h l -> Heap.add l bound h) Heap.empty (Seq.init dimension (fun i -> makeNumber i metadata))

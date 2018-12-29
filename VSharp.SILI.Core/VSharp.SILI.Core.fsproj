@@ -33,6 +33,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
     <OtherFlags>--warnon:1182</OtherFlags>
+    <PlatformTarget>x86</PlatformTarget>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />
@@ -72,6 +73,7 @@
     <Compile Include="Lambdas.fs" />
     <Compile Include="Database.fs" />
     <Compile Include="Memory.fs" />
+    <Compile Include="Interning.fs" />
     <Compile Include="TypeCasting.fs" />
     <Compile Include="Explorer.fs" />
     <Compile Include="API.fsi" />

@@ -198,17 +198,21 @@ module internal Memory =
                 Heap.empty, Heap.empty, length, makeSymbolicArrayRank metadata source arrayName
         Array metadata dim arrayLength lowerBound instantiator Heap.empty arrayLengths typ
 
-    let private makeSymbolicString metadata time (source : extractingSymbolicConstantSource) stringName =
+    let private makeSymbStrArray metadata time (source : extractingSymbolicConstantSource) strLength typ name =
+        let arrayConstant = Constant metadata name source typ
+        let instantiator = [True, LazyInstantiator(arrayConstant, char)]
+        Strings.makeStringArray metadata time strLength instantiator Heap.empty char
+
+    let private makeSymbolicString mtd time (source : extractingSymbolicConstantSource) strName =
         let makeSymbolicStringField key t makeField =
             match source.source with
             | :? lazyInstantiation as liSource ->
                 let ref = referenceSubLocation (key, t) ArrayContents liSource.location
                 makeField {source with source = {liSource with location = ref}} t
             | _ -> __notImplemented__()
-        let e, d = Numeric typedefof<char>, Vector
-        let length = makeSymbolicStringField (makeStringKey "System.String.m_StringLength") Arrays.lengthTermType (fun source t -> Constant metadata (sprintf "%s.m_StringLength" stringName) source t)
-        let array = makeSymbolicStringField (makeStringKey "System.String.m_FirstChar") (ArrayType (e, d)) (fun source t -> makeSymbolicArray metadata source d e t (sprintf "%s.m_FirstChar" stringName))
-        Strings.makeStringOfFields metadata time length array
+        let length = makeSymbolicStringField (makeStringKey "System.String.m_StringLength") Arrays.lengthTermType (fun src t -> Constant mtd (sprintf "%s.m_StringLength" strName) src t)
+        let array = makeSymbolicStringField (makeStringKey "System.String.m_FirstChar") (ArrayType (char, Vector)) (fun src t -> makeSymbStrArray mtd time src length t (sprintf "%s.m_FirstChar" strName))
+        Strings.makeStringOfFields mtd time length array
 
     let makeSymbolicInstance metadata time (source : extractingSymbolicConstantSource) name = function
         | Pointer typ -> makeSymbolicHeapReference metadata time source name typ <| fun mtd path _ time typ -> HeapPtr mtd path time typ
@@ -314,7 +318,7 @@ module internal Memory =
 
 // ------------------------------- Locations comparison -------------------------------
 
-    type private pointerInfo = { location : term; typ : termType; time : timestamp; path : (term * termType) list; isTopLevel : bool; arrayTarget : arrayReferenceTarget }
+    type internal pointerInfo = { location : term; typ : termType; time : timestamp; path : (term * termType) list; isTopLevel : bool; arrayTarget : arrayReferenceTarget }
 
     let private canPoint mtd pointerAddr pointerType pointerTime locationAddr locationValue locationTime =
         // TODO: what if locationType is Null?
@@ -340,7 +344,7 @@ module internal Memory =
             | False -> None
             | _ -> Some(guard, k, cell)
         let gvs = h |> Heap.toSeq |> List.ofSeq |> List.choose filterMapKey
-        let baseGvs, restGvs = gvs |> List.partition (fst3 >> isTrue)
+        let baseGvs, restGvs = gvs |> List.partition (fst3 >> isTrue) |> mapfst (List.map (fun (_, a, v) -> a, v))
         assert(List.length baseGvs <= 1)
         List.tryHead baseGvs, restGvs
 
@@ -395,7 +399,7 @@ module internal Memory =
             | t ->
                 internalfailf "expected complex type, but got %O" t
 
-    and private accessHeap read restricted metadata groundHeap guard update h keyMapper valueMapper (lazyInstantiator : ILazyInstantiator) (ptr : pointerInfo) =
+    and internal accessHeap read restricted metadata groundHeap guard update h keyMapper valueMapper (lazyInstantiator : ILazyInstantiator) (ptr : pointerInfo) =
         let accessRec gvas lazyValue h =
             let gvs, (h', newTime) = gvas |> ((h, Timestamp.zero) |> List.mapFold (fun (h, maxTime) (guard', addr, cell) ->
                 let guard'' = guard &&& guard'
@@ -423,7 +427,7 @@ module internal Memory =
                 let lv = if shouldLazyInstantiate then Some(baseGuard, lazyValue) else None
                 let h = if shouldLazyInstantiate then h else h.Add(ptr.location, baseCell)
                 accessRec gavs lv h
-            | Some(g, a, v) -> accessRec ((g, a, v)::restGavs) None h
+            | Some(a, v) -> accessRec [(makeTrue metadata, a, v)] None h
 
     let private commonHierarchicalStackAccess read update metadata state location path =
         let stackLazyInstantiator = instantiationFactory.TopLevelStackInstantiator state location
@@ -433,7 +437,7 @@ module internal Memory =
         let newState = if read || cell.value = newBaseValue then state else writeStackLocation state location { cell with value = newBaseValue; modified = newTime }
         accessedValue, newState
 
-    let private commonHierarchicalHeapAccess read restricted update metadata groundHeap heap keyMapper valueMapper forcedLazyInstantiator ((addr, t) as location) path ptrTime arrayMode =
+    let private commonHierarchicalHeapAccess read restricted update metadata groundHeap heap keyMapper valueMapper forcedLazyInstantiator ((addr, t) as location) isTopLevel path ptrTime arrayMode =
         let lazyInstantiator =
             match forcedLazyInstantiator with
             | Some li -> instantiationFactory.CustomInstantiator li metadata
@@ -441,7 +445,7 @@ module internal Memory =
                 let typ = if List.isEmpty path then t else path |> List.last |> snd
                 instantiationFactory.EndPointInstantiator arrayMode metadata groundHeap (HeapRef metadata (location, path) arrayMode ptrTime typ) typ
             | None -> instantiationFactory.TopLevelHeapInstantiator metadata groundHeap ptrTime addr t
-        let ptr = {location = addr; typ = t; time = ptrTime.v; path = path; isTopLevel = true; arrayTarget = arrayMode}
+        let ptr = {location = addr; typ = t; time = ptrTime.v; path = path; isTopLevel = isTopLevel; arrayTarget = arrayMode}
         accessHeap read restricted metadata groundHeap (makeTrue metadata) update heap keyMapper valueMapper lazyInstantiator ptr
 
     let private commonHierarchicalStaticsAccess read restricted update metadata groundHeap statics keyMapper valueMapper forcedLazyInstantiator location path =
@@ -460,7 +464,7 @@ module internal Memory =
         commonHierarchicalStackAccess false (fun _ _ -> (value, time)) metadata state location path
 
     let private mutateHeap restricted metadata h location path time arrayTarget value =
-        commonHierarchicalHeapAccess false restricted (fun _  _ -> (value, time)) metadata None h id id None location path {v=time} arrayTarget
+        commonHierarchicalHeapAccess false restricted (fun _  _ -> (value, time)) metadata None h id id None location true path {v=time} arrayTarget
 
     let private mutateStatics restricted metadata statics location path time value =
         commonHierarchicalStaticsAccess false restricted (fun _ _ -> (value, time)) metadata None statics id id None location path
@@ -476,7 +480,7 @@ module internal Memory =
             |_ -> false
         | None -> false
 
-    and private accessGeneralizedHeapRec (exploredIds : ImmutableHashSet<IFunctionIdentifier>) keyMapper valueMapper lazyInstantiator read getter location accessDefined = function
+    and internal accessGeneralizedHeapRec (exploredIds : ImmutableHashSet<IFunctionIdentifier>) keyMapper valueMapper lazyInstantiator read getter location accessDefined = function
         | Defined(r, h) ->
             let result, heap, _ = accessDefined keyMapper valueMapper lazyInstantiator None r h
             result, Defined r heap
@@ -529,7 +533,7 @@ module internal Memory =
                 (fun state k -> k (actionNull metadata state t))
                 (fun state k ->
                     let accessDefined keyMapper valueMapper lazyInstantiator groundHeap r h =
-                        commonHierarchicalHeapAccess read r updateDefined metadata groundHeap h keyMapper valueMapper lazyInstantiator location path time arrayMode
+                        commonHierarchicalHeapAccess read r updateDefined metadata groundHeap h keyMapper valueMapper lazyInstantiator location true path time arrayMode
                     let result, h' = accessGeneralizedHeap read heapOf term accessDefined (heapOf state)
                     k (result, withHeap state h'))
                 Merging.merge Merging.merge2Terms id id
@@ -870,11 +874,11 @@ module internal Memory =
         | HigherOrderApplication _ as h ->
             mkStaticKeyGuard mtd h key
 
-    let private staticKeyInitialized mtd key state =
-        staticGuardOfHeap ImmutableHashSet<IFunctionIdentifier>.Empty mtd key state.statics
+    let internal keyInitialized mtd key state getter =
+        staticGuardOfHeap ImmutableHashSet<IFunctionIdentifier>.Empty mtd key (getter state)
 
     let internal typeNameInitialized mtd typeName state =
-        staticKeyInitialized mtd (makeStringKey typeName) state
+        keyInitialized mtd (makeStringKey typeName) state staticsOf
 
 // ------------------------------- Compositions of constants -------------------------------
 
@@ -896,4 +900,4 @@ module internal Memory =
     type staticsInitializedSource with
         interface IStatedSymbolicConstantSource with
             override x.Compose ctx state =
-                staticKeyInitialized ctx.mtd x.key state
+                keyInitialized ctx.mtd x.key state staticsOf

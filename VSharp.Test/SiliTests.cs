@@ -188,7 +188,7 @@ namespace VSharp.Test
                 , "Employee"
                 , "Helper"
                 , "Array"
-//                , "Unsafe"
+                , "Unsafe"
             };
 
             var failReason = new StringBuilder();
