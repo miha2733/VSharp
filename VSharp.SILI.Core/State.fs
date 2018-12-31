@@ -6,23 +6,25 @@ open System.Text
 open System.Collections.Generic
 open VSharp.Utils
 
-type compositionContext = { mtd : termMetadata; addr : concreteHeapAddress; time : timestamp }
+type compositionContext =
+    { mtd : termMetadata; addr : concreteHeapAddress; time : timestamp }
+    static member Empty = { mtd = Metadata.empty; addr = []; time = Timestamp.zero }
 
-type stack = mappedStack<stackKey, memoryCell<term, termType>>
+type stack = mappedStack<stackKey, term memoryCell>
 type pathCondition = term list
 type entry = { key : stackKey; mtd : termMetadata; typ : termType }
 type stackFrame = { func : (IFunctionIdentifier * pathCondition) option; entries : entry list; time : timestamp }
 type frames = { f : stackFrame stack; sh : stackHash }
-type generalizedHeap =
-    | Defined of bool * symbolicHeap  // bool = restricted
+type 'key generalizedHeap when 'key : equality =
+    | Defined of bool * heap<'key, term, fql>  // bool = restricted
     | HigherOrderApplication of term * concreteHeapAddress * timestamp
     | RecursiveApplication of IFunctionIdentifier * concreteHeapAddress * timestamp
-    | Composition of state * compositionContext * generalizedHeap
-    | Mutation of generalizedHeap * symbolicHeap
-    | Merged of (term * generalizedHeap) list
-and staticMemory = generalizedHeap
+    | Composition of state * compositionContext * 'key generalizedHeap
+    | Mutation of 'key generalizedHeap * heap<'key, term, fql>
+    | Merged of (term * 'key generalizedHeap) list
+and staticMemory = termType generalizedHeap
 and typeVariables = mappedStack<typeId, termType> * typeId list stack
-and state = { stack : stack; heap : generalizedHeap; statics : staticMemory; iPool : generalizedHeap; frames : frames; pc : pathCondition; typeVariables : typeVariables }
+and state = { stack : stack; heap : term generalizedHeap; statics : staticMemory; iPool : term generalizedHeap; frames : frames; pc : pathCondition; typeVariables : typeVariables } // TODO: mb pool not term?
 
 type IActivator =
     abstract member CreateInstance : locationBinding -> System.Type -> term list -> state -> (term * state)
@@ -31,6 +33,24 @@ type IStatedSymbolicConstantSource =
     inherit ISymbolicConstantSource
     abstract Compose : compositionContext -> state -> term
 
+type IStatedSymbolicTypeSource =
+    inherit ISymbolicTypeSource
+    abstract TypeCompose : compositionContext -> state -> termType
+
+[<AbstractClass>]
+type TypeExtractor() =
+    abstract TypeExtract : termType -> termType
+    override x.Equals other = x.GetType() = other.GetType()
+    override x.GetHashCode() = x.GetType().GetHashCode()
+type private IdTypeExtractor() =
+    inherit TypeExtractor()
+    override x.TypeExtract t = t
+type private ArrayTypeExtractor() =
+    inherit TypeExtractor()
+    override x.TypeExtract t =
+        match t with
+        | ArrayType(e, _) -> e
+        | _ -> t
 [<AbstractClass>]
 type TermExtractor() =
     abstract Extract : term -> term
@@ -39,13 +59,12 @@ type TermExtractor() =
 type private IdTermExtractor() =
     inherit TermExtractor()
     override x.Extract t = t
-[<StructuralEquality;NoComparison>]
-type extractingSymbolicConstantSource =
-    {source : IStatedSymbolicConstantSource; extractor : TermExtractor}
-    static member wrap source = {source = source; extractor = IdTermExtractor()}
-    interface IStatedSymbolicConstantSource with
-        override x.SubTerms = x.source.SubTerms
-        override x.Compose ctx state = x.source.Compose ctx state |> x.extractor.Extract
+type IExtractingSymbolicConstantSource =
+    inherit IStatedSymbolicConstantSource
+    abstract WithExtractor : TermExtractor -> IExtractingSymbolicConstantSource
+type IExtractingSymbolicTypeSource =
+    inherit IStatedSymbolicTypeSource
+    abstract WithTypeExtractor : TypeExtractor -> IExtractingSymbolicTypeSource
 
 module internal State =
 
@@ -75,9 +94,11 @@ module internal State =
         typeVariables = (MappedStack.empty, Stack.empty)
     }
 
-    let emptyCompositionContext : compositionContext = { mtd = Metadata.empty; addr = []; time = Timestamp.zero }
+    let emptyCompositionContext : compositionContext = compositionContext.Empty
+    let private isZeroAddress (x : concreteHeapAddress) =
+        x = [0]
     let composeAddresses (a1 : concreteHeapAddress) (a2 : concreteHeapAddress) : concreteHeapAddress =
-        List.append a1 a2
+        if isZeroAddress a2 then a2 else List.append a1 a2
     let decomposeAddresses (a1 : concreteHeapAddress) (a2 : concreteHeapAddress) : concreteHeapAddress =
         List.minus a1 a2
     let composeContexts (c1 : compositionContext) (c2 : compositionContext) : compositionContext =
@@ -85,18 +106,18 @@ module internal State =
     let decomposeContexts (c1 : compositionContext) (c2 : compositionContext) : compositionContext =
         { mtd = c1.mtd; addr = decomposeAddresses c1.addr c2.addr; time = Timestamp.decompose c1.time c2.time }
 
-    let nameOfLocation = term >> function
-        | HeapRef(((a, _), []), _, _, _) -> toString a
-        | StackRef((name, _), [], _) -> name
-        | StaticRef(name, [], _) -> System.Type.GetType(name).FullName
-        | HeapRef(path, _, _, _) ->
-            let printElement (l, _) =
-                if isArray l then sprintf "[%s]" (l.term.IndicesToString())
-                else toString l
-            path |> NonEmptyList.toList |> Seq.map printElement |> join "."
-        | StackRef(_, path, _)
-        | StaticRef(_, path, _) -> path |> List.map (fun (l, _) -> l.term.IndicesToString()) |> join "."
-        | l ->  internalfailf "requested name of an unexpected location %O" l
+    let private printPathSegment = function
+        | StructField(f, _) -> f
+        | ArrayIndex(i, _) -> sprintf "[%s]" (i.term.IndicesToString())
+        | ArrayLowerBound i
+        | ArrayLength i -> i.term.IndicesToString()
+
+    let nameOfLocation = function
+        | TopLevelStack(name, _), [] -> name
+        | TopLevelStatics typ, [] -> toString typ
+        | TopLevelHeap(key, _, _), path ->
+            toString key :: List.map printPathSegment path |> join "."
+        | _, path -> path |> List.map printPathSegment |> join "."
 
     let readStackLocation (s : state) key = MappedStack.find key s.stack
     let readHeapLocation (s : symbolicHeap) key = s.heap.[key].value
@@ -106,7 +127,7 @@ module internal State =
     let private newStackRegion time metadata (s : state) frame frameMetadata sh : state =
         let pushOne (map : stack) (key, value, typ) =
             match value with
-            | Specified term -> { key = key; mtd = metadata; typ = typ }, MappedStack.push key { value = term; created = time; modified = time; typ = typ } map
+            | Specified term -> { key = key; mtd = metadata; typ = typ }, MappedStack.push key { value = term; created = time; modified = time } map
             | Unspecified -> { key = key; mtd = metadata; typ = typ }, MappedStack.reserve key map
         let locations, newStack = frame |> List.mapFold pushOne s.stack
         let f' = Stack.push s.frames.f { func = frameMetadata; entries = locations; time = time }
@@ -138,6 +159,26 @@ module internal State =
         { s with stack = MappedStack.add key value s.stack }
 
     let stackFold = MappedStack.fold
+
+    let private heapFold keyFolder termFolder acc h =
+        Heap.fold (fun acc k cell -> let acc = keyFolder acc k in termFolder acc cell.value) acc h
+
+    let rec private generalizedHeapFold<'a, 'b when 'b : equality> (keyFolder : 'a -> 'b -> 'a) (typeFolder : 'a -> termType -> 'a) (termFolder : 'a -> term -> 'a) (acc : 'a) = function
+        | Defined(_, h) -> heapFold keyFolder termFolder acc h
+        | Composition(h1, _, h2) ->
+            let acc = fold typeFolder termFolder acc h1
+            generalizedHeapFold keyFolder typeFolder termFolder acc h2
+        | Mutation(h1, h2) ->
+            let acc = generalizedHeapFold keyFolder typeFolder termFolder acc h1
+            heapFold keyFolder termFolder acc h2
+        | Merged ghs ->
+            List.fold (fun acc (g, h) -> let acc = termFolder acc g in generalizedHeapFold keyFolder typeFolder termFolder acc h) acc ghs
+        | _ -> acc
+
+    and fold typeFolder termFolder acc state =
+        let acc = stackFold (fun acc _ v -> termFolder acc v.value) acc state.stack
+        let acc = generalizedHeapFold termFolder typeFolder termFolder acc state.heap
+        generalizedHeapFold typeFolder typeFolder termFolder acc state.statics
 
     let inline private entriesOfFrame f = f.entries
     let inline private keyOfEntry en = en.key
@@ -174,18 +215,13 @@ module internal State =
 
     let withHeap (s : state) h' = { s with heap = h' }
     let withStatics (s : state) m' = { s with statics = m' }
-    let withPool (s : state) i' = { s with iPool = i' }
+    let withPool (s : state) i' = { s with iPool = i' } // TODO: need indeed?
 
     let private heapKeyToString = term >> function
         | Concrete(:? (int list) as k, _) -> k |> List.map toString |> join "."
         | t -> toString t
 
-    let staticKeyToString = term >> function
-        | Concrete(typeName, Types.StringType) ->
-            if typeName = null then ()
-            let typ = System.Type.GetType(typeName :?> string)
-            if typ = null then (typeName :?> string) else typ.FullName
-        | t -> toString t
+    let private staticKeyToString (t : termType) = toString t
 
     let mkMetadata (location : locationBinding) state =
         { origins = [{ location = location; stack = framesHashOf state}]; misc = null }
@@ -203,8 +239,8 @@ module internal State =
         let newMappedStack = List.fold MappedStack.remove oldMappedStack toPop
         { state with typeVariables = (newMappedStack, newStack) }
 
-    let rec substituteTypeVariables (state : state) typ =
-        let substituteTypeVariables = substituteTypeVariables state
+    let rec substituteTypeVariables ctx (state : state) typ =
+        let substituteTypeVariables = substituteTypeVariables ctx state
         let substitute constructor t args = constructor t (List.map substituteTypeVariables args)
         match typ with
         | Void
@@ -212,7 +248,10 @@ module internal State =
         | termType.Null
         | Bool
         | Numeric _ -> typ
-        | TypeVariable(Implicit(name, t)) -> TypeVariable(Implicit(name, substituteTypeVariables t))
+        | TypeVariable(Implicit(name, source, t)) ->
+            match source with
+            | :? IExtractingSymbolicTypeSource as ext -> ext.WithTypeExtractor(ArrayTypeExtractor()).TypeCompose ctx state
+            | _ -> TypeVariable(Implicit(name, source, substituteTypeVariables t))
         | Func(domain, range) -> Func(List.map (substituteTypeVariables) domain, substituteTypeVariables range)
         | StructType(t, args) -> substitute Types.StructType t args
         | ClassType(t, args) -> substitute Types.ClassType t args
@@ -220,60 +259,56 @@ module internal State =
         | TypeVariable(Explicit _ as key) ->
             let ms = state.typeVariables |> fst
             if MappedStack.containsKey key ms then MappedStack.find key ms else typ
-        | ArrayType(t, Vector) -> ArrayType(substituteTypeVariables t, Vector)
-        | ArrayType(t, ConcreteDimension 1) -> ArrayType(substituteTypeVariables t, ConcreteDimension 1)
-        | ArrayType(t, ConcreteDimension rank) -> ArrayType(substituteTypeVariables t, ConcreteDimension rank)
-        | ArrayType(t, SymbolicDimension name) -> ArrayType(substituteTypeVariables t, SymbolicDimension name)
+        | ArrayType(TypeVariable(Implicit(_, source, _)) as typ, SymbolicDimension dim) ->
+            match source with
+            | :? IExtractingSymbolicTypeSource as ext -> ext.TypeCompose ctx state
+            | _ -> ArrayType(substituteTypeVariables typ, SymbolicDimension dim)
+        | ArrayType(t, dim) -> ArrayType(substituteTypeVariables t, dim)
         | Reference t -> Reference (substituteTypeVariables t)
         | Pointer t -> Pointer(substituteTypeVariables t)
 
-// ------------------------------- Instantiation (lazy & eager) -------------------------------
+// ------------------------------- Memory layer -------------------------------
 
     type private NullActivator() =
         interface IActivator with
-            member x.CreateInstance _ _ _ _ = internalfail "activator is not ready"
-    let mutable private activator : IActivator = NullActivator() :> IActivator
-
-    type ILazyInstantiator =
-        abstract Instantiate : unit -> term
-        abstract GoDeeperToStruct : term -> termType -> ILazyInstantiator
-        abstract GoDeeperToArray : arrayReferenceTarget -> (term * arrayInstantiator) list -> timestamp -> term -> termType -> ILazyInstantiator
-    type ILazyInstantiatorFactory =
-        abstract TopLevelStackInstantiator : state -> stackKey -> ILazyInstantiator
-        abstract TopLevelHeapInstantiator : termMetadata -> generalizedHeap option -> timestamp transparent -> term -> termType -> ILazyInstantiator
-        abstract TopLevelStaticsInstantiator : termMetadata -> generalizedHeap option -> string -> termType -> ILazyInstantiator
-        abstract EndPointInstantiator : arrayReferenceTarget -> termMetadata -> generalizedHeap option -> term -> termType -> ILazyInstantiator
-        abstract CustomInstantiator : (unit -> term) -> termMetadata -> ILazyInstantiator
-    type private NullLazyInstantiatorFactory() =
-        interface ILazyInstantiatorFactory with
-            override x.TopLevelStackInstantiator _ _ = internalfail "lazy instantiation factory is not ready"
-            override x.TopLevelHeapInstantiator _ _ _ _ _ = internalfail "lazy instantiation factory is not ready"
-            override x.TopLevelStaticsInstantiator _ _ _ _ = internalfail "lazy instantiation factory is not ready"
-            override x.EndPointInstantiator _ _ _ _ _ = internalfail "lazy instantiation factory is not ready"
-            override x.CustomInstantiator _ _ = internalfail "lazy instantiation factory is not ready"
-    let mutable private lazyInstantiatorFactory : ILazyInstantiatorFactory = NullLazyInstantiatorFactory() :> ILazyInstantiatorFactory
-
+            member x.CreateInstance _ _ _ _ =
+                internalfail "activator is not ready"
+    let mutable private activator : IActivator = new NullActivator() :> IActivator
     let configure act = activator <- act
-    let configureFactory liFactory = lazyInstantiatorFactory <- liFactory
     let createInstance mtd typ args state = activator.CreateInstance (Metadata.firstOrigin mtd) typ args state
-    let topLevelStackInstantiator state key = lazyInstantiatorFactory.TopLevelStackInstantiator state key
-    let topLevelHeapInstantiator metadata heap time key typ = lazyInstantiatorFactory.TopLevelHeapInstantiator metadata heap time key typ
-    let topLevelStaticsInstantiator metadata heap key typ = lazyInstantiatorFactory.TopLevelStaticsInstantiator metadata heap key typ
+
+    let mutable genericLazyInstantiator : termMetadata -> fql -> termType -> unit -> term =
+        fun _ _ _ () -> internalfailf "generic lazy instantiator is not ready"
+
+    let stackLazyInstantiator state time key =
+        let t = typeOfStackLocation state key
+        let metadata = metadataOfStackLocation state key
+        let fql = TopLevelStack key, []
+        { value = genericLazyInstantiator metadata fql t (); created = time; modified = time }
+
+    let mutable readHeap : termMetadata -> bool -> heap<term, term, fql> -> term -> termType -> term memoryCell =
+        fun _ _ _ -> internalfail "read heap is not ready"
+
+    let mutable readStatics : termMetadata -> bool -> heap<termType, term, fql> -> termType -> termType -> term memoryCell =
+        fun _ _ _ -> internalfail "read heap is not ready"
+
+    let mutable readTerm : termMetadata -> bool -> term memoryCell -> fql -> termType -> term memoryCell =
+        fun _ _ _ -> internalfail "read heap is not ready"
 
 // ------------------------------- Pretty-printing -------------------------------
 
     let private compositionToString s1 s2 =
         sprintf "%s ⚪ %s" s1 s2
 
-    let private dumpHeap keyToString prefix n r h (concrete : StringBuilder) (ids : Dictionary<symbolicHeap, string>) =
+    let private dumpHeap keyToString prefix n r h (concrete : StringBuilder) (ids : Dictionary<int, string>) =
         let id = ref ""
-        if ids.TryGetValue(h, id) then !id, n, concrete
+        if ids.TryGetValue(hash h, id) then !id, n, concrete
         else
             let freshIdentifier = sprintf "%s%d%s" prefix n (if r then "[restr.]" else "")
-            ids.Add(h, freshIdentifier)
+            ids.Add(hash h, freshIdentifier)
             freshIdentifier, n+1, concrete.Append(sprintf "\n---------- %s = ----------\n" freshIdentifier).Append(Heap.dump h keyToString)
 
-    let rec private dumpGeneralizedHeap keyToString prefix n (concrete : StringBuilder) (ids : Dictionary<symbolicHeap, string>) = function
+    let rec private dumpGeneralizedHeap<'a when 'a : equality> (keyToString : 'a -> string) prefix n (concrete : StringBuilder) (ids : Dictionary<int, string>) = function
         | Defined(r, s) when Heap.isEmpty s -> (if r then "<empty[restr.]>" else "<empty>"), n, concrete
         | Defined(r, s) -> dumpHeap keyToString prefix n r s concrete ids
         | HigherOrderApplication(f, _, _) -> sprintf "app(%O)" f, n, concrete
@@ -301,5 +336,5 @@ module internal State =
         (sprintf "{ heap = %s, statics = %s, pool = %s }" sh mh ph, n, concrete)
 
     let dumpMemory (s : state) =
-        let dump, _, concrete = dumpMemoryRec s 0 (new StringBuilder()) (new Dictionary<symbolicHeap, string>())
+        let dump, _, concrete = dumpMemoryRec s 0 (new StringBuilder()) (new Dictionary<int, string>())
         if concrete.Length = 0 then dump else sprintf "%s where%O" dump concrete

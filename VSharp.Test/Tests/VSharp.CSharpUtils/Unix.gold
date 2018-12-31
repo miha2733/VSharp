@@ -436,6 +436,117 @@ HEAP:
 	| System.Exception._stackTraceString ~> null
 	| System.Exception.captured_traces ~> null
 	| System.Exception.native_trace_ips ~> null]
+<<<<<<< HEAD
+=======
+7 ==> STRUCT System.String[
+	| System.String.m_FirstChar ~> [|
+		0: 'H';
+		10: 't';
+		11: 'i';
+		12: 'v';
+		13: 'e';
+		14: ' ';
+		15: 'n';
+		16: 'u';
+		17: 'm';
+		18: 'b';
+		19: 'e';
+		1: 'm';
+		20: 'r';
+		21: 's';
+		22: ' ';
+		23: 'a';
+		24: 'r';
+		25: 'e';
+		26: ' ';
+		27: 'a';
+		28: 'l';
+		29: 's';
+		2: 'm';
+		30: 'o';
+		31: ' ';
+		32: 'n';
+		33: 'o';
+		34: 't';
+		35: ' ';
+		36: 'a';
+		37: 'l';
+		38: 'l';
+		39: 'o';
+		3: '.';
+		40: 'w';
+		41: 'e';
+		42: 'd';
+		43: '!';
+		44: '\000';
+		4: '.';
+		5: ' ';
+		6: 'n';
+		7: 'e';
+		8: 'g';
+		9: 'a';
+		 ... 45 ... |]
+	| System.String.m_StringLength ~> 44]
+8 ==> STRUCT System.Runtime.Serialization.SafeSerializationManager[
+	| System.Runtime.Serialization.SafeSerializationManager.m_realObject ~> null
+	| System.Runtime.Serialization.SafeSerializationManager.m_realType ~> null
+	| System.Runtime.Serialization.SafeSerializationManager.m_savedSerializationInfo ~> null
+	| System.Runtime.Serialization.SafeSerializationManager.m_serializedStates ~> null]
+9 ==> STRUCT System.Exception[
+	| System.Exception._HResult ~> -2146233088
+	| System.Exception._className ~> null
+	| System.Exception._data ~> null
+	| System.Exception._dynamicMethods ~> null
+	| System.Exception._helpURL ~> null
+	| System.Exception._innerException ~> null
+	| System.Exception._message ~> (HeapRef 10)
+	| System.Exception._remoteStackIndex ~> 0
+	| System.Exception._remoteStackTraceString ~> null
+	| System.Exception._safeSerializationManager ~> (HeapRef 11)
+	| System.Exception._source ~> null
+	| System.Exception._stackTrace ~> null
+	| System.Exception._stackTraceString ~> null
+	| System.Exception.captured_traces ~> null
+	| System.Exception.native_trace_ips ~> null]
+---------- s1 = ----------
+System.ArgumentException ==> STRUCT System.ArgumentException[]
+System.Exception ==> STRUCT System.Exception[
+	| System.Exception._COMPlusExceptionCode ~> UNION[
+		| !(0 == n) | hasKey#3 ~> System.Exception._COMPlusExceptionCode
+		| !hasKey#3 & 0 == n ~> -532462766]
+	| System.Exception.s_EDILock ~> UNION[
+		| !(0 == n) | hasKey#3 ~> (HeapRef System.Exception.s_EDILock)
+		| !hasKey#3 & 0 == n ~> (HeapRef 3)]]
+System.InvalidOperationException ==> STRUCT System.InvalidOperationException[]
+System.Object ==> STRUCT System.Object[]
+System.Runtime.Serialization.SafeSerializationManager ==> STRUCT System.Runtime.Serialization.SafeSerializationManager[
+	| System.Runtime.Serialization.SafeSerializationManager.RealTypeSerializationName ~> UNION[
+		| !(0 == n) | hasKey#5 ~> (HeapRef System.Runtime.Serialization.SafeSerializationManager.RealTypeSerializationName)
+		| !hasKey#5 & 0 == n ~> (HeapRef 5)]]
+System.SystemException ==> STRUCT System.SystemException[]
+VSharp.CSharpUtils.TryCatch ==> STRUCT VSharp.CSharpUtils.TryCatch[]
+METHOD: System.Int32 VSharp.CSharpUtils.TryCatch.ThrowNull(System.Int32)
+RESULT: -2147467261
+HEAP:
+{ heap = h0, statics = s1 } where
+---------- h0 = ----------
+1 ==> STRUCT System.NullReferenceException[
+	| System.Exception._HResult ~> -2147467261
+	| System.Exception._className ~> null
+	| System.Exception._data ~> null
+	| System.Exception._dynamicMethods ~> null
+	| System.Exception._helpURL ~> null
+	| System.Exception._innerException ~> null
+	| System.Exception._message ~> (HeapRef 2)
+	| System.Exception._remoteStackIndex ~> 0
+	| System.Exception._remoteStackTraceString ~> null
+	| System.Exception._safeSerializationManager ~> (HeapRef 4)
+	| System.Exception._source ~> null
+	| System.Exception._stackTrace ~> null
+	| System.Exception._stackTraceString ~> null
+	| System.Exception.captured_traces ~> null
+	| System.Exception.native_trace_ips ~> null]
+>>>>>>> origin/mergeWithRead
 2 ==> STRUCT System.String[
 	| System.String.m_FirstChar ~> [|
 		0: 'O';
@@ -588,7 +699,11 @@ System.Environment ==> STRUCT System.Environment[
 		| !hasKey#2 ~> Win32S
 		| hasKey#2 ~> System.Environment.<Platform>k__BackingField]
 	| System.Environment.mono_corlib_version ~> UNION[
+<<<<<<< HEAD
 		| !hasKey#2 ~> 1051200002
+=======
+		| !hasKey#2 ~> 1051600014
+>>>>>>> origin/mergeWithRead
 		| hasKey#2 ~> System.Environment.mono_corlib_version]
 	| System.Environment.nl ~> UNION[
 		| !hasKey#2 ~> null
@@ -997,7 +1112,11 @@ System.Environment ==> STRUCT System.Environment[
 		| !hasKey#2 & 0 == m ~> Win32S]
 	| System.Environment.mono_corlib_version ~> UNION[
 		| !(0 == m) | hasKey#2 ~> System.Environment.mono_corlib_version
+<<<<<<< HEAD
 		| !hasKey#2 & 0 == m ~> 1051200002]
+=======
+		| !hasKey#2 & 0 == m ~> 1051600014]
+>>>>>>> origin/mergeWithRead
 	| System.Environment.nl ~> UNION[
 		| !(0 == m) | hasKey#2 ~> (HeapRef System.Environment.nl)
 		| !hasKey#2 & 0 == m ~> null]
@@ -1233,7 +1352,11 @@ System.Environment ==> STRUCT System.Environment[
 		| !hasKey#2 & 0 == m * m * m ~> Win32S]
 	| System.Environment.mono_corlib_version ~> UNION[
 		| !(0 == m * m * m) | hasKey#2 ~> System.Environment.mono_corlib_version
+<<<<<<< HEAD
 		| !hasKey#2 & 0 == m * m * m ~> 1051200002]
+=======
+		| !hasKey#2 & 0 == m * m * m ~> 1051600014]
+>>>>>>> origin/mergeWithRead
 	| System.Environment.nl ~> UNION[
 		| !(0 == m * m * m) | hasKey#2 ~> (HeapRef System.Environment.nl)
 		| !hasKey#2 & 0 == m * m * m ~> null]
@@ -1351,6 +1474,7 @@ HEAP:
 	| System.Runtime.Serialization.SafeSerializationManager.m_serializedStates ~> null]
 5 ==> STRUCT System.String[
 	| System.String.m_FirstChar ~> [|
+<<<<<<< HEAD
 		0: UNION[
 			| !hasKey#7 ~> 'C'];
 		10: UNION[
@@ -1431,6 +1555,48 @@ HEAP:
 	| !hasKey#7 ~> 38] ... |]
 	| System.String.m_StringLength ~> UNION[
 		| !hasKey#7 ~> 37]]
+=======
+		0: 'C';
+		10: 'r';
+		11: 'i';
+		12: 'a';
+		13: 'l';
+		14: 'i';
+		15: 'z';
+		16: 'a';
+		17: 't';
+		18: 'i';
+		19: 'o';
+		1: 'L';
+		20: 'n';
+		21: 'M';
+		22: 'a';
+		23: 'n';
+		24: 'a';
+		25: 'g';
+		26: 'e';
+		27: 'r';
+		28: '_';
+		29: 'R';
+		2: 'R';
+		30: 'e';
+		31: 'a';
+		32: 'l';
+		33: 'T';
+		34: 'y';
+		35: 'p';
+		36: 'e';
+		37: '\000';
+		3: '_';
+		4: 'S';
+		5: 'a';
+		6: 'f';
+		7: 'e';
+		8: 'S';
+		9: 'e';
+		 ... 38 ... |]
+	| System.String.m_StringLength ~> 37]
+>>>>>>> origin/mergeWithRead
 ---------- s1 = ----------
 System.ArithmeticException ==> STRUCT System.ArithmeticException[]
 System.Environment ==> STRUCT System.Environment[
@@ -1438,7 +1604,11 @@ System.Environment ==> STRUCT System.Environment[
 		| !hasKey#2 ~> Win32S
 		| hasKey#2 ~> System.Environment.<Platform>k__BackingField]
 	| System.Environment.mono_corlib_version ~> UNION[
+<<<<<<< HEAD
 		| !hasKey#2 ~> 1051200002
+=======
+		| !hasKey#2 ~> 1051600014
+>>>>>>> origin/mergeWithRead
 		| hasKey#2 ~> System.Environment.mono_corlib_version]
 	| System.Environment.nl ~> UNION[
 		| !hasKey#2 ~> null
@@ -1627,7 +1797,11 @@ System.Environment ==> STRUCT System.Environment[
 		| !hasKey#2 ~> Win32S
 		| hasKey#2 ~> System.Environment.<Platform>k__BackingField]
 	| System.Environment.mono_corlib_version ~> UNION[
+<<<<<<< HEAD
 		| !hasKey#2 ~> 1051200002
+=======
+		| !hasKey#2 ~> 1051600014
+>>>>>>> origin/mergeWithRead
 		| hasKey#2 ~> System.Environment.mono_corlib_version]
 	| System.Environment.nl ~> UNION[
 		| !hasKey#2 ~> null
@@ -1813,7 +1987,11 @@ System.Environment ==> STRUCT System.Environment[
 		| !hasKey#3 ~> Win32S
 		| hasKey#3 ~> System.Environment.<Platform>k__BackingField]
 	| System.Environment.mono_corlib_version ~> UNION[
+<<<<<<< HEAD
 		| !hasKey#3 ~> 1051200002
+=======
+		| !hasKey#3 ~> 1051600014
+>>>>>>> origin/mergeWithRead
 		| hasKey#3 ~> System.Environment.mono_corlib_version]
 	| System.Environment.nl ~> UNION[
 		| !hasKey#3 ~> null
@@ -2670,6 +2848,7 @@ HEAP:
 { heap = h0, statics = s1 } where
 ---------- h0 = ----------
 1 ==> [|
+<<<<<<< HEAD
 	0: UNION[
 		| !hasKey#1 ~> 1];
 	10: UNION[
@@ -2704,6 +2883,25 @@ HEAP:
 		| !hasKey#1 ~> 1000000000];
 	 ... UNION[
 	| !hasKey#1 ~> 16] ... |]
+=======
+	0: 1;
+	10: 10000000000;
+	11: 100000000000;
+	12: 1000000000000;
+	13: 10000000000000;
+	14: 100000000000000;
+	15: 1E+15;
+	1: 10;
+	2: 100;
+	3: 1000;
+	4: 10000;
+	5: 100000;
+	6: 1000000;
+	7: 10000000;
+	8: 100000000;
+	9: 1000000000;
+	 ... 16 ... |]
+>>>>>>> origin/mergeWithRead
 ---------- s1 = ----------
 System.Math ==> STRUCT System.Math[
 	| System.Math.E ~> UNION[
@@ -4486,6 +4684,7 @@ HEAP:
 { heap = h0, statics = s1 } where
 ---------- h0 = ----------
 1 ==> [|
+<<<<<<< HEAD
 	0: UNION[
 		| !hasKey#1 ~> 1];
 	10: UNION[
@@ -4883,18 +5082,137 @@ HEAP:
 	| System.String.m_StringLength ~> UNION[
 		| !hasKey#2 & !hasKey#8 & 0 == System.DBNull.Value & hasKey#3 ~> 37]]
 System.DBNull.Value ==> STRUCT System.DBNull[]
+=======
+	0: 1;
+	10: 10000000000;
+	11: 100000000000;
+	12: 1000000000000;
+	13: 10000000000000;
+	14: 100000000000000;
+	15: 1E+15;
+	1: 10;
+	2: 100;
+	3: 1000;
+	4: 10000;
+	5: 100000;
+	6: 1000000;
+	7: 10000000;
+	8: 100000000;
+	9: 1000000000;
+	 ... 16 ... |]
+2 ==> [|
+	0: System.Empty;
+	10: System.UInt32;
+	11: System.Int64;
+	12: System.UInt64;
+	13: System.Single;
+	14: System.Double;
+	15: System.Decimal;
+	16: System.DateTime;
+	17: System.Object;
+	18: System.String;
+	1: System.Object;
+	2: System.DBNull;
+	3: System.Boolean;
+	4: System.Char;
+	5: System.SByte;
+	6: System.Byte;
+	7: System.Int16;
+	8: System.UInt16;
+	9: System.Int32;
+	 ... 19 ... |]
+3 ==> [|
+	0: 'A';
+	10: 'K';
+	11: 'L';
+	12: 'M';
+	13: 'N';
+	14: 'O';
+	15: 'P';
+	16: 'Q';
+	17: 'R';
+	18: 'S';
+	19: 'T';
+	1: 'B';
+	20: 'U';
+	21: 'V';
+	22: 'W';
+	23: 'X';
+	24: 'Y';
+	25: 'Z';
+	26: 'a';
+	27: 'b';
+	28: 'c';
+	29: 'd';
+	2: 'C';
+	30: 'e';
+	31: 'f';
+	32: 'g';
+	33: 'h';
+	34: 'i';
+	35: 'j';
+	36: 'k';
+	37: 'l';
+	38: 'm';
+	39: 'n';
+	3: 'D';
+	40: 'o';
+	41: 'p';
+	42: 'q';
+	43: 'r';
+	44: 's';
+	45: 't';
+	46: 'u';
+	47: 'v';
+	48: 'w';
+	49: 'x';
+	4: 'E';
+	50: 'y';
+	51: 'z';
+	52: '0';
+	53: '1';
+	54: '2';
+	55: '3';
+	56: '4';
+	57: '5';
+	58: '6';
+	59: '7';
+	5: 'F';
+	60: '8';
+	61: '9';
+	62: '+';
+	63: '/';
+	64: '=';
+	6: 'G';
+	7: 'H';
+	8: 'I';
+	9: 'J';
+	 ... 65 ... |]
+4 ==> STRUCT System.DBNull[]
+>>>>>>> origin/mergeWithRead
 ---------- s1 = ----------
 System.Convert ==> STRUCT System.Convert[
 	| System.Convert.ConvertTypes ~> UNION[
 		| !hasKey#2 ~> (HeapRef 2)
 		| hasKey#2 ~> (HeapRef System.Convert.ConvertTypes)]
 	| System.Convert.DBNull ~> UNION[
+<<<<<<< HEAD
 		| !hasKey#2 & (!(0 == System.DBNull.Value) | !hasKey#3) ~> <VOID>
 		| !hasKey#2 & 0 == System.DBNull.Value & hasKey#3 ~> null
 		| hasKey#2 ~> (HeapRef System.Convert.DBNull)]
 	| System.Convert.EnumType ~> UNION[
 		| !hasKey#2 ~> System.Enum
 		| hasKey#2 ~> (HeapRef System.Convert.EnumType)]
+=======
+		| !(0 == System.DBNull.Value) & !hasKey#2 & hasKey#3 ~> (HeapRef System.DBNull.Value)
+		| !hasKey#2 & !hasKey#3 ~> (HeapRef 4)
+		| !hasKey#2 & 0 == System.DBNull.Value & hasKey#3 ~> null
+		| (!(0 == System.DBNull.Value) | !hasKey#3) & hasKey#2 ~> (HeapRef System.Convert.DBNull)
+		| 0 == System.DBNull.Value & hasKey#2 & hasKey#3 ~> (HeapRef System.Convert.DBNull)]
+	| System.Convert.EnumType ~> UNION[
+		| !hasKey#2 ~> System.Enum
+		| hasKey#2 ~> STRUCT TypeVariable{System.Convert.EnumType}{System.RuntimeType}[]]
+>>>>>>> origin/mergeWithRead
 	| System.Convert.base64LineBreakPosition ~> UNION[
 		| !hasKey#2 ~> 76
 		| hasKey#2 ~> System.Convert.base64LineBreakPosition]
@@ -4905,6 +5223,7 @@ System.DBNull ==> STRUCT System.DBNull[
 	| System.DBNull.Value ~> UNION[
 		| !hasKey#2 & !hasKey#3 ~> (HeapRef 4)
 		| hasKey#2 | hasKey#3 ~> (HeapRef System.DBNull.Value)]]
+<<<<<<< HEAD
 System.Exception ==> STRUCT System.Exception[
 	| System.Exception._COMPlusExceptionCode ~> UNION[
 		| !(0 == System.DBNull.Value) | !hasKey#3 | hasKey#2 | hasKey#7 ~> System.Exception._COMPlusExceptionCode
@@ -4913,6 +5232,8 @@ System.Exception ==> STRUCT System.Exception[
 		| !(0 == System.DBNull.Value) | !hasKey#3 | hasKey#2 | hasKey#7 ~> (HeapRef System.Exception.s_EDILock)
 		| !hasKey#2 & !hasKey#7 & 0 == System.DBNull.Value & hasKey#3 ~> (HeapRef 7)]]
 System.InvalidCastException ==> STRUCT System.InvalidCastException[]
+=======
+>>>>>>> origin/mergeWithRead
 System.Math ==> STRUCT System.Math[
 	| System.Math.E ~> UNION[
 		| !hasKey#1 ~> 2.71828182845905
@@ -5644,6 +5965,7 @@ HEAP:
 		| !hasKey#1 ~> null]]
 3 ==> STRUCT System.String[
 	| System.String.m_FirstChar ~> [|
+<<<<<<< HEAD
 		0: UNION[
 			| !hasKey#1 ~> 'O'];
 		10: UNION[
@@ -5756,6 +6078,228 @@ HEAP:
 	| !hasKey#1 ~> 54] ... |]
 	| System.String.m_StringLength ~> UNION[
 		| !hasKey#1 ~> 53]]
+=======
+		0: 'O';
+		10: 'e';
+		11: 'r';
+		12: 'e';
+		13: 'n';
+		14: 'c';
+		15: 'e';
+		16: ' ';
+		17: 'n';
+		18: 'o';
+		19: 't';
+		1: 'b';
+		20: ' ';
+		21: 's';
+		22: 'e';
+		23: 't';
+		24: ' ';
+		25: 't';
+		26: 'o';
+		27: ' ';
+		28: 'a';
+		29: 'n';
+		2: 'j';
+		30: ' ';
+		31: 'i';
+		32: 'n';
+		33: 's';
+		34: 't';
+		35: 'a';
+		36: 'n';
+		37: 'c';
+		38: 'e';
+		39: ' ';
+		3: 'e';
+		40: 'o';
+		41: 'f';
+		42: ' ';
+		43: 'a';
+		44: 'n';
+		45: ' ';
+		46: 'o';
+		47: 'b';
+		48: 'j';
+		49: 'e';
+		4: 'c';
+		50: 'c';
+		51: 't';
+		52: '.';
+		53: '\000';
+		5: 't';
+		6: ' ';
+		7: 'r';
+		8: 'e';
+		9: 'f';
+		 ... 54 ... |]
+	| System.String.m_StringLength ~> 53]
+4 ==> STRUCT System.Object[]
+5 ==> STRUCT System.Runtime.Serialization.SafeSerializationManager[
+	| System.Runtime.Serialization.SafeSerializationManager.m_realObject ~> null
+	| System.Runtime.Serialization.SafeSerializationManager.m_realType ~> null
+	| System.Runtime.Serialization.SafeSerializationManager.m_savedSerializationInfo ~> null
+	| System.Runtime.Serialization.SafeSerializationManager.m_serializedStates ~> null]
+6 ==> STRUCT System.String[
+	| System.String.m_FirstChar ~> [|
+		0: 'C';
+		10: 'r';
+		11: 'i';
+		12: 'a';
+		13: 'l';
+		14: 'i';
+		15: 'z';
+		16: 'a';
+		17: 't';
+		18: 'i';
+		19: 'o';
+		1: 'L';
+		20: 'n';
+		21: 'M';
+		22: 'a';
+		23: 'n';
+		24: 'a';
+		25: 'g';
+		26: 'e';
+		27: 'r';
+		28: '_';
+		29: 'R';
+		2: 'R';
+		30: 'e';
+		31: 'a';
+		32: 'l';
+		33: 'T';
+		34: 'y';
+		35: 'p';
+		36: 'e';
+		37: '\000';
+		3: '_';
+		4: 'S';
+		5: 'a';
+		6: 'f';
+		7: 'e';
+		8: 'S';
+		9: 'e';
+		 ... 38 ... |]
+	| System.String.m_StringLength ~> 37]
+---------- s1 = ----------
+System.Environment ==> STRUCT System.Environment[
+	| System.Environment.<Platform>k__BackingField ~> UNION[
+		| !hasKey#1 & !hasKey#4 ~> Win32S
+		| hasKey#1 | hasKey#4 ~> System.Environment.<Platform>k__BackingField]
+	| System.Environment.mono_corlib_version ~> UNION[
+		| !hasKey#1 & !hasKey#4 ~> 1051600014
+		| hasKey#1 | hasKey#4 ~> System.Environment.mono_corlib_version]
+	| System.Environment.nl ~> UNION[
+		| !hasKey#1 & !hasKey#4 ~> null
+		| hasKey#1 | hasKey#4 ~> (HeapRef System.Environment.nl)]
+	| System.Environment.os ~> UNION[
+		| !hasKey#1 & !hasKey#4 ~> null
+		| hasKey#1 | hasKey#4 ~> (HeapRef System.Environment.os)]]
+System.Exception ==> STRUCT System.Exception[
+	| System.Exception._COMPlusExceptionCode ~> UNION[
+		| !hasKey#1 & !hasKey#6 ~> -532462766
+		| hasKey#1 | hasKey#6 ~> System.Exception._COMPlusExceptionCode]
+	| System.Exception.s_EDILock ~> UNION[
+		| !hasKey#1 & !hasKey#6 ~> (HeapRef 4)
+		| hasKey#1 | hasKey#6 ~> (HeapRef System.Exception.s_EDILock)]]
+System.NullReferenceException ==> STRUCT System.NullReferenceException[]
+System.Object ==> STRUCT System.Object[]
+System.Runtime.Serialization.SafeSerializationManager ==> STRUCT System.Runtime.Serialization.SafeSerializationManager[
+	| System.Runtime.Serialization.SafeSerializationManager.RealTypeSerializationName ~> UNION[
+		| !hasKey#1 & !hasKey#8 ~> (HeapRef 6)
+		| hasKey#1 | hasKey#8 ~> (HeapRef System.Runtime.Serialization.SafeSerializationManager.RealTypeSerializationName)]]
+System.SystemException ==> STRUCT System.SystemException[]
+VSharp.CSharpUtils.Tests.ClassesSimpleException ==> STRUCT VSharp.CSharpUtils.Tests.ClassesSimpleException[]
+VSharp.CSharpUtils.Tests.ClassesSimpleException0 ==> STRUCT VSharp.CSharpUtils.Tests.ClassesSimpleException0[
+	| VSharp.CSharpUtils.Tests.ClassesSimpleException0.field0 ~> UNION[
+		| !hasKey#1 ~> 0
+		| hasKey#1 ~> VSharp.CSharpUtils.Tests.ClassesSimpleException0.field0]]
+VSharp.CSharpUtils.Tests.ClassesSimpleExceptionInitializer ==> STRUCT VSharp.CSharpUtils.Tests.ClassesSimpleExceptionInitializer[]
+METHOD: System.Void VSharp.CSharpUtils.Tests.ClassesSimpleException.Test2()
+RESULT: UNION[
+	| !hasKey#1 ~> <ERROR: (HeapRef 2)>
+	| hasKey#1 ~> <VOID>]
+HEAP:
+{ heap = h0, statics = s1 } where
+---------- h0 = ----------
+1 ==> STRUCT VSharp.CSharpUtils.Tests.ClassesSimpleException1[]
+2 ==> STRUCT System.NullReferenceException[
+	| System.Exception._HResult ~> -2147467261
+	| System.Exception._className ~> null
+	| System.Exception._data ~> null
+	| System.Exception._dynamicMethods ~> null
+	| System.Exception._helpURL ~> null
+	| System.Exception._innerException ~> null
+	| System.Exception._message ~> (HeapRef 3)
+	| System.Exception._remoteStackIndex ~> 0
+	| System.Exception._remoteStackTraceString ~> null
+	| System.Exception._safeSerializationManager ~> (HeapRef 5)
+	| System.Exception._source ~> null
+	| System.Exception._stackTrace ~> null
+	| System.Exception._stackTraceString ~> null
+	| System.Exception.captured_traces ~> null
+	| System.Exception.native_trace_ips ~> null]
+3 ==> STRUCT System.String[
+	| System.String.m_FirstChar ~> [|
+		0: 'O';
+		10: 'e';
+		11: 'r';
+		12: 'e';
+		13: 'n';
+		14: 'c';
+		15: 'e';
+		16: ' ';
+		17: 'n';
+		18: 'o';
+		19: 't';
+		1: 'b';
+		20: ' ';
+		21: 's';
+		22: 'e';
+		23: 't';
+		24: ' ';
+		25: 't';
+		26: 'o';
+		27: ' ';
+		28: 'a';
+		29: 'n';
+		2: 'j';
+		30: ' ';
+		31: 'i';
+		32: 'n';
+		33: 's';
+		34: 't';
+		35: 'a';
+		36: 'n';
+		37: 'c';
+		38: 'e';
+		39: ' ';
+		3: 'e';
+		40: 'o';
+		41: 'f';
+		42: ' ';
+		43: 'a';
+		44: 'n';
+		45: ' ';
+		46: 'o';
+		47: 'b';
+		48: 'j';
+		49: 'e';
+		4: 'c';
+		50: 'c';
+		51: 't';
+		52: '.';
+		53: '\000';
+		5: 't';
+		6: ' ';
+		7: 'r';
+		8: 'e';
+		9: 'f';
+		 ... 54 ... |]
+	| System.String.m_StringLength ~> 53]
+>>>>>>> origin/mergeWithRead
 4 ==> STRUCT System.Object[]
 5 ==> STRUCT System.Runtime.Serialization.SafeSerializationManager[
 	| System.Runtime.Serialization.SafeSerializationManager.m_realObject ~> UNION[
@@ -5854,7 +6398,11 @@ System.Environment ==> STRUCT System.Environment[
 		| !hasKey#1 & !hasKey#4 ~> Win32S
 		| hasKey#1 | hasKey#4 ~> System.Environment.<Platform>k__BackingField]
 	| System.Environment.mono_corlib_version ~> UNION[
+<<<<<<< HEAD
 		| !hasKey#1 & !hasKey#4 ~> 1051200002
+=======
+		| !hasKey#1 & !hasKey#4 ~> 1051600014
+>>>>>>> origin/mergeWithRead
 		| hasKey#1 | hasKey#4 ~> System.Environment.mono_corlib_version]
 	| System.Environment.nl ~> UNION[
 		| !hasKey#1 & !hasKey#4 ~> null
@@ -5877,12 +6425,39 @@ System.Runtime.Serialization.SafeSerializationManager ==> STRUCT System.Runtime.
 		| hasKey#1 | hasKey#8 ~> (HeapRef System.Runtime.Serialization.SafeSerializationManager.RealTypeSerializationName)]]
 System.SystemException ==> STRUCT System.SystemException[]
 VSharp.CSharpUtils.Tests.ClassesSimpleException ==> STRUCT VSharp.CSharpUtils.Tests.ClassesSimpleException[]
+<<<<<<< HEAD
 VSharp.CSharpUtils.Tests.ClassesSimpleException0 ==> STRUCT VSharp.CSharpUtils.Tests.ClassesSimpleException0[
 	| VSharp.CSharpUtils.Tests.ClassesSimpleException0.field0 ~> UNION[
 		| !hasKey#1 ~> 0
 		| hasKey#1 ~> VSharp.CSharpUtils.Tests.ClassesSimpleException0.field0]]
 VSharp.CSharpUtils.Tests.ClassesSimpleExceptionInitializer ==> STRUCT VSharp.CSharpUtils.Tests.ClassesSimpleExceptionInitializer[]
 METHOD: System.Void VSharp.CSharpUtils.Tests.ClassesSimpleException.Test2()
+=======
+VSharp.CSharpUtils.Tests.ClassesSimpleException1 ==> STRUCT VSharp.CSharpUtils.Tests.ClassesSimpleException1[
+	| VSharp.CSharpUtils.Tests.ClassesSimpleException1.field0 ~> UNION[
+		| !hasKey#1 ~> -24
+		| hasKey#1 ~> VSharp.CSharpUtils.Tests.ClassesSimpleException1.field0]
+	| VSharp.CSharpUtils.Tests.ClassesSimpleException1.field1 ~> UNION[
+		| !hasKey#1 ~> 0
+		| hasKey#1 ~> VSharp.CSharpUtils.Tests.ClassesSimpleException1.field1]]
+VSharp.CSharpUtils.Tests.ClassesSimpleExceptionInitializer ==> STRUCT VSharp.CSharpUtils.Tests.ClassesSimpleExceptionInitializer[]
+METHOD: VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess+SimpleStruct VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess.get_StructProperty()
+RESULT: STRUCT VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess+SimpleStruct[]
+HEAP:
+{ heap = <empty>, statics = s0 } where
+---------- s0 = ----------
+VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess ==> STRUCT VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess[]
+METHOD: System.Void VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess.set_StructProperty(VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess+SimpleStruct)
+RESULT: <VOID>
+HEAP:
+{ heap = h0, statics = s1 } where
+---------- h0 = ----------
+this ==> STRUCT TypeVariable{this}{VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess}[
+	| VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess._structProperty ~> STRUCT VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess+SimpleStruct[]]
+---------- s1 = ----------
+VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess ==> STRUCT VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess[]
+METHOD: System.Int32 VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess.get_Property()
+>>>>>>> origin/mergeWithRead
 RESULT: UNION[
 	| !hasKey#1 ~> <ERROR: (HeapRef 2)>
 	| hasKey#1 ~> <VOID>]
@@ -6047,6 +6622,7 @@ HEAP:
 		| !hasKey#1 ~> null]]
 6 ==> STRUCT System.String[
 	| System.String.m_FirstChar ~> [|
+<<<<<<< HEAD
 		0: UNION[
 			| !hasKey#1 & !hasKey#8 ~> 'C'];
 		10: UNION[
@@ -6148,12 +6724,87 @@ System.Exception ==> STRUCT System.Exception[
 	| System.Exception.s_EDILock ~> UNION[
 		| !hasKey#1 & !hasKey#6 ~> (HeapRef 4)
 		| hasKey#1 | hasKey#6 ~> (HeapRef System.Exception.s_EDILock)]]
+=======
+		0: 'C';
+		10: 'r';
+		11: 'i';
+		12: 'a';
+		13: 'l';
+		14: 'i';
+		15: 'z';
+		16: 'a';
+		17: 't';
+		18: 'i';
+		19: 'o';
+		1: 'L';
+		20: 'n';
+		21: 'M';
+		22: 'a';
+		23: 'n';
+		24: 'a';
+		25: 'g';
+		26: 'e';
+		27: 'r';
+		28: '_';
+		29: 'R';
+		2: 'R';
+		30: 'e';
+		31: 'a';
+		32: 'l';
+		33: 'T';
+		34: 'y';
+		35: 'p';
+		36: 'e';
+		37: '\000';
+		3: '_';
+		4: 'S';
+		5: 'a';
+		6: 'f';
+		7: 'e';
+		8: 'S';
+		9: 'e';
+		 ... 38 ... |]
+	| System.String.m_StringLength ~> 37]
+---------- s1 = ----------
+System.Collections.Generic.List`1[System.Boolean] ==> STRUCT System.Collections.Generic.List`1[System.Boolean][
+	| System.Collections.Generic.List`1.DefaultCapacity ~> UNION[
+		| !hasKey#1 ~> 4
+		| hasKey#1 ~> System.Collections.Generic.List`1.DefaultCapacity]
+	| System.Collections.Generic.List`1.s_emptyArray ~> UNION[
+		| !hasKey#1 ~> (HeapRef 1)
+		| hasKey#1 ~> (HeapRef System.Collections.Generic.List`1.s_emptyArray)]]
+System.Environment ==> STRUCT System.Environment[
+	| System.Environment.<Platform>k__BackingField ~> UNION[
+		| !(0 == this.VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess.<SecretProperty>k__BackingField) | hasKey#3 ~> System.Environment.<Platform>k__BackingField
+		| !hasKey#3 & 0 == this.VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess.<SecretProperty>k__BackingField ~> Win32S]
+	| System.Environment.mono_corlib_version ~> UNION[
+		| !(0 == this.VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess.<SecretProperty>k__BackingField) | hasKey#3 ~> System.Environment.mono_corlib_version
+		| !hasKey#3 & 0 == this.VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess.<SecretProperty>k__BackingField ~> 1051600014]
+	| System.Environment.nl ~> UNION[
+		| !(0 == this.VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess.<SecretProperty>k__BackingField) | hasKey#3 ~> (HeapRef System.Environment.nl)
+		| !hasKey#3 & 0 == this.VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess.<SecretProperty>k__BackingField ~> null]
+	| System.Environment.os ~> UNION[
+		| !(0 == this.VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess.<SecretProperty>k__BackingField) | hasKey#3 ~> (HeapRef System.Environment.os)
+		| !hasKey#3 & 0 == this.VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess.<SecretProperty>k__BackingField ~> null]]
+System.Exception ==> STRUCT System.Exception[
+	| System.Exception._COMPlusExceptionCode ~> UNION[
+		| !(0 == this.VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess.<SecretProperty>k__BackingField) | hasKey#5 ~> System.Exception._COMPlusExceptionCode
+		| !hasKey#5 & 0 == this.VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess.<SecretProperty>k__BackingField ~> -532462766]
+	| System.Exception.s_EDILock ~> UNION[
+		| !(0 == this.VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess.<SecretProperty>k__BackingField) | hasKey#5 ~> (HeapRef System.Exception.s_EDILock)
+		| !hasKey#5 & 0 == this.VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess.<SecretProperty>k__BackingField ~> (HeapRef 4)]]
+>>>>>>> origin/mergeWithRead
 System.NullReferenceException ==> STRUCT System.NullReferenceException[]
 System.Object ==> STRUCT System.Object[]
 System.Runtime.Serialization.SafeSerializationManager ==> STRUCT System.Runtime.Serialization.SafeSerializationManager[
 	| System.Runtime.Serialization.SafeSerializationManager.RealTypeSerializationName ~> UNION[
+<<<<<<< HEAD
 		| !hasKey#1 & !hasKey#8 ~> (HeapRef 6)
 		| hasKey#1 | hasKey#8 ~> (HeapRef System.Runtime.Serialization.SafeSerializationManager.RealTypeSerializationName)]]
+=======
+		| !(0 == this.VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess.<SecretProperty>k__BackingField) | hasKey#7 ~> (HeapRef System.Runtime.Serialization.SafeSerializationManager.RealTypeSerializationName)
+		| !hasKey#7 & 0 == this.VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess.<SecretProperty>k__BackingField ~> (HeapRef 6)]]
+>>>>>>> origin/mergeWithRead
 System.SystemException ==> STRUCT System.SystemException[]
 VSharp.CSharpUtils.Tests.ClassesSimpleException ==> STRUCT VSharp.CSharpUtils.Tests.ClassesSimpleException[]
 VSharp.CSharpUtils.Tests.ClassesSimpleException1 ==> STRUCT VSharp.CSharpUtils.Tests.ClassesSimpleException1[
@@ -6169,25 +6820,132 @@ RESULT: STRUCT VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess+SimpleStruct
 HEAP:
 { heap = h0, statics = s1 } where
 ---------- h0 = ----------
+<<<<<<< HEAD
 this ==> STRUCT VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess[]
 ---------- s1 = ----------
 VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess ==> STRUCT VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess[]
 METHOD: System.Void VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess.set_StructProperty(VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess+SimpleStruct)
+=======
+1 ==> STRUCT VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess[
+	| VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess.<SecretProperty>k__BackingField ~> (HeapRef 2)
+	| VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess._structProperty ~> STRUCT VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess+SimpleStruct[
+		| VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess+SimpleStruct.X ~> 0]]
+2 ==> STRUCT System.Collections.Generic.List`1[System.Boolean][
+	| System.Collections.Generic.List`1._items ~> UNION[
+		| !hasKey#3 ~> (HeapRef 3)
+		| hasKey#3 ~> (HeapRef System.Collections.Generic.List`1.s_emptyArray)]
+	| System.Collections.Generic.List`1._size ~> 0
+	| System.Collections.Generic.List`1._syncRoot ~> null
+	| System.Collections.Generic.List`1._version ~> 0]
+3 ==> [| ... 0 ... |]
+---------- s1 = ----------
+System.Collections.Generic.List`1[System.Boolean] ==> STRUCT System.Collections.Generic.List`1[System.Boolean][
+	| System.Collections.Generic.List`1.DefaultCapacity ~> UNION[
+		| !hasKey#3 ~> 4
+		| hasKey#3 ~> System.Collections.Generic.List`1.DefaultCapacity]
+	| System.Collections.Generic.List`1.s_emptyArray ~> UNION[
+		| !hasKey#3 ~> (HeapRef 3)
+		| hasKey#3 ~> (HeapRef System.Collections.Generic.List`1.s_emptyArray)]]
+System.Object ==> STRUCT System.Object[]
+VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess+SimpleStruct ==> STRUCT VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess+SimpleStruct[]
+VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess ==> STRUCT VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess[]
+METHOD: VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccessModify+SimpleStruct VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccessModify.get_StructProperty()
+RESULT: (HeapRef this.VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccessModify.<StructProperty>k__BackingField)
+HEAP:
+{ heap = <empty>, statics = s0 } where
+---------- s0 = ----------
+VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccessModify ==> STRUCT VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccessModify[]
+METHOD: System.Void VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccessModify.set_StructProperty(VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccessModify+SimpleStruct)
+>>>>>>> origin/mergeWithRead
 RESULT: <VOID>
 HEAP:
 { heap = h0, statics = s1 } where
 ---------- h0 = ----------
+<<<<<<< HEAD
 this ==> STRUCT VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess[
 	| VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess._structProperty ~> STRUCT VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess+SimpleStruct[]]
 ---------- s1 = ----------
 VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess ==> STRUCT VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess[]
 METHOD: System.Int32 VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess.get_Property()
+=======
+this ==> STRUCT TypeVariable{this}{VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccessModify}[
+	| VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccessModify.<StructProperty>k__BackingField ~> (HeapRef value)]
+---------- s1 = ----------
+VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccessModify ==> STRUCT VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccessModify[]
+METHOD: System.Int32 VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccessModify.TestProperty1(System.Int32)
+RESULT: anyVarName
+HEAP:
+{ heap = h0, statics = s1 } where
+---------- h0 = ----------
+1 ==> STRUCT VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccessModify[
+	| VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccessModify.<StructProperty>k__BackingField ~> (HeapRef 2)]
+2 ==> STRUCT VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccessModify+SimpleStruct[
+	| VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccessModify+SimpleStruct.X ~> anyVarName]
+---------- s1 = ----------
+VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccessModify+SimpleStruct ==> STRUCT VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccessModify+SimpleStruct[]
+VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccessModify ==> STRUCT VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccessModify[]
+METHOD: System.Boolean VSharp.CSharpUtils.Tests.Conditional.IsMaxEven(System.Int32, System.Int32, System.Int32)
+RESULT: !(2 * x < 2 * y) & !(2 * y < z) | !(2 * x < z) & 2 * y < z | !(2 * y < z) & (!(2 * y < z) & 2 * x < 2 * y | 2 * x < z & 2 * y < z) | (!(2 * y < z) & 2 * x < 2 * y | 2 * x < z & 2 * y < z) & 0 == z % 2
+HEAP:
+{ heap = h0, statics = s1 } where
+---------- h0 = ----------
+1 ==> [|
+	0: 1;
+	10: 10000000000;
+	11: 100000000000;
+	12: 1000000000000;
+	13: 10000000000000;
+	14: 100000000000000;
+	15: 1E+15;
+	1: 10;
+	2: 100;
+	3: 1000;
+	4: 10000;
+	5: 100000;
+	6: 1000000;
+	7: 10000000;
+	8: 100000000;
+	9: 1000000000;
+	 ... 16 ... |]
+---------- s1 = ----------
+System.Math ==> STRUCT System.Math[
+	| System.Math.E ~> UNION[
+		| !hasKey#1 ~> 2.71828182845905
+		| hasKey#1 ~> System.Math.E]
+	| System.Math.PI ~> UNION[
+		| !hasKey#1 ~> 3.14159265358979
+		| hasKey#1 ~> System.Math.PI]
+	| System.Math.doubleRoundLimit ~> UNION[
+		| !hasKey#1 ~> 1E+16
+		| hasKey#1 ~> System.Math.doubleRoundLimit]
+	| System.Math.maxRoundingDigits ~> UNION[
+		| !hasKey#1 ~> 15
+		| hasKey#1 ~> System.Math.maxRoundingDigits]
+	| System.Math.roundPower10Double ~> UNION[
+		| !hasKey#1 ~> (HeapRef 1)
+		| hasKey#1 ~> (HeapRef System.Math.roundPower10Double)]]
+VSharp.CSharpUtils.Tests.Conditional ==> STRUCT VSharp.CSharpUtils.Tests.Conditional[]
+METHOD: System.Int32 VSharp.CSharpUtils.Tests.Conditional.Always18()
+RESULT: 18
+HEAP:
+{ heap = <empty>, statics = s0 } where
+---------- s0 = ----------
+VSharp.CSharpUtils.Tests.Conditional ==> STRUCT VSharp.CSharpUtils.Tests.Conditional[]
+METHOD: System.Int32 VSharp.CSharpUtils.Tests.Conditional.FirstEvenGreaterThen7()
+RESULT: 8
+HEAP:
+{ heap = <empty>, statics = s0 } where
+---------- s0 = ----------
+VSharp.CSharpUtils.Tests.Conditional ==> STRUCT VSharp.CSharpUtils.Tests.Conditional[]
+METHOD: System.Boolean VSharp.CSharpUtils.Tests.Conditional.TestSwitch(System.Char)
+>>>>>>> origin/mergeWithRead
 RESULT: UNION[
 	| !(0 == this.VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess.<SecretProperty>k__BackingField) ~> this.VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess.<SecretProperty>k__BackingField.System.Collections.Generic.List`1._size
 	| 0 == this.VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess.<SecretProperty>k__BackingField ~> <ERROR: (HeapRef 2)>]
 HEAP:
 { heap = h0, statics = s1 } where
 ---------- h0 = ----------
+<<<<<<< HEAD
 1 ==> [| ... UNION[
 	| !hasKey#1 ~> 0] ... |]
 2 ==> STRUCT System.NullReferenceException[
@@ -6429,6 +7187,321 @@ HEAP:
 		| !hasKey#7 & 0 == this.VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess.<SecretProperty>k__BackingField ~> 37]]
 this ==> STRUCT VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess[]
 this.VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess.<SecretProperty>k__BackingField ==> STRUCT System.Collections.Generic.List`1[System.Boolean][]
+=======
+1 ==> STRUCT System.ArgumentException[
+	| System.ArgumentException.m_paramName ~> null
+	| System.Exception._HResult ~> -2147024809
+	| System.Exception._className ~> null
+	| System.Exception._data ~> null
+	| System.Exception._dynamicMethods ~> null
+	| System.Exception._helpURL ~> null
+	| System.Exception._innerException ~> null
+	| System.Exception._message ~> (HeapRef 2)
+	| System.Exception._remoteStackIndex ~> 0
+	| System.Exception._remoteStackTraceString ~> null
+	| System.Exception._safeSerializationManager ~> (HeapRef 4)
+	| System.Exception._source ~> null
+	| System.Exception._stackTrace ~> null
+	| System.Exception._stackTraceString ~> null
+	| System.Exception.captured_traces ~> null
+	| System.Exception.native_trace_ips ~> null]
+2 ==> STRUCT System.String[
+	| System.String.m_FirstChar ~> [|
+		0: 'H';
+		10: ' ';
+		11: 'n';
+		12: 'u';
+		13: 'm';
+		14: 'b';
+		15: 'e';
+		16: 'r';
+		17: '!';
+		18: '\000';
+		1: 'e';
+		2: 'y';
+		3: '!';
+		4: ' ';
+		5: 'G';
+		6: 'i';
+		7: 'm';
+		8: 'm';
+		9: 'e';
+		 ... 19 ... |]
+	| System.String.m_StringLength ~> 18]
+3 ==> STRUCT System.Object[]
+4 ==> STRUCT System.Runtime.Serialization.SafeSerializationManager[
+	| System.Runtime.Serialization.SafeSerializationManager.m_realObject ~> null
+	| System.Runtime.Serialization.SafeSerializationManager.m_realType ~> null
+	| System.Runtime.Serialization.SafeSerializationManager.m_savedSerializationInfo ~> null
+	| System.Runtime.Serialization.SafeSerializationManager.m_serializedStates ~> null]
+5 ==> STRUCT System.String[
+	| System.String.m_FirstChar ~> [|
+		0: 'C';
+		10: 'r';
+		11: 'i';
+		12: 'a';
+		13: 'l';
+		14: 'i';
+		15: 'z';
+		16: 'a';
+		17: 't';
+		18: 'i';
+		19: 'o';
+		1: 'L';
+		20: 'n';
+		21: 'M';
+		22: 'a';
+		23: 'n';
+		24: 'a';
+		25: 'g';
+		26: 'e';
+		27: 'r';
+		28: '_';
+		29: 'R';
+		2: 'R';
+		30: 'e';
+		31: 'a';
+		32: 'l';
+		33: 'T';
+		34: 'y';
+		35: 'p';
+		36: 'e';
+		37: '\000';
+		3: '_';
+		4: 'S';
+		5: 'a';
+		6: 'f';
+		7: 'e';
+		8: 'S';
+		9: 'e';
+		 ... 38 ... |]
+	| System.String.m_StringLength ~> 37]
+---------- s1 = ----------
+System.ArgumentException ==> STRUCT System.ArgumentException[]
+System.Exception ==> STRUCT System.Exception[
+	| System.Exception._COMPlusExceptionCode ~> UNION[
+		| !('A' == c) & !('B' == c) & !('C' == c) & !('D' == c) & !('R' == c) & !hasKey#3 & 'T' == c ~> -532462766
+		| !('T' == c) | 'A' == c | 'B' == c | 'C' == c | 'D' == c | 'R' == c | hasKey#3 ~> System.Exception._COMPlusExceptionCode]
+	| System.Exception.s_EDILock ~> UNION[
+		| !('A' == c) & !('B' == c) & !('C' == c) & !('D' == c) & !('R' == c) & !hasKey#3 & 'T' == c ~> (HeapRef 3)
+		| !('T' == c) | 'A' == c | 'B' == c | 'C' == c | 'D' == c | 'R' == c | hasKey#3 ~> (HeapRef System.Exception.s_EDILock)]]
+System.Object ==> STRUCT System.Object[]
+System.Runtime.Serialization.SafeSerializationManager ==> STRUCT System.Runtime.Serialization.SafeSerializationManager[
+	| System.Runtime.Serialization.SafeSerializationManager.RealTypeSerializationName ~> UNION[
+		| !('A' == c) & !('B' == c) & !('C' == c) & !('D' == c) & !('R' == c) & !hasKey#5 & 'T' == c ~> (HeapRef 5)
+		| !('T' == c) | 'A' == c | 'B' == c | 'C' == c | 'D' == c | 'R' == c | hasKey#5 ~> (HeapRef System.Runtime.Serialization.SafeSerializationManager.RealTypeSerializationName)]]
+System.SystemException ==> STRUCT System.SystemException[]
+VSharp.CSharpUtils.Tests.Conditional ==> STRUCT VSharp.CSharpUtils.Tests.Conditional[]
+METHOD: System.Int32 VSharp.CSharpUtils.Tests.Conditional.ExceptionInCondition1(VSharp.CSharpUtils.Tests.Conditional+NewBool)
+RESULT: UNION[
+	| !(0 == nb) & !nb.VSharp.CSharpUtils.Tests.Conditional+NewBool.BoolValue ~> 56
+	| !(0 == nb) & nb.VSharp.CSharpUtils.Tests.Conditional+NewBool.BoolValue ~> 42
+	| 0 == nb ~> <ERROR: (HeapRef 1)>]
+HEAP:
+{ heap = h0, statics = s1 } where
+---------- h0 = ----------
+1 ==> STRUCT System.NullReferenceException[
+	| System.Exception._HResult ~> -2147467261
+	| System.Exception._className ~> null
+	| System.Exception._data ~> null
+	| System.Exception._dynamicMethods ~> null
+	| System.Exception._helpURL ~> null
+	| System.Exception._innerException ~> null
+	| System.Exception._message ~> (HeapRef 2)
+	| System.Exception._remoteStackIndex ~> 0
+	| System.Exception._remoteStackTraceString ~> null
+	| System.Exception._safeSerializationManager ~> (HeapRef 4)
+	| System.Exception._source ~> null
+	| System.Exception._stackTrace ~> null
+	| System.Exception._stackTraceString ~> null
+	| System.Exception.captured_traces ~> null
+	| System.Exception.native_trace_ips ~> null]
+2 ==> STRUCT System.String[
+	| System.String.m_FirstChar ~> [|
+		0: 'O';
+		10: 'e';
+		11: 'r';
+		12: 'e';
+		13: 'n';
+		14: 'c';
+		15: 'e';
+		16: ' ';
+		17: 'n';
+		18: 'o';
+		19: 't';
+		1: 'b';
+		20: ' ';
+		21: 's';
+		22: 'e';
+		23: 't';
+		24: ' ';
+		25: 't';
+		26: 'o';
+		27: ' ';
+		28: 'a';
+		29: 'n';
+		2: 'j';
+		30: ' ';
+		31: 'i';
+		32: 'n';
+		33: 's';
+		34: 't';
+		35: 'a';
+		36: 'n';
+		37: 'c';
+		38: 'e';
+		39: ' ';
+		3: 'e';
+		40: 'o';
+		41: 'f';
+		42: ' ';
+		43: 'a';
+		44: 'n';
+		45: ' ';
+		46: 'o';
+		47: 'b';
+		48: 'j';
+		49: 'e';
+		4: 'c';
+		50: 'c';
+		51: 't';
+		52: '.';
+		53: '\000';
+		5: 't';
+		6: ' ';
+		7: 'r';
+		8: 'e';
+		9: 'f';
+		 ... 54 ... |]
+	| System.String.m_StringLength ~> 53]
+3 ==> STRUCT System.Object[]
+4 ==> STRUCT System.Runtime.Serialization.SafeSerializationManager[
+	| System.Runtime.Serialization.SafeSerializationManager.m_realObject ~> null
+	| System.Runtime.Serialization.SafeSerializationManager.m_realType ~> null
+	| System.Runtime.Serialization.SafeSerializationManager.m_savedSerializationInfo ~> null
+	| System.Runtime.Serialization.SafeSerializationManager.m_serializedStates ~> null]
+5 ==> STRUCT System.String[
+	| System.String.m_FirstChar ~> [|
+		0: 'C';
+		10: 'r';
+		11: 'i';
+		12: 'a';
+		13: 'l';
+		14: 'i';
+		15: 'z';
+		16: 'a';
+		17: 't';
+		18: 'i';
+		19: 'o';
+		1: 'L';
+		20: 'n';
+		21: 'M';
+		22: 'a';
+		23: 'n';
+		24: 'a';
+		25: 'g';
+		26: 'e';
+		27: 'r';
+		28: '_';
+		29: 'R';
+		2: 'R';
+		30: 'e';
+		31: 'a';
+		32: 'l';
+		33: 'T';
+		34: 'y';
+		35: 'p';
+		36: 'e';
+		37: '\000';
+		3: '_';
+		4: 'S';
+		5: 'a';
+		6: 'f';
+		7: 'e';
+		8: 'S';
+		9: 'e';
+		 ... 38 ... |]
+	| System.String.m_StringLength ~> 37]
+6 ==> STRUCT System.NullReferenceException[
+	| System.Exception._HResult ~> -2147467261
+	| System.Exception._className ~> null
+	| System.Exception._data ~> null
+	| System.Exception._dynamicMethods ~> null
+	| System.Exception._helpURL ~> null
+	| System.Exception._innerException ~> null
+	| System.Exception._message ~> (HeapRef 7)
+	| System.Exception._remoteStackIndex ~> 0
+	| System.Exception._remoteStackTraceString ~> null
+	| System.Exception._safeSerializationManager ~> (HeapRef 8)
+	| System.Exception._source ~> null
+	| System.Exception._stackTrace ~> null
+	| System.Exception._stackTraceString ~> null
+	| System.Exception.captured_traces ~> null
+	| System.Exception.native_trace_ips ~> null]
+7 ==> STRUCT System.String[
+	| System.String.m_FirstChar ~> [|
+		0: 'O';
+		10: 'e';
+		11: 'r';
+		12: 'e';
+		13: 'n';
+		14: 'c';
+		15: 'e';
+		16: ' ';
+		17: 'n';
+		18: 'o';
+		19: 't';
+		1: 'b';
+		20: ' ';
+		21: 's';
+		22: 'e';
+		23: 't';
+		24: ' ';
+		25: 't';
+		26: 'o';
+		27: ' ';
+		28: 'a';
+		29: 'n';
+		2: 'j';
+		30: ' ';
+		31: 'i';
+		32: 'n';
+		33: 's';
+		34: 't';
+		35: 'a';
+		36: 'n';
+		37: 'c';
+		38: 'e';
+		39: ' ';
+		3: 'e';
+		40: 'o';
+		41: 'f';
+		42: ' ';
+		43: 'a';
+		44: 'n';
+		45: ' ';
+		46: 'o';
+		47: 'b';
+		48: 'j';
+		49: 'e';
+		4: 'c';
+		50: 'c';
+		51: 't';
+		52: '.';
+		53: '\000';
+		5: 't';
+		6: ' ';
+		7: 'r';
+		8: 'e';
+		9: 'f';
+		 ... 54 ... |]
+	| System.String.m_StringLength ~> 53]
+8 ==> STRUCT System.Runtime.Serialization.SafeSerializationManager[
+	| System.Runtime.Serialization.SafeSerializationManager.m_realObject ~> null
+	| System.Runtime.Serialization.SafeSerializationManager.m_realType ~> null
+	| System.Runtime.Serialization.SafeSerializationManager.m_savedSerializationInfo ~> null
+	| System.Runtime.Serialization.SafeSerializationManager.m_serializedStates ~> null]
+>>>>>>> origin/mergeWithRead
 ---------- s1 = ----------
 System.Collections.Generic.List`1 ==> STRUCT System.Collections.Generic.List`1[System.Boolean][
 	| System.Collections.Generic.List`1._defaultCapacity ~> UNION[
@@ -6439,6 +7512,7 @@ System.Collections.Generic.List`1 ==> STRUCT System.Collections.Generic.List`1[S
 		| hasKey#1 ~> (HeapRef System.Collections.Generic.List`1._emptyArray)]]
 System.Environment ==> STRUCT System.Environment[
 	| System.Environment.<Platform>k__BackingField ~> UNION[
+<<<<<<< HEAD
 		| !(0 == this.VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess.<SecretProperty>k__BackingField) | hasKey#3 ~> System.Environment.<Platform>k__BackingField
 		| !hasKey#3 & 0 == this.VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess.<SecretProperty>k__BackingField ~> Win32S]
 	| System.Environment.mono_corlib_version ~> UNION[
@@ -6457,12 +7531,37 @@ System.Exception ==> STRUCT System.Exception[
 	| System.Exception.s_EDILock ~> UNION[
 		| !(0 == this.VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess.<SecretProperty>k__BackingField) | hasKey#5 ~> (HeapRef System.Exception.s_EDILock)
 		| !hasKey#5 & 0 == this.VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess.<SecretProperty>k__BackingField ~> (HeapRef 4)]]
+=======
+		| !(0 == nb) | hasKey#3 ~> System.Environment.<Platform>k__BackingField
+		| !hasKey#3 & 0 == nb ~> Win32S]
+	| System.Environment.mono_corlib_version ~> UNION[
+		| !(0 == nb) | hasKey#3 ~> System.Environment.mono_corlib_version
+		| !hasKey#3 & 0 == nb ~> 1051600014]
+	| System.Environment.nl ~> UNION[
+		| !(0 == nb) | hasKey#3 ~> (HeapRef System.Environment.nl)
+		| !hasKey#3 & 0 == nb ~> null]
+	| System.Environment.os ~> UNION[
+		| !(0 == nb) | hasKey#3 ~> (HeapRef System.Environment.os)
+		| !hasKey#3 & 0 == nb ~> null]]
+System.Exception ==> STRUCT System.Exception[
+	| System.Exception._COMPlusExceptionCode ~> UNION[
+		| !(0 == nb) | hasKey#5 ~> System.Exception._COMPlusExceptionCode
+		| !hasKey#5 & 0 == nb ~> -532462766]
+	| System.Exception.s_EDILock ~> UNION[
+		| !(0 == nb) | hasKey#5 ~> (HeapRef System.Exception.s_EDILock)
+		| !hasKey#5 & 0 == nb ~> (HeapRef 3)]]
+>>>>>>> origin/mergeWithRead
 System.NullReferenceException ==> STRUCT System.NullReferenceException[]
 System.Object ==> STRUCT System.Object[]
 System.Runtime.Serialization.SafeSerializationManager ==> STRUCT System.Runtime.Serialization.SafeSerializationManager[
 	| System.Runtime.Serialization.SafeSerializationManager.RealTypeSerializationName ~> UNION[
+<<<<<<< HEAD
 		| !(0 == this.VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess.<SecretProperty>k__BackingField) | hasKey#7 ~> (HeapRef System.Runtime.Serialization.SafeSerializationManager.RealTypeSerializationName)
 		| !hasKey#7 & 0 == this.VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess.<SecretProperty>k__BackingField ~> (HeapRef 6)]]
+=======
+		| !(0 == nb) | hasKey#7 ~> (HeapRef System.Runtime.Serialization.SafeSerializationManager.RealTypeSerializationName)
+		| !hasKey#7 & 0 == nb ~> (HeapRef 5)]]
+>>>>>>> origin/mergeWithRead
 System.SystemException ==> STRUCT System.SystemException[]
 VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess ==> STRUCT VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess[]
 METHOD: System.Void VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess.TestProperty1()
@@ -6470,6 +7569,7 @@ RESULT: <VOID>
 HEAP:
 { heap = h0, statics = s1 } where
 ---------- h0 = ----------
+<<<<<<< HEAD
 1 ==> STRUCT VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess[
 	| VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess.<SecretProperty>k__BackingField ~> (HeapRef 2)
 	| VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess._structProperty ~> STRUCT VSharp.CSharpUtils.Tests.ClassesSimplePropertyAccess+SimpleStruct[
@@ -6783,6 +7883,236 @@ System.Runtime.Serialization.SafeSerializationManager ==> STRUCT System.Runtime.
 	| System.Runtime.Serialization.SafeSerializationManager.RealTypeSerializationName ~> UNION[
 		| !('A' == c) & !('B' == c) & !('C' == c) & !('D' == c) & !('R' == c) & !hasKey#5 & 'T' == c & (!('A' == c) & !('B' == c) & !('C' == c) & !('D' == c) & 'R' == c | !('A' == c) & !('B' == c) & !('C' == c) & !('D' == c) & 'T' == c | (!('R' == c) | 'A' == c | 'B' == c | 'C' == c | 'D' == c) & (!('T' == c) | 'A' == c | 'B' == c | 'C' == c | 'D' == c)) ~> (HeapRef 5)
 		| (!('A' == c) & !('B' == c) & !('C' == c) & !('D' == c) & 'R' == c | !('A' == c) & !('B' == c) & !('C' == c) & !('D' == c) & 'T' == c | (!('R' == c) | 'A' == c | 'B' == c | 'C' == c | 'D' == c) & (!('T' == c) | 'A' == c | 'B' == c | 'C' == c | 'D' == c)) & (!('T' == c) | 'A' == c | 'B' == c | 'C' == c | 'D' == c | 'R' == c | hasKey#5) ~> (HeapRef System.Runtime.Serialization.SafeSerializationManager.RealTypeSerializationName)]]
+=======
+1 ==> STRUCT System.NullReferenceException[
+	| System.Exception._HResult ~> -2147467261
+	| System.Exception._className ~> null
+	| System.Exception._data ~> null
+	| System.Exception._dynamicMethods ~> null
+	| System.Exception._helpURL ~> null
+	| System.Exception._innerException ~> null
+	| System.Exception._message ~> (HeapRef 2)
+	| System.Exception._remoteStackIndex ~> 0
+	| System.Exception._remoteStackTraceString ~> null
+	| System.Exception._safeSerializationManager ~> (HeapRef 4)
+	| System.Exception._source ~> null
+	| System.Exception._stackTrace ~> null
+	| System.Exception._stackTraceString ~> null
+	| System.Exception.captured_traces ~> null
+	| System.Exception.native_trace_ips ~> null]
+2 ==> STRUCT System.String[
+	| System.String.m_FirstChar ~> [|
+		0: 'O';
+		10: 'e';
+		11: 'r';
+		12: 'e';
+		13: 'n';
+		14: 'c';
+		15: 'e';
+		16: ' ';
+		17: 'n';
+		18: 'o';
+		19: 't';
+		1: 'b';
+		20: ' ';
+		21: 's';
+		22: 'e';
+		23: 't';
+		24: ' ';
+		25: 't';
+		26: 'o';
+		27: ' ';
+		28: 'a';
+		29: 'n';
+		2: 'j';
+		30: ' ';
+		31: 'i';
+		32: 'n';
+		33: 's';
+		34: 't';
+		35: 'a';
+		36: 'n';
+		37: 'c';
+		38: 'e';
+		39: ' ';
+		3: 'e';
+		40: 'o';
+		41: 'f';
+		42: ' ';
+		43: 'a';
+		44: 'n';
+		45: ' ';
+		46: 'o';
+		47: 'b';
+		48: 'j';
+		49: 'e';
+		4: 'c';
+		50: 'c';
+		51: 't';
+		52: '.';
+		53: '\000';
+		5: 't';
+		6: ' ';
+		7: 'r';
+		8: 'e';
+		9: 'f';
+		 ... 54 ... |]
+	| System.String.m_StringLength ~> 53]
+3 ==> STRUCT System.Object[]
+4 ==> STRUCT System.Runtime.Serialization.SafeSerializationManager[
+	| System.Runtime.Serialization.SafeSerializationManager.m_realObject ~> null
+	| System.Runtime.Serialization.SafeSerializationManager.m_realType ~> null
+	| System.Runtime.Serialization.SafeSerializationManager.m_savedSerializationInfo ~> null
+	| System.Runtime.Serialization.SafeSerializationManager.m_serializedStates ~> null]
+5 ==> STRUCT System.String[
+	| System.String.m_FirstChar ~> [|
+		0: 'C';
+		10: 'r';
+		11: 'i';
+		12: 'a';
+		13: 'l';
+		14: 'i';
+		15: 'z';
+		16: 'a';
+		17: 't';
+		18: 'i';
+		19: 'o';
+		1: 'L';
+		20: 'n';
+		21: 'M';
+		22: 'a';
+		23: 'n';
+		24: 'a';
+		25: 'g';
+		26: 'e';
+		27: 'r';
+		28: '_';
+		29: 'R';
+		2: 'R';
+		30: 'e';
+		31: 'a';
+		32: 'l';
+		33: 'T';
+		34: 'y';
+		35: 'p';
+		36: 'e';
+		37: '\000';
+		3: '_';
+		4: 'S';
+		5: 'a';
+		6: 'f';
+		7: 'e';
+		8: 'S';
+		9: 'e';
+		 ... 38 ... |]
+	| System.String.m_StringLength ~> 37]
+6 ==> STRUCT System.NullReferenceException[
+	| System.Exception._HResult ~> -2147467261
+	| System.Exception._className ~> null
+	| System.Exception._data ~> null
+	| System.Exception._dynamicMethods ~> null
+	| System.Exception._helpURL ~> null
+	| System.Exception._innerException ~> null
+	| System.Exception._message ~> (HeapRef 7)
+	| System.Exception._remoteStackIndex ~> 0
+	| System.Exception._remoteStackTraceString ~> null
+	| System.Exception._safeSerializationManager ~> (HeapRef 8)
+	| System.Exception._source ~> null
+	| System.Exception._stackTrace ~> null
+	| System.Exception._stackTraceString ~> null
+	| System.Exception.captured_traces ~> null
+	| System.Exception.native_trace_ips ~> null]
+7 ==> STRUCT System.String[
+	| System.String.m_FirstChar ~> [|
+		0: 'O';
+		10: 'e';
+		11: 'r';
+		12: 'e';
+		13: 'n';
+		14: 'c';
+		15: 'e';
+		16: ' ';
+		17: 'n';
+		18: 'o';
+		19: 't';
+		1: 'b';
+		20: ' ';
+		21: 's';
+		22: 'e';
+		23: 't';
+		24: ' ';
+		25: 't';
+		26: 'o';
+		27: ' ';
+		28: 'a';
+		29: 'n';
+		2: 'j';
+		30: ' ';
+		31: 'i';
+		32: 'n';
+		33: 's';
+		34: 't';
+		35: 'a';
+		36: 'n';
+		37: 'c';
+		38: 'e';
+		39: ' ';
+		3: 'e';
+		40: 'o';
+		41: 'f';
+		42: ' ';
+		43: 'a';
+		44: 'n';
+		45: ' ';
+		46: 'o';
+		47: 'b';
+		48: 'j';
+		49: 'e';
+		4: 'c';
+		50: 'c';
+		51: 't';
+		52: '.';
+		53: '\000';
+		5: 't';
+		6: ' ';
+		7: 'r';
+		8: 'e';
+		9: 'f';
+		 ... 54 ... |]
+	| System.String.m_StringLength ~> 53]
+8 ==> STRUCT System.Runtime.Serialization.SafeSerializationManager[
+	| System.Runtime.Serialization.SafeSerializationManager.m_realObject ~> null
+	| System.Runtime.Serialization.SafeSerializationManager.m_realType ~> null
+	| System.Runtime.Serialization.SafeSerializationManager.m_savedSerializationInfo ~> null
+	| System.Runtime.Serialization.SafeSerializationManager.m_serializedStates ~> null]
+---------- s1 = ----------
+System.Environment ==> STRUCT System.Environment[
+	| System.Environment.<Platform>k__BackingField ~> UNION[
+		| !(0 == nb) | hasKey#3 ~> System.Environment.<Platform>k__BackingField
+		| !hasKey#3 & 0 == nb ~> Win32S]
+	| System.Environment.mono_corlib_version ~> UNION[
+		| !(0 == nb) | hasKey#3 ~> System.Environment.mono_corlib_version
+		| !hasKey#3 & 0 == nb ~> 1051600014]
+	| System.Environment.nl ~> UNION[
+		| !(0 == nb) | hasKey#3 ~> (HeapRef System.Environment.nl)
+		| !hasKey#3 & 0 == nb ~> null]
+	| System.Environment.os ~> UNION[
+		| !(0 == nb) | hasKey#3 ~> (HeapRef System.Environment.os)
+		| !hasKey#3 & 0 == nb ~> null]]
+System.Exception ==> STRUCT System.Exception[
+	| System.Exception._COMPlusExceptionCode ~> UNION[
+		| !(0 == nb) | hasKey#5 ~> System.Exception._COMPlusExceptionCode
+		| !hasKey#5 & 0 == nb ~> -532462766]
+	| System.Exception.s_EDILock ~> UNION[
+		| !(0 == nb) | hasKey#5 ~> (HeapRef System.Exception.s_EDILock)
+		| !hasKey#5 & 0 == nb ~> (HeapRef 3)]]
+System.NullReferenceException ==> STRUCT System.NullReferenceException[]
+System.Object ==> STRUCT System.Object[]
+System.Runtime.Serialization.SafeSerializationManager ==> STRUCT System.Runtime.Serialization.SafeSerializationManager[
+	| System.Runtime.Serialization.SafeSerializationManager.RealTypeSerializationName ~> UNION[
+		| !(0 == nb) | hasKey#7 ~> (HeapRef System.Runtime.Serialization.SafeSerializationManager.RealTypeSerializationName)
+		| !hasKey#7 & 0 == nb ~> (HeapRef 5)]]
+>>>>>>> origin/mergeWithRead
 System.SystemException ==> STRUCT System.SystemException[]
 VSharp.CSharpUtils.Tests.Conditional ==> STRUCT VSharp.CSharpUtils.Tests.Conditional[]
 METHOD: System.Int32 VSharp.CSharpUtils.Tests.Conditional.ExceptionInCondition1(VSharp.CSharpUtils.Tests.Conditional+NewBool)
@@ -7113,6 +8443,7 @@ nb ==> STRUCT TypeVariable1{VSharp.CSharpUtils.Tests.Conditional+NewBool}[]
 ---------- s1 = ----------
 System.Environment ==> STRUCT System.Environment[
 	| System.Environment.<Platform>k__BackingField ~> UNION[
+<<<<<<< HEAD
 		| !(0 == nb) | hasKey#3 ~> System.Environment.<Platform>k__BackingField
 		| !hasKey#3 & 0 == nb ~> Win32S]
 	| System.Environment.mono_corlib_version ~> UNION[
@@ -7131,11 +8462,38 @@ System.Exception ==> STRUCT System.Exception[
 	| System.Exception.s_EDILock ~> UNION[
 		| !(0 == nb) | hasKey#5 ~> (HeapRef System.Exception.s_EDILock)
 		| !hasKey#5 & 0 == nb ~> (HeapRef 3)]]
+=======
+		| !(0 == nb) & !hasKey#9 | !hasKey#3 & 0 == nb ~> Win32S
+		| !(0 == nb) & hasKey#9 | 0 == nb & hasKey#3 ~> System.Environment.<Platform>k__BackingField]
+	| System.Environment.mono_corlib_version ~> UNION[
+		| !(0 == nb) & !hasKey#9 | !hasKey#3 & 0 == nb ~> 1051600014
+		| !(0 == nb) & hasKey#9 | 0 == nb & hasKey#3 ~> System.Environment.mono_corlib_version]
+	| System.Environment.nl ~> UNION[
+		| !(0 == nb) & !hasKey#9 | !hasKey#3 & 0 == nb ~> null
+		| !(0 == nb) & hasKey#9 | 0 == nb & hasKey#3 ~> (HeapRef System.Environment.nl)]
+	| System.Environment.os ~> UNION[
+		| !(0 == nb) & !hasKey#9 | !hasKey#3 & 0 == nb ~> null
+		| !(0 == nb) & hasKey#9 | 0 == nb & hasKey#3 ~> (HeapRef System.Environment.os)]]
+System.Exception ==> STRUCT System.Exception[
+	| System.Exception._COMPlusExceptionCode ~> UNION[
+		| !(0 == nb) & !hasKey#11 | !hasKey#5 & 0 == nb ~> -532462766
+		| !(0 == nb) & hasKey#11 | 0 == nb & hasKey#5 ~> System.Exception._COMPlusExceptionCode]
+	| System.Exception.s_EDILock ~> UNION[
+		| !(0 == nb) & !hasKey#11 ~> (HeapRef 8)
+		| !(0 == nb) & hasKey#11 | 0 == nb & hasKey#5 ~> (HeapRef System.Exception.s_EDILock)
+		| !hasKey#5 & 0 == nb ~> (HeapRef 3)]]
+System.NotImplementedException ==> STRUCT System.NotImplementedException[]
+>>>>>>> origin/mergeWithRead
 System.NullReferenceException ==> STRUCT System.NullReferenceException[]
 System.Object ==> STRUCT System.Object[]
 System.Runtime.Serialization.SafeSerializationManager ==> STRUCT System.Runtime.Serialization.SafeSerializationManager[
 	| System.Runtime.Serialization.SafeSerializationManager.RealTypeSerializationName ~> UNION[
+<<<<<<< HEAD
 		| !(0 == nb) | hasKey#7 ~> (HeapRef System.Runtime.Serialization.SafeSerializationManager.RealTypeSerializationName)
+=======
+		| !(0 == nb) & !hasKey#13 ~> (HeapRef 10)
+		| !(0 == nb) & hasKey#13 | 0 == nb & hasKey#7 ~> (HeapRef System.Runtime.Serialization.SafeSerializationManager.RealTypeSerializationName)
+>>>>>>> origin/mergeWithRead
 		| !hasKey#7 & 0 == nb ~> (HeapRef 5)]]
 System.SystemException ==> STRUCT System.SystemException[]
 VSharp.CSharpUtils.Tests.Conditional+NewBool ==> STRUCT VSharp.CSharpUtils.Tests.Conditional+NewBool[]
@@ -8084,7 +9442,7 @@ RESULT: 18
 HEAP:
 { heap = h0, statics = s1 } where
 ---------- h0 = ----------
-1 ==> <Lambda Expression System.Int32 -> TypeVariable1{<nullType>}>
+1 ==> <Lambda Expression System.Int32 -> System.Object>
 ---------- s1 = ----------
 VSharp.CSharpUtils.Tests.Lambdas ==> STRUCT VSharp.CSharpUtils.Tests.Lambdas[]
 METHOD: System.Boolean VSharp.CSharpUtils.Tests.Lambdas.DoubleValue(System.Int32, System.Boolean)
@@ -8092,10 +9450,15 @@ RESULT: True
 HEAP:
 { heap = h0, statics = s1 } where
 ---------- h0 = ----------
+<<<<<<< HEAD
 1 ==> UNION[
 	| !flag ~> <Lambda Expression System.Int32 -> TypeVariable1{<nullType>}>]
 2 ==> UNION[
 	| flag ~> <Lambda Expression System.Int32 -> TypeVariable2{<nullType>}>]
+=======
+1 ==> <Lambda Expression System.Int32 -> System.Object>
+2 ==> <Lambda Expression System.Int32 -> System.Object>
+>>>>>>> origin/mergeWithRead
 ---------- s1 = ----------
 VSharp.CSharpUtils.Tests.Lambdas ==> STRUCT VSharp.CSharpUtils.Tests.Lambdas[]
 METHOD: System.String VSharp.CSharpUtils.Tests.Strings.EmptyString(System.Int32, System.Int32)
@@ -8109,6 +9472,7 @@ System.String ==> STRUCT System.String[
 	| System.String.Empty ~> UNION[
 		| !hasKey#1 ~> null
 		| hasKey#1 ~> (HeapRef System.String.Empty)]
+<<<<<<< HEAD
 	| System.String.TrimBoth ~> UNION[
 		| !hasKey#1 ~> 2
 		| hasKey#1 ~> System.String.TrimBoth]
@@ -8124,6 +9488,20 @@ System.String ==> STRUCT System.String[
 	| System.String.charPtrAlignConst ~> UNION[
 		| !hasKey#1 ~> 1
 		| hasKey#1 ~> System.String.charPtrAlignConst]]
+=======
+	| System.String.PROBABILISTICMAP_BLOCK_INDEX_MASK ~> UNION[
+		| !hasKey#1 ~> 7
+		| hasKey#1 ~> System.String.PROBABILISTICMAP_BLOCK_INDEX_MASK]
+	| System.String.PROBABILISTICMAP_BLOCK_INDEX_SHIFT ~> UNION[
+		| !hasKey#1 ~> 3
+		| hasKey#1 ~> System.String.PROBABILISTICMAP_BLOCK_INDEX_SHIFT]
+	| System.String.PROBABILISTICMAP_SIZE ~> UNION[
+		| !hasKey#1 ~> 8
+		| hasKey#1 ~> System.String.PROBABILISTICMAP_SIZE]
+	| System.String.StackallocIntBufferSizeLimit ~> UNION[
+		| !hasKey#1 ~> 128
+		| hasKey#1 ~> System.String.StackallocIntBufferSizeLimit]]
+>>>>>>> origin/mergeWithRead
 VSharp.CSharpUtils.Tests.Strings ==> STRUCT VSharp.CSharpUtils.Tests.Strings[]
 METHOD: System.Boolean VSharp.CSharpUtils.Tests.Lists.Construct()
 RESULT: True
@@ -8152,6 +9530,7 @@ HEAP:
 	 ... 4 ... |]
 ---------- s1 = ----------
 System.Array ==> STRUCT System.Array[]
+<<<<<<< HEAD
 System.Collections.Generic.List`1 ==> STRUCT System.Collections.Generic.List`1[System.Int32][
 	| System.Collections.Generic.List`1._defaultCapacity ~> UNION[
 		| !hasKey#1 ~> 4
@@ -8159,6 +9538,15 @@ System.Collections.Generic.List`1 ==> STRUCT System.Collections.Generic.List`1[S
 	| System.Collections.Generic.List`1._emptyArray ~> UNION[
 		| !hasKey#1 ~> (HeapRef 2)
 		| hasKey#1 ~> (HeapRef System.Collections.Generic.List`1._emptyArray)]]
+=======
+System.Collections.Generic.List`1[System.Int32] ==> STRUCT System.Collections.Generic.List`1[System.Int32][
+	| System.Collections.Generic.List`1.DefaultCapacity ~> UNION[
+		| !hasKey#1 ~> 4
+		| hasKey#1 ~> System.Collections.Generic.List`1.DefaultCapacity]
+	| System.Collections.Generic.List`1.s_emptyArray ~> UNION[
+		| !hasKey#1 ~> (HeapRef 2)
+		| hasKey#1 ~> (HeapRef System.Collections.Generic.List`1.s_emptyArray)]]
+>>>>>>> origin/mergeWithRead
 System.Object ==> STRUCT System.Object[]
 VSharp.CSharpUtils.Tests.Lists ==> STRUCT VSharp.CSharpUtils.Tests.Lists[]
 METHOD: System.Int32[] VSharp.CSharpUtils.Tests.Lists.Mutate(System.Int32)
@@ -8186,7 +9574,12 @@ HEAP:
 		| !(i < 0) & 4 == i & i < 5 ~> 10];
 	i: UNION[
 		| !(0 == i) & !(1 == i) & !(2 == i) & !(3 == i) & !(4 == i) & !(i < 0) & i < 5 ~> 10
-		| !(i < 0) & (0 == i | 1 == i | 2 == i | 3 == i | 4 == i) & i < 5 ~> 0];
+		| !(0 == i) & !(1 == i) & !(2 == i) & !(3 == i) & !(4 == i) & (!(i < 5) | i < 0) | !(i < 0) & (0 == i | 1 == i | 2 == i | 3 == i | 4 == i) & i < 5 ~> 0
+		| (!(i < 5) | i < 0) & 0 == i ~> 1
+		| (!(i < 5) | i < 0) & 1 == i ~> 2
+		| (!(i < 5) | i < 0) & 2 == i ~> 3
+		| (!(i < 5) | i < 0) & 3 == i ~> 4
+		| (!(i < 5) | i < 0) & 4 == i ~> 5];
 	 ... 5 ... |]
 2 ==> STRUCT System.IndexOutOfRangeException[
 	| System.Exception._HResult ~> UNION[
@@ -8410,7 +9803,11 @@ System.Environment ==> STRUCT System.Environment[
 		| !hasKey#2 & (!(i < 5) | i < 0) ~> Win32S]
 	| System.Environment.mono_corlib_version ~> UNION[
 		| !(i < 0) & i < 5 | (!(i < 5) | i < 0) & hasKey#2 ~> System.Environment.mono_corlib_version
+<<<<<<< HEAD
 		| !hasKey#2 & (!(i < 5) | i < 0) ~> 1051200002]
+=======
+		| !hasKey#2 & (!(i < 5) | i < 0) ~> 1051600014]
+>>>>>>> origin/mergeWithRead
 	| System.Environment.nl ~> UNION[
 		| !(i < 0) & i < 5 | (!(i < 5) | i < 0) & hasKey#2 ~> (HeapRef System.Environment.nl)
 		| !hasKey#2 & (!(i < 5) | i < 0) ~> null]
@@ -8901,6 +10298,7 @@ HEAP:
 		| !(0 == array) ~> 42]]
 8 ==> STRUCT System.Object[]
 9 ==> STRUCT System.Runtime.Serialization.SafeSerializationManager[
+<<<<<<< HEAD
 	| System.Runtime.Serialization.SafeSerializationManager.m_realObject ~> UNION[
 		| !(0 == array) ~> null]
 	| System.Runtime.Serialization.SafeSerializationManager.m_realType ~> UNION[
@@ -8910,6 +10308,12 @@ HEAP:
 	| System.Runtime.Serialization.SafeSerializationManager.m_serializedStates ~> UNION[
 		| !(0 == array) ~> null]]
 array ==> System.Int32: [| ... System.Int32[,].0_Length x System.Int32[,].1_Length ... |]
+=======
+	| System.Runtime.Serialization.SafeSerializationManager.m_realObject ~> null
+	| System.Runtime.Serialization.SafeSerializationManager.m_realType ~> null
+	| System.Runtime.Serialization.SafeSerializationManager.m_savedSerializationInfo ~> null
+	| System.Runtime.Serialization.SafeSerializationManager.m_serializedStates ~> null]
+>>>>>>> origin/mergeWithRead
 ---------- s1 = ----------
 System.Array ==> STRUCT System.Array[]
 System.Environment ==> STRUCT System.Environment[
@@ -8917,7 +10321,11 @@ System.Environment ==> STRUCT System.Environment[
 		| !(0 == array) & !hasKey#9 | !hasKey#3 & 0 == array ~> Win32S
 		| !(0 == array) & hasKey#9 | 0 == array & hasKey#3 ~> System.Environment.<Platform>k__BackingField]
 	| System.Environment.mono_corlib_version ~> UNION[
+<<<<<<< HEAD
 		| !(0 == array) & !hasKey#9 | !hasKey#3 & 0 == array ~> 1051200002
+=======
+		| !(0 == array) & !hasKey#9 | !hasKey#3 & 0 == array ~> 1051600014
+>>>>>>> origin/mergeWithRead
 		| !(0 == array) & hasKey#9 | 0 == array & hasKey#3 ~> System.Environment.mono_corlib_version]
 	| System.Environment.nl ~> UNION[
 		| !(0 == array) & !hasKey#9 | !hasKey#3 & 0 == array ~> null
@@ -9397,6 +10805,7 @@ HEAP:
 		| !(0 == array) & (!(dimension < 2) | dimension < 0) ~> 42]]
 8 ==> STRUCT System.Object[]
 9 ==> STRUCT System.Runtime.Serialization.SafeSerializationManager[
+<<<<<<< HEAD
 	| System.Runtime.Serialization.SafeSerializationManager.m_realObject ~> UNION[
 		| !(0 == array) & (!(dimension < 2) | dimension < 0) ~> null]
 	| System.Runtime.Serialization.SafeSerializationManager.m_realType ~> UNION[
@@ -9406,6 +10815,12 @@ HEAP:
 	| System.Runtime.Serialization.SafeSerializationManager.m_serializedStates ~> UNION[
 		| !(0 == array) & (!(dimension < 2) | dimension < 0) ~> null]]
 array ==> System.Int32: [| ... System.Int32[,].0_Length x System.Int32[,].1_Length ... |]
+=======
+	| System.Runtime.Serialization.SafeSerializationManager.m_realObject ~> null
+	| System.Runtime.Serialization.SafeSerializationManager.m_realType ~> null
+	| System.Runtime.Serialization.SafeSerializationManager.m_savedSerializationInfo ~> null
+	| System.Runtime.Serialization.SafeSerializationManager.m_serializedStates ~> null]
+>>>>>>> origin/mergeWithRead
 ---------- s1 = ----------
 System.Array ==> STRUCT System.Array[]
 System.Environment ==> STRUCT System.Environment[
@@ -9413,7 +10828,11 @@ System.Environment ==> STRUCT System.Environment[
 		| !(0 == array) & !hasKey#9 & (!(dimension < 2) | dimension < 0) | !hasKey#3 & 0 == array ~> Win32S
 		| !(0 == array) & (!(dimension < 0) & dimension < 2 | (!(dimension < 2) | dimension < 0) & hasKey#9) | 0 == array & hasKey#3 ~> System.Environment.<Platform>k__BackingField]
 	| System.Environment.mono_corlib_version ~> UNION[
+<<<<<<< HEAD
 		| !(0 == array) & !hasKey#9 & (!(dimension < 2) | dimension < 0) | !hasKey#3 & 0 == array ~> 1051200002
+=======
+		| !(0 == array) & !hasKey#9 & (!(dimension < 2) | dimension < 0) | !hasKey#3 & 0 == array ~> 1051600014
+>>>>>>> origin/mergeWithRead
 		| !(0 == array) & (!(dimension < 0) & dimension < 2 | (!(dimension < 2) | dimension < 0) & hasKey#9) | 0 == array & hasKey#3 ~> System.Environment.mono_corlib_version]
 	| System.Environment.nl ~> UNION[
 		| !(0 == array) & !hasKey#9 & (!(dimension < 2) | dimension < 0) | !hasKey#3 & 0 == array ~> null
@@ -9482,6 +10901,7 @@ HEAP:
 ---------- h0 = ----------
 1 ==> [|
 	1: UNION[
+		| !flag1 & !flag2 ~> 0
 		| !flag1 & flag2 ~> 89
 		| flag1 ~> 42];
 	 ... 5 ... |]
@@ -9497,6 +10917,7 @@ RESULT: UNION[
 HEAP:
 { heap = h0, statics = s1 } where
 ---------- h0 = ----------
+<<<<<<< HEAD
 1 ==> [|
 	1: UNION[
 		| !(8 == n) & (!(1 < n) & 8 == n | !(7 < n) & 8 == n | (!(8 == n) | 1 < n) & (!(8 == n) | 7 < n)) & 1 < n & 4 < n & 5 == n | (!(1 < n) & 5 == n | !(4 < n) & 5 == n) & 1 < n & 4 < n & 5 == n ~> 42
@@ -9507,6 +10928,22 @@ HEAP:
 		| (!(1 < n) & 8 == n | !(7 < n) & 8 == n | (!(8 == n) | 1 < n) & (!(8 == n) | 7 < n)) & (!(5 == n) | 4 < n) & 1 < n & 7 < n & 8 == n ~> 66];
 	 ... UNION[
 	| !(1 < n) & 5 == n | !(4 < n) & 5 == n | (!(1 < n) & 8 == n | !(7 < n) & 8 == n | (!(8 == n) | 1 < n) & (!(8 == n) | 7 < n)) & (!(5 == n) | 1 < n) & (!(5 == n) | 4 < n) ~> n] ... |]
+=======
+1 ==> UNION[
+	| !(1 < n) & 5 == n | !(4 < n) & 5 == n | (!(5 == n) | 1 < n) & (!(5 == n) | 4 < n) ~> [|
+		1: UNION[
+			| !(8 == n) & 1 < n & 4 < n & 5 == n | (!(1 < n) & 5 == n | !(4 < n) & 5 == n) & 1 < n & 4 < n & 5 == n ~> 42
+			| (!(1 < n) & 5 == n | !(4 < n) & 5 == n) & (!(1 < n) | !(4 < n) | !(5 == n)) | (!(1 < n) & 8 == n | !(8 == n) & (!(1 < n) | !(4 < n) | !(5 == n))) & (!(5 == n) | 1 < n) & (!(5 == n) | 4 < n) ~> 0
+			| (!(5 == n) | 4 < n) & 1 < n & 8 == n ~> 89];
+		4: UNION[
+			| !(5 == n) | (!(1 < n) & 5 == n | !(4 < n) & 5 == n) & (!(4 < n) | !(5 == n)) ~> 0
+			| (!(1 < n) & 5 == n | !(4 < n) & 5 == n) & 4 < n & 5 == n | 1 < n & 4 < n & 5 == n ~> 99];
+		7: UNION[
+			| !(1 < n) & 5 == n | !(4 < n) & 5 == n | (!(1 < n) | !(7 < n) | !(8 == n)) & (!(5 == n) | 1 < n) & (!(5 == n) | 4 < n) ~> 0
+			| (!(5 == n) | 4 < n) & 1 < n & 7 < n & 8 == n ~> 66];
+		 ... UNION[
+	| !(1 < n) & 5 == n | !(4 < n) & 5 == n | (!(5 == n) | 1 < n) & (!(5 == n) | 4 < n) ~> n] ... |]]
+>>>>>>> origin/mergeWithRead
 10 ==> STRUCT System.IndexOutOfRangeException[
 	| System.Exception._HResult ~> UNION[
 		| !(1 < n) & !(5 == n) & (!(1 < n) & 8 == n | !(7 < n) & 8 == n | (!(8 == n) | 1 < n) & (!(8 == n) | 7 < n)) & 8 == n ~> -2146233080]
@@ -10121,6 +11558,7 @@ HEAP:
 ---------- s1 = ----------
 System.Environment ==> STRUCT System.Environment[
 	| System.Environment.<Platform>k__BackingField ~> UNION[
+<<<<<<< HEAD
 		| !(4 < n) & (!(1 < n) & 5 == n | !(4 < n) & 5 == n) & 5 == n ~> Win32S
 		| (!(1 < n) & 5 == n | !(4 < n) & 5 == n) & (!(5 == n) | 4 < n) | (!(1 < n) & 8 == n | !(7 < n) & 8 == n | (!(8 == n) | 1 < n) & (!(8 == n) | 7 < n)) & (!(5 == n) | 1 < n) & (!(5 == n) | 4 < n) ~> System.Environment.<Platform>k__BackingField]
 	| System.Environment.mono_corlib_version ~> UNION[
@@ -10139,22 +11577,47 @@ System.Exception ==> STRUCT System.Exception[
 	| System.Exception.s_EDILock ~> UNION[
 		| !(4 < n) & (!(1 < n) & 5 == n | !(4 < n) & 5 == n) & 5 == n ~> (HeapRef 4)
 		| (!(1 < n) & 5 == n | !(4 < n) & 5 == n) & (!(5 == n) | 4 < n) | (!(1 < n) & 8 == n | !(7 < n) & 8 == n | (!(8 == n) | 1 < n) & (!(8 == n) | 7 < n)) & (!(5 == n) | 1 < n) & (!(5 == n) | 4 < n) ~> (HeapRef System.Exception.s_EDILock)]]
+=======
+		| !(4 < n) & 5 == n ~> Win32S
+		| !(5 == n) | 4 < n ~> System.Environment.<Platform>k__BackingField]
+	| System.Environment.mono_corlib_version ~> UNION[
+		| !(4 < n) & 5 == n ~> 1051600014
+		| !(5 == n) | 4 < n ~> System.Environment.mono_corlib_version]
+	| System.Environment.nl ~> UNION[
+		| !(4 < n) & 5 == n ~> null
+		| !(5 == n) | 4 < n ~> (HeapRef System.Environment.nl)]
+	| System.Environment.os ~> UNION[
+		| !(4 < n) & 5 == n ~> null
+		| !(5 == n) | 4 < n ~> (HeapRef System.Environment.os)]]
+System.Exception ==> STRUCT System.Exception[
+	| System.Exception._COMPlusExceptionCode ~> UNION[
+		| !(4 < n) & 5 == n ~> -532462766
+		| !(5 == n) | 4 < n ~> System.Exception._COMPlusExceptionCode]
+	| System.Exception.s_EDILock ~> UNION[
+		| !(4 < n) & 5 == n ~> (HeapRef 4)
+		| !(5 == n) | 4 < n ~> (HeapRef System.Exception.s_EDILock)]]
+>>>>>>> origin/mergeWithRead
 System.IndexOutOfRangeException ==> STRUCT System.IndexOutOfRangeException[]
 System.Object ==> STRUCT System.Object[]
 System.Runtime.Serialization.SafeSerializationManager ==> STRUCT System.Runtime.Serialization.SafeSerializationManager[
 	| System.Runtime.Serialization.SafeSerializationManager.RealTypeSerializationName ~> UNION[
+<<<<<<< HEAD
 		| !(4 < n) & (!(1 < n) & 5 == n | !(4 < n) & 5 == n) & 5 == n ~> (HeapRef 6)
 		| (!(1 < n) & 5 == n | !(4 < n) & 5 == n) & (!(5 == n) | 4 < n) | (!(1 < n) & 8 == n | !(7 < n) & 8 == n | (!(8 == n) | 1 < n) & (!(8 == n) | 7 < n)) & (!(5 == n) | 1 < n) & (!(5 == n) | 4 < n) ~> (HeapRef System.Runtime.Serialization.SafeSerializationManager.RealTypeSerializationName)]]
+=======
+		| !(4 < n) & 5 == n ~> (HeapRef 6)
+		| !(5 == n) | 4 < n ~> (HeapRef System.Runtime.Serialization.SafeSerializationManager.RealTypeSerializationName)]]
+>>>>>>> origin/mergeWithRead
 System.SystemException ==> STRUCT System.SystemException[]
 VSharp.CSharpUtils.Tests.Lists ==> STRUCT VSharp.CSharpUtils.Tests.Lists[]
 METHOD: System.Array VSharp.CSharpUtils.Tests.Lists.RetSystemArray1(System.Array)
 RESULT: UNION[
-	| !(0 == arr) & !(1 < arr.0_Length) & (ArrayTypeVariable1 <: System.Int32[,]) ~> <ERROR: UNION[
-		| !(0 == arr) & (ArrayTypeVariable1 <: System.Int32[]) ~> (HeapRef 6)
-		| !(ArrayTypeVariable1 <: System.Int32[]) | 0 == arr ~> (HeapRef 1)]>
-	| !(0 == arr) & !(1 < arr.1_Length) & !(ArrayTypeVariable1 <: System.Int32[]) & (ArrayTypeVariable1 <: System.Int32[,]) & 1 < arr.0_Length | !(0 == arr) & ((!(1 < arr.0_Length) | !(1 < arr.1_Length)) & (!(ArrayTypeVariable1 <: System.Int32[,]) | 0 == arr) | 1 < arr.0_Length & 1 < arr.1_Length) & (ArrayTypeVariable1 <: System.Int32[]) | ((!(1 < arr.0_Length) | !(1 < arr.1_Length)) & (!(ArrayTypeVariable1 <: System.Int32[,]) | 0 == arr) | 1 < arr.0_Length & 1 < arr.1_Length) & 1 < arr.0_Length ~> (HeapRef arr)
-	| !(0 == arr) & !(1 < arr.1_Length) & (ArrayTypeVariable1 <: System.Int32[,]) & (ArrayTypeVariable1 <: System.Int32[]) & 1 < arr.0_Length ~> <ERROR: (HeapRef 6)>
-	| !(1 < arr.0_Length) & (!(ArrayTypeVariable1 <: System.Int32[]) | 0 == arr) & ((!(1 < arr.0_Length) | !(1 < arr.1_Length)) & (!(ArrayTypeVariable1 <: System.Int32[,]) | 0 == arr) | 1 < arr.0_Length & 1 < arr.1_Length) ~> <ERROR: (HeapRef 1)>]
+	| !(0 == arr) & !(1 < arr.0_Length) & (ArrayTypeVariable{arr} <: System.Int32[,]) ~> <ERROR: UNION[
+		| !(0 == arr) & (ArrayTypeVariable{arr} <: System.Int32[]) ~> (HeapRef 6)
+		| !(ArrayTypeVariable{arr} <: System.Int32[]) | 0 == arr ~> (HeapRef 1)]>
+	| !(0 == arr) & !(1 < arr.1_Length) & !(ArrayTypeVariable{arr} <: System.Int32[]) & (ArrayTypeVariable{arr} <: System.Int32[,]) & 1 < arr.0_Length | !(0 == arr) & ((!(1 < arr.0_Length) | !(1 < arr.1_Length)) & (!(ArrayTypeVariable{arr} <: System.Int32[,]) | 0 == arr) | 1 < arr.0_Length & 1 < arr.1_Length) & (ArrayTypeVariable{arr} <: System.Int32[]) | ((!(1 < arr.0_Length) | !(1 < arr.1_Length)) & (!(ArrayTypeVariable{arr} <: System.Int32[,]) | 0 == arr) | 1 < arr.0_Length & 1 < arr.1_Length) & 1 < arr.0_Length ~> (HeapRef arr)
+	| !(0 == arr) & !(1 < arr.1_Length) & (ArrayTypeVariable{arr} <: System.Int32[,]) & (ArrayTypeVariable{arr} <: System.Int32[]) & 1 < arr.0_Length ~> <ERROR: (HeapRef 6)>
+	| !(1 < arr.0_Length) & (!(ArrayTypeVariable{arr} <: System.Int32[]) | 0 == arr) & ((!(1 < arr.0_Length) | !(1 < arr.1_Length)) & (!(ArrayTypeVariable{arr} <: System.Int32[,]) | 0 == arr) | 1 < arr.0_Length & 1 < arr.1_Length) ~> <ERROR: (HeapRef 1)>]
 HEAP:
 { heap = h0, statics = s1 } where
 ---------- h0 = ----------
@@ -10580,6 +12043,7 @@ HEAP:
 		| !(0 == arr) & !(ArrayTypeVariable1 <: System.Int32[]) & (!(0 == arr) & !(1 < arr.0_Length) & (ArrayTypeVariable1 <: System.Int32[,]) | !(0 == arr) & !(1 < arr.1_Length) & (ArrayTypeVariable1 <: System.Int32[,]) & (ArrayTypeVariable1 <: System.Int32[]) | !(1 < arr.0_Length) & (!(ArrayTypeVariable1 <: System.Int32[]) | 0 == arr) & ((!(1 < arr.0_Length) | !(1 < arr.1_Length)) & (!(ArrayTypeVariable1 <: System.Int32[,]) | 0 == arr) | 1 < arr.0_Length & 1 < arr.1_Length) | (!(0 == arr) & (ArrayTypeVariable1 <: System.Int32[]) | (!(0 == arr) & (ArrayTypeVariable1 <: System.Int32[,]) | 1 < arr.0_Length & 1 < arr.1_Length) & (!(1 < arr.0_Length) | !(1 < arr.1_Length)) | 1 < arr.0_Length) & (!(ArrayTypeVariable1 <: System.Int32[,]) | !(ArrayTypeVariable1 <: System.Int32[]) | 0 == arr | 1 < arr.1_Length) & (!(ArrayTypeVariable1 <: System.Int32[,]) | 0 == arr | 1 < arr.0_Length)) & (!(1 < arr.0_Length) | !(1 < arr.1_Length)) & (ArrayTypeVariable1 <: System.Int32[,]) ~> 42]]
 8 ==> STRUCT System.Object[]
 9 ==> STRUCT System.Runtime.Serialization.SafeSerializationManager[
+<<<<<<< HEAD
 	| System.Runtime.Serialization.SafeSerializationManager.m_realObject ~> UNION[
 		| !(0 == arr) & !(ArrayTypeVariable1 <: System.Int32[]) & (!(0 == arr) & !(1 < arr.0_Length) & (ArrayTypeVariable1 <: System.Int32[,]) | !(0 == arr) & !(1 < arr.1_Length) & (ArrayTypeVariable1 <: System.Int32[,]) & (ArrayTypeVariable1 <: System.Int32[]) | !(1 < arr.0_Length) & (!(ArrayTypeVariable1 <: System.Int32[]) | 0 == arr) & ((!(1 < arr.0_Length) | !(1 < arr.1_Length)) & (!(ArrayTypeVariable1 <: System.Int32[,]) | 0 == arr) | 1 < arr.0_Length & 1 < arr.1_Length) | (!(0 == arr) & (ArrayTypeVariable1 <: System.Int32[]) | (!(0 == arr) & (ArrayTypeVariable1 <: System.Int32[,]) | 1 < arr.0_Length & 1 < arr.1_Length) & (!(1 < arr.0_Length) | !(1 < arr.1_Length)) | 1 < arr.0_Length) & (!(ArrayTypeVariable1 <: System.Int32[,]) | !(ArrayTypeVariable1 <: System.Int32[]) | 0 == arr | 1 < arr.1_Length) & (!(ArrayTypeVariable1 <: System.Int32[,]) | 0 == arr | 1 < arr.0_Length)) & (!(1 < arr.0_Length) | !(1 < arr.1_Length)) & (ArrayTypeVariable1 <: System.Int32[,]) ~> null]
 	| System.Runtime.Serialization.SafeSerializationManager.m_realType ~> UNION[
@@ -10595,10 +12059,24 @@ arr ==> TypeVariable1{System.Object}: [|
 	1: UNION[
 		| !(0 == arr) & !(1 < arr.0_Length) & (ArrayTypeVariable1 <: System.Int32[,]) | !(0 == arr) & !(1 < arr.1_Length) & (ArrayTypeVariable1 <: System.Int32[,]) & (ArrayTypeVariable1 <: System.Int32[]) | !(1 < arr.0_Length) & (!(ArrayTypeVariable1 <: System.Int32[]) | 0 == arr) & ((!(1 < arr.0_Length) | !(1 < arr.1_Length)) & (!(ArrayTypeVariable1 <: System.Int32[,]) | 0 == arr) | 1 < arr.0_Length & 1 < arr.1_Length) | (!(0 == arr) & (ArrayTypeVariable1 <: System.Int32[]) | (!(0 == arr) & (ArrayTypeVariable1 <: System.Int32[,]) | 1 < arr.0_Length & 1 < arr.1_Length) & (!(1 < arr.0_Length) | !(1 < arr.1_Length)) | 1 < arr.0_Length) & (!(ArrayTypeVariable1 <: System.Int32[,]) | !(ArrayTypeVariable1 <: System.Int32[]) | 0 == arr | 1 < arr.1_Length) & (!(ArrayTypeVariable1 <: System.Int32[,]) | 0 == arr | 1 < arr.0_Length) ~> STRUCT TypeVariable7{TypeVariable1{System.Object}}[]
 		| !(0 == arr) & (!(0 == arr) & !(1 < arr.0_Length) & (ArrayTypeVariable1 <: System.Int32[,]) | !(0 == arr) & !(1 < arr.1_Length) & (ArrayTypeVariable1 <: System.Int32[,]) & (ArrayTypeVariable1 <: System.Int32[]) | !(1 < arr.0_Length) & (!(ArrayTypeVariable1 <: System.Int32[]) | 0 == arr) & ((!(1 < arr.0_Length) | !(1 < arr.1_Length)) & (!(ArrayTypeVariable1 <: System.Int32[,]) | 0 == arr) | 1 < arr.0_Length & 1 < arr.1_Length) | (!(0 == arr) & (ArrayTypeVariable1 <: System.Int32[]) | (!(0 == arr) & (ArrayTypeVariable1 <: System.Int32[,]) | 1 < arr.0_Length & 1 < arr.1_Length) & (!(1 < arr.0_Length) | !(1 < arr.1_Length)) | 1 < arr.0_Length) & (!(ArrayTypeVariable1 <: System.Int32[,]) | !(ArrayTypeVariable1 <: System.Int32[]) | 0 == arr | 1 < arr.1_Length) & (!(ArrayTypeVariable1 <: System.Int32[,]) | 0 == arr | 1 < arr.0_Length)) & (ArrayTypeVariable1 <: System.Int32[]) & 1 < arr.0_Length ~> 5];
+=======
+	| System.Runtime.Serialization.SafeSerializationManager.m_realObject ~> null
+	| System.Runtime.Serialization.SafeSerializationManager.m_realType ~> null
+	| System.Runtime.Serialization.SafeSerializationManager.m_savedSerializationInfo ~> null
+	| System.Runtime.Serialization.SafeSerializationManager.m_serializedStates ~> null]
+arr ==> TypeVariable{arr}{System.Object}: [|
+	1, 1: UNION[
+		| !(0 == arr) & !(ArrayTypeVariable{arr} <: System.Int32[]) & (ArrayTypeVariable{arr} <: System.Int32[,]) & 1 < arr.0_Length & 1 < arr.1_Length ~> 7
+		| !(0 == arr) & (ArrayTypeVariable{arr} <: System.Int32[]) | (!(1 < arr.0_Length) | !(1 < arr.1_Length) | !(ArrayTypeVariable{arr} <: System.Int32[,]) | 0 == arr) & (!(ArrayTypeVariable{arr} <: System.Int32[]) | 0 == arr) ~> arr.[1, 1]];
+	1: UNION[
+		| !(0 == arr) & (ArrayTypeVariable{arr} <: System.Int32[]) & 1 < arr.0_Length ~> 5
+		| !(1 < arr.0_Length) | !(ArrayTypeVariable{arr} <: System.Int32[]) | 0 == arr ~> arr.[1]];
+>>>>>>> origin/mergeWithRead
 	 ...  ... |]
 ---------- s1 = ----------
 System.Environment ==> STRUCT System.Environment[
 	| System.Environment.<Platform>k__BackingField ~> UNION[
+<<<<<<< HEAD
 		| (!(0 == arr) & !(1 < arr.0_Length) & !hasKey#2 & (ArrayTypeVariable1 <: System.Int32[]) | !(0 == arr) & !(ArrayTypeVariable1 <: System.Int32[]) & !hasKey#8 & (!(1 < arr.0_Length) | !(1 < arr.1_Length)) & (ArrayTypeVariable1 <: System.Int32[,])) & (!(0 == arr) & !(1 < arr.0_Length) & (ArrayTypeVariable1 <: System.Int32[,]) | !(0 == arr) & !(1 < arr.1_Length) & (ArrayTypeVariable1 <: System.Int32[,]) & (ArrayTypeVariable1 <: System.Int32[]) | !(1 < arr.0_Length) & (!(ArrayTypeVariable1 <: System.Int32[]) | 0 == arr) & ((!(1 < arr.0_Length) | !(1 < arr.1_Length)) & (!(ArrayTypeVariable1 <: System.Int32[,]) | 0 == arr) | 1 < arr.0_Length & 1 < arr.1_Length) | (!(0 == arr) & (ArrayTypeVariable1 <: System.Int32[]) | (!(0 == arr) & (ArrayTypeVariable1 <: System.Int32[,]) | 1 < arr.0_Length & 1 < arr.1_Length) & (!(1 < arr.0_Length) | !(1 < arr.1_Length)) | 1 < arr.0_Length) & (!(ArrayTypeVariable1 <: System.Int32[,]) | !(ArrayTypeVariable1 <: System.Int32[]) | 0 == arr | 1 < arr.1_Length) & (!(ArrayTypeVariable1 <: System.Int32[,]) | 0 == arr | 1 < arr.0_Length)) ~> Win32S
 		| (!(0 == arr) & !(1 < arr.0_Length) & (ArrayTypeVariable1 <: System.Int32[,]) | !(0 == arr) & !(1 < arr.1_Length) & (ArrayTypeVariable1 <: System.Int32[,]) & (ArrayTypeVariable1 <: System.Int32[]) | !(1 < arr.0_Length) & (!(ArrayTypeVariable1 <: System.Int32[]) | 0 == arr) & ((!(1 < arr.0_Length) | !(1 < arr.1_Length)) & (!(ArrayTypeVariable1 <: System.Int32[,]) | 0 == arr) | 1 < arr.0_Length & 1 < arr.1_Length) | (!(0 == arr) & (ArrayTypeVariable1 <: System.Int32[]) | (!(0 == arr) & (ArrayTypeVariable1 <: System.Int32[,]) | 1 < arr.0_Length & 1 < arr.1_Length) & (!(1 < arr.0_Length) | !(1 < arr.1_Length)) | 1 < arr.0_Length) & (!(ArrayTypeVariable1 <: System.Int32[,]) | !(ArrayTypeVariable1 <: System.Int32[]) | 0 == arr | 1 < arr.1_Length) & (!(ArrayTypeVariable1 <: System.Int32[,]) | 0 == arr | 1 < arr.0_Length)) & (!(0 == arr) & (1 < arr.0_Length | hasKey#2) & (ArrayTypeVariable1 <: System.Int32[]) | (!(ArrayTypeVariable1 <: System.Int32[,]) | (!(1 < arr.0_Length) | !(1 < arr.1_Length)) & hasKey#8 | 0 == arr | 1 < arr.0_Length & 1 < arr.1_Length) & (!(ArrayTypeVariable1 <: System.Int32[]) | 0 == arr)) ~> System.Environment.<Platform>k__BackingField]
 	| System.Environment.mono_corlib_version ~> UNION[
@@ -10618,21 +12096,48 @@ System.Exception ==> STRUCT System.Exception[
 		| !(0 == arr) & !(1 < arr.0_Length) & !hasKey#4 & (!(0 == arr) & !(1 < arr.0_Length) & (ArrayTypeVariable1 <: System.Int32[,]) | !(0 == arr) & !(1 < arr.1_Length) & (ArrayTypeVariable1 <: System.Int32[,]) & (ArrayTypeVariable1 <: System.Int32[]) | !(1 < arr.0_Length) & (!(ArrayTypeVariable1 <: System.Int32[]) | 0 == arr) & ((!(1 < arr.0_Length) | !(1 < arr.1_Length)) & (!(ArrayTypeVariable1 <: System.Int32[,]) | 0 == arr) | 1 < arr.0_Length & 1 < arr.1_Length) | (!(0 == arr) & (ArrayTypeVariable1 <: System.Int32[]) | (!(0 == arr) & (ArrayTypeVariable1 <: System.Int32[,]) | 1 < arr.0_Length & 1 < arr.1_Length) & (!(1 < arr.0_Length) | !(1 < arr.1_Length)) | 1 < arr.0_Length) & (!(ArrayTypeVariable1 <: System.Int32[,]) | !(ArrayTypeVariable1 <: System.Int32[]) | 0 == arr | 1 < arr.1_Length) & (!(ArrayTypeVariable1 <: System.Int32[,]) | 0 == arr | 1 < arr.0_Length)) & (ArrayTypeVariable1 <: System.Int32[]) ~> (HeapRef 3)
 		| !(0 == arr) & !(ArrayTypeVariable1 <: System.Int32[]) & !hasKey#10 & (!(0 == arr) & !(1 < arr.0_Length) & (ArrayTypeVariable1 <: System.Int32[,]) | !(0 == arr) & !(1 < arr.1_Length) & (ArrayTypeVariable1 <: System.Int32[,]) & (ArrayTypeVariable1 <: System.Int32[]) | !(1 < arr.0_Length) & (!(ArrayTypeVariable1 <: System.Int32[]) | 0 == arr) & ((!(1 < arr.0_Length) | !(1 < arr.1_Length)) & (!(ArrayTypeVariable1 <: System.Int32[,]) | 0 == arr) | 1 < arr.0_Length & 1 < arr.1_Length) | (!(0 == arr) & (ArrayTypeVariable1 <: System.Int32[]) | (!(0 == arr) & (ArrayTypeVariable1 <: System.Int32[,]) | 1 < arr.0_Length & 1 < arr.1_Length) & (!(1 < arr.0_Length) | !(1 < arr.1_Length)) | 1 < arr.0_Length) & (!(ArrayTypeVariable1 <: System.Int32[,]) | !(ArrayTypeVariable1 <: System.Int32[]) | 0 == arr | 1 < arr.1_Length) & (!(ArrayTypeVariable1 <: System.Int32[,]) | 0 == arr | 1 < arr.0_Length)) & (!(1 < arr.0_Length) | !(1 < arr.1_Length)) & (ArrayTypeVariable1 <: System.Int32[,]) ~> (HeapRef 8)
 		| (!(0 == arr) & !(1 < arr.0_Length) & (ArrayTypeVariable1 <: System.Int32[,]) | !(0 == arr) & !(1 < arr.1_Length) & (ArrayTypeVariable1 <: System.Int32[,]) & (ArrayTypeVariable1 <: System.Int32[]) | !(1 < arr.0_Length) & (!(ArrayTypeVariable1 <: System.Int32[]) | 0 == arr) & ((!(1 < arr.0_Length) | !(1 < arr.1_Length)) & (!(ArrayTypeVariable1 <: System.Int32[,]) | 0 == arr) | 1 < arr.0_Length & 1 < arr.1_Length) | (!(0 == arr) & (ArrayTypeVariable1 <: System.Int32[]) | (!(0 == arr) & (ArrayTypeVariable1 <: System.Int32[,]) | 1 < arr.0_Length & 1 < arr.1_Length) & (!(1 < arr.0_Length) | !(1 < arr.1_Length)) | 1 < arr.0_Length) & (!(ArrayTypeVariable1 <: System.Int32[,]) | !(ArrayTypeVariable1 <: System.Int32[]) | 0 == arr | 1 < arr.1_Length) & (!(ArrayTypeVariable1 <: System.Int32[,]) | 0 == arr | 1 < arr.0_Length)) & (!(0 == arr) & (1 < arr.0_Length | hasKey#4) & (ArrayTypeVariable1 <: System.Int32[]) | (!(ArrayTypeVariable1 <: System.Int32[,]) | (!(1 < arr.0_Length) | !(1 < arr.1_Length)) & hasKey#10 | 0 == arr | 1 < arr.0_Length & 1 < arr.1_Length) & (!(ArrayTypeVariable1 <: System.Int32[]) | 0 == arr)) ~> (HeapRef System.Exception.s_EDILock)]]
+=======
+		| !(0 == arr) & !(1 < arr.0_Length) & !hasKey#2 & (ArrayTypeVariable{arr} <: System.Int32[]) | !(0 == arr) & !(ArrayTypeVariable{arr} <: System.Int32[]) & !hasKey#8 & (!(1 < arr.0_Length) | !(1 < arr.1_Length)) & (ArrayTypeVariable{arr} <: System.Int32[,]) ~> Win32S
+		| !(0 == arr) & (1 < arr.0_Length | hasKey#2) & (ArrayTypeVariable{arr} <: System.Int32[]) | (!(ArrayTypeVariable{arr} <: System.Int32[,]) | (!(1 < arr.0_Length) | !(1 < arr.1_Length)) & hasKey#8 | 0 == arr | 1 < arr.0_Length & 1 < arr.1_Length) & (!(ArrayTypeVariable{arr} <: System.Int32[]) | 0 == arr) ~> System.Environment.<Platform>k__BackingField]
+	| System.Environment.mono_corlib_version ~> UNION[
+		| !(0 == arr) & !(1 < arr.0_Length) & !hasKey#2 & (ArrayTypeVariable{arr} <: System.Int32[]) | !(0 == arr) & !(ArrayTypeVariable{arr} <: System.Int32[]) & !hasKey#8 & (!(1 < arr.0_Length) | !(1 < arr.1_Length)) & (ArrayTypeVariable{arr} <: System.Int32[,]) ~> 1051600014
+		| !(0 == arr) & (1 < arr.0_Length | hasKey#2) & (ArrayTypeVariable{arr} <: System.Int32[]) | (!(ArrayTypeVariable{arr} <: System.Int32[,]) | (!(1 < arr.0_Length) | !(1 < arr.1_Length)) & hasKey#8 | 0 == arr | 1 < arr.0_Length & 1 < arr.1_Length) & (!(ArrayTypeVariable{arr} <: System.Int32[]) | 0 == arr) ~> System.Environment.mono_corlib_version]
+	| System.Environment.nl ~> UNION[
+		| !(0 == arr) & !(1 < arr.0_Length) & !hasKey#2 & (ArrayTypeVariable{arr} <: System.Int32[]) | !(0 == arr) & !(ArrayTypeVariable{arr} <: System.Int32[]) & !hasKey#8 & (!(1 < arr.0_Length) | !(1 < arr.1_Length)) & (ArrayTypeVariable{arr} <: System.Int32[,]) ~> null
+		| !(0 == arr) & (1 < arr.0_Length | hasKey#2) & (ArrayTypeVariable{arr} <: System.Int32[]) | (!(ArrayTypeVariable{arr} <: System.Int32[,]) | (!(1 < arr.0_Length) | !(1 < arr.1_Length)) & hasKey#8 | 0 == arr | 1 < arr.0_Length & 1 < arr.1_Length) & (!(ArrayTypeVariable{arr} <: System.Int32[]) | 0 == arr) ~> (HeapRef System.Environment.nl)]
+	| System.Environment.os ~> UNION[
+		| !(0 == arr) & !(1 < arr.0_Length) & !hasKey#2 & (ArrayTypeVariable{arr} <: System.Int32[]) | !(0 == arr) & !(ArrayTypeVariable{arr} <: System.Int32[]) & !hasKey#8 & (!(1 < arr.0_Length) | !(1 < arr.1_Length)) & (ArrayTypeVariable{arr} <: System.Int32[,]) ~> null
+		| !(0 == arr) & (1 < arr.0_Length | hasKey#2) & (ArrayTypeVariable{arr} <: System.Int32[]) | (!(ArrayTypeVariable{arr} <: System.Int32[,]) | (!(1 < arr.0_Length) | !(1 < arr.1_Length)) & hasKey#8 | 0 == arr | 1 < arr.0_Length & 1 < arr.1_Length) & (!(ArrayTypeVariable{arr} <: System.Int32[]) | 0 == arr) ~> (HeapRef System.Environment.os)]]
+System.Exception ==> STRUCT System.Exception[
+	| System.Exception._COMPlusExceptionCode ~> UNION[
+		| !(0 == arr) & !(1 < arr.0_Length) & !hasKey#4 & (ArrayTypeVariable{arr} <: System.Int32[]) | !(0 == arr) & !(ArrayTypeVariable{arr} <: System.Int32[]) & !hasKey#10 & (!(1 < arr.0_Length) | !(1 < arr.1_Length)) & (ArrayTypeVariable{arr} <: System.Int32[,]) ~> -532462766
+		| !(0 == arr) & (1 < arr.0_Length | hasKey#4) & (ArrayTypeVariable{arr} <: System.Int32[]) | (!(ArrayTypeVariable{arr} <: System.Int32[,]) | (!(1 < arr.0_Length) | !(1 < arr.1_Length)) & hasKey#10 | 0 == arr | 1 < arr.0_Length & 1 < arr.1_Length) & (!(ArrayTypeVariable{arr} <: System.Int32[]) | 0 == arr) ~> System.Exception._COMPlusExceptionCode]
+	| System.Exception.s_EDILock ~> UNION[
+		| !(0 == arr) & !(1 < arr.0_Length) & !hasKey#4 & (ArrayTypeVariable{arr} <: System.Int32[]) ~> (HeapRef 3)
+		| !(0 == arr) & !(ArrayTypeVariable{arr} <: System.Int32[]) & !hasKey#10 & (!(1 < arr.0_Length) | !(1 < arr.1_Length)) & (ArrayTypeVariable{arr} <: System.Int32[,]) ~> (HeapRef 8)
+		| !(0 == arr) & (1 < arr.0_Length | hasKey#4) & (ArrayTypeVariable{arr} <: System.Int32[]) | (!(ArrayTypeVariable{arr} <: System.Int32[,]) | (!(1 < arr.0_Length) | !(1 < arr.1_Length)) & hasKey#10 | 0 == arr | 1 < arr.0_Length & 1 < arr.1_Length) & (!(ArrayTypeVariable{arr} <: System.Int32[]) | 0 == arr) ~> (HeapRef System.Exception.s_EDILock)]]
+>>>>>>> origin/mergeWithRead
 System.IndexOutOfRangeException ==> STRUCT System.IndexOutOfRangeException[]
 System.Object ==> STRUCT System.Object[]
 System.Runtime.Serialization.SafeSerializationManager ==> STRUCT System.Runtime.Serialization.SafeSerializationManager[
 	| System.Runtime.Serialization.SafeSerializationManager.RealTypeSerializationName ~> UNION[
+<<<<<<< HEAD
 		| !(0 == arr) & !(1 < arr.0_Length) & !hasKey#6 & (!(0 == arr) & !(1 < arr.0_Length) & (ArrayTypeVariable1 <: System.Int32[,]) | !(0 == arr) & !(1 < arr.1_Length) & (ArrayTypeVariable1 <: System.Int32[,]) & (ArrayTypeVariable1 <: System.Int32[]) | !(1 < arr.0_Length) & (!(ArrayTypeVariable1 <: System.Int32[]) | 0 == arr) & ((!(1 < arr.0_Length) | !(1 < arr.1_Length)) & (!(ArrayTypeVariable1 <: System.Int32[,]) | 0 == arr) | 1 < arr.0_Length & 1 < arr.1_Length) | (!(0 == arr) & (ArrayTypeVariable1 <: System.Int32[]) | (!(0 == arr) & (ArrayTypeVariable1 <: System.Int32[,]) | 1 < arr.0_Length & 1 < arr.1_Length) & (!(1 < arr.0_Length) | !(1 < arr.1_Length)) | 1 < arr.0_Length) & (!(ArrayTypeVariable1 <: System.Int32[,]) | !(ArrayTypeVariable1 <: System.Int32[]) | 0 == arr | 1 < arr.1_Length) & (!(ArrayTypeVariable1 <: System.Int32[,]) | 0 == arr | 1 < arr.0_Length)) & (ArrayTypeVariable1 <: System.Int32[]) ~> (HeapRef 5)
 		| !(0 == arr) & !(ArrayTypeVariable1 <: System.Int32[]) & !hasKey#12 & (!(0 == arr) & !(1 < arr.0_Length) & (ArrayTypeVariable1 <: System.Int32[,]) | !(0 == arr) & !(1 < arr.1_Length) & (ArrayTypeVariable1 <: System.Int32[,]) & (ArrayTypeVariable1 <: System.Int32[]) | !(1 < arr.0_Length) & (!(ArrayTypeVariable1 <: System.Int32[]) | 0 == arr) & ((!(1 < arr.0_Length) | !(1 < arr.1_Length)) & (!(ArrayTypeVariable1 <: System.Int32[,]) | 0 == arr) | 1 < arr.0_Length & 1 < arr.1_Length) | (!(0 == arr) & (ArrayTypeVariable1 <: System.Int32[]) | (!(0 == arr) & (ArrayTypeVariable1 <: System.Int32[,]) | 1 < arr.0_Length & 1 < arr.1_Length) & (!(1 < arr.0_Length) | !(1 < arr.1_Length)) | 1 < arr.0_Length) & (!(ArrayTypeVariable1 <: System.Int32[,]) | !(ArrayTypeVariable1 <: System.Int32[]) | 0 == arr | 1 < arr.1_Length) & (!(ArrayTypeVariable1 <: System.Int32[,]) | 0 == arr | 1 < arr.0_Length)) & (!(1 < arr.0_Length) | !(1 < arr.1_Length)) & (ArrayTypeVariable1 <: System.Int32[,]) ~> (HeapRef 10)
 		| (!(0 == arr) & !(1 < arr.0_Length) & (ArrayTypeVariable1 <: System.Int32[,]) | !(0 == arr) & !(1 < arr.1_Length) & (ArrayTypeVariable1 <: System.Int32[,]) & (ArrayTypeVariable1 <: System.Int32[]) | !(1 < arr.0_Length) & (!(ArrayTypeVariable1 <: System.Int32[]) | 0 == arr) & ((!(1 < arr.0_Length) | !(1 < arr.1_Length)) & (!(ArrayTypeVariable1 <: System.Int32[,]) | 0 == arr) | 1 < arr.0_Length & 1 < arr.1_Length) | (!(0 == arr) & (ArrayTypeVariable1 <: System.Int32[]) | (!(0 == arr) & (ArrayTypeVariable1 <: System.Int32[,]) | 1 < arr.0_Length & 1 < arr.1_Length) & (!(1 < arr.0_Length) | !(1 < arr.1_Length)) | 1 < arr.0_Length) & (!(ArrayTypeVariable1 <: System.Int32[,]) | !(ArrayTypeVariable1 <: System.Int32[]) | 0 == arr | 1 < arr.1_Length) & (!(ArrayTypeVariable1 <: System.Int32[,]) | 0 == arr | 1 < arr.0_Length)) & (!(0 == arr) & (1 < arr.0_Length | hasKey#6) & (ArrayTypeVariable1 <: System.Int32[]) | (!(ArrayTypeVariable1 <: System.Int32[,]) | (!(1 < arr.0_Length) | !(1 < arr.1_Length)) & hasKey#12 | 0 == arr | 1 < arr.0_Length & 1 < arr.1_Length) & (!(ArrayTypeVariable1 <: System.Int32[]) | 0 == arr)) ~> (HeapRef System.Runtime.Serialization.SafeSerializationManager.RealTypeSerializationName)]]
+=======
+		| !(0 == arr) & !(1 < arr.0_Length) & !hasKey#6 & (ArrayTypeVariable{arr} <: System.Int32[]) ~> (HeapRef 5)
+		| !(0 == arr) & !(ArrayTypeVariable{arr} <: System.Int32[]) & !hasKey#12 & (!(1 < arr.0_Length) | !(1 < arr.1_Length)) & (ArrayTypeVariable{arr} <: System.Int32[,]) ~> (HeapRef 10)
+		| !(0 == arr) & (1 < arr.0_Length | hasKey#6) & (ArrayTypeVariable{arr} <: System.Int32[]) | (!(ArrayTypeVariable{arr} <: System.Int32[,]) | (!(1 < arr.0_Length) | !(1 < arr.1_Length)) & hasKey#12 | 0 == arr | 1 < arr.0_Length & 1 < arr.1_Length) & (!(ArrayTypeVariable{arr} <: System.Int32[]) | 0 == arr) ~> (HeapRef System.Runtime.Serialization.SafeSerializationManager.RealTypeSerializationName)]]
+>>>>>>> origin/mergeWithRead
 System.SystemException ==> STRUCT System.SystemException[]
 VSharp.CSharpUtils.Tests.Lists ==> STRUCT VSharp.CSharpUtils.Tests.Lists[]
 METHOD: System.Array VSharp.CSharpUtils.Tests.Lists.RetSystemArray2(System.Array)
 RESULT: UNION[
-	| !(0 == arr) & !(1 < arr.0_Length) & (!(0 == arr) & (!(1 < arr.0_Length) | !(1 < arr.1_Length) | !(1 < arr.2_Length)) & (!(1 < arr.0_Length) | !(1 < arr.1_Length)) & (ArrayTypeVariable1 <: System.Int32[,,]) & (ArrayTypeVariable1 <: System.Int32[,]) | !(0 == arr) & (!(1 < arr.0_Length) | !(1 < arr.1_Length)) & ((!(1 < arr.0_Length) | !(1 < arr.1_Length) | !(1 < arr.2_Length)) & (!(ArrayTypeVariable1 <: System.Int32[,,]) | 0 == arr) | 1 < arr.0_Length & 1 < arr.1_Length & 1 < arr.2_Length) & (ArrayTypeVariable1 <: System.Int32[,])) & (ArrayTypeVariable1 <: System.Int32[]) | !(0 == arr) & !(1 < arr.0_Length) & ((!(1 < arr.0_Length) | !(1 < arr.1_Length) | !(1 < arr.2_Length)) & (!(ArrayTypeVariable1 <: System.Int32[,,]) | 0 == arr) | 1 < arr.0_Length & 1 < arr.1_Length & 1 < arr.2_Length) & ((!(1 < arr.0_Length) | !(1 < arr.1_Length)) & (!(ArrayTypeVariable1 <: System.Int32[,]) | 0 == arr) | 1 < arr.0_Length & 1 < arr.1_Length) & (ArrayTypeVariable1 <: System.Int32[]) | !(0 == arr) & !(1 < arr.0_Length) & ((!(1 < arr.0_Length) | !(1 < arr.1_Length)) & (!(ArrayTypeVariable1 <: System.Int32[,]) | 0 == arr) | 1 < arr.0_Length & 1 < arr.1_Length) & (ArrayTypeVariable1 <: System.Int32[,,]) & (ArrayTypeVariable1 <: System.Int32[]) ~> <ERROR: (HeapRef 1)>
-	| !(0 == arr) & (!(1 < arr.0_Length) | !(1 < arr.1_Length) | !(1 < arr.2_Length)) & (!(ArrayTypeVariable1 <: System.Int32[]) | 1 < arr.0_Length) & ((!(1 < arr.0_Length) | !(1 < arr.1_Length)) & (!(ArrayTypeVariable1 <: System.Int32[,]) | 0 == arr) | 1 < arr.0_Length & 1 < arr.1_Length) & (ArrayTypeVariable1 <: System.Int32[,,]) ~> <ERROR: (HeapRef 9)>
-	| (!(0 == arr) & (!(1 < arr.0_Length) | !(1 < arr.1_Length) | !(1 < arr.2_Length)) & (!(1 < arr.0_Length) | !(1 < arr.1_Length)) & (ArrayTypeVariable1 <: System.Int32[,,]) & (ArrayTypeVariable1 <: System.Int32[,]) | !(0 == arr) & (!(1 < arr.0_Length) | !(1 < arr.1_Length)) & ((!(1 < arr.0_Length) | !(1 < arr.1_Length) | !(1 < arr.2_Length)) & (!(ArrayTypeVariable1 <: System.Int32[,,]) | 0 == arr) | 1 < arr.0_Length & 1 < arr.1_Length & 1 < arr.2_Length) & (ArrayTypeVariable1 <: System.Int32[,])) & (!(ArrayTypeVariable1 <: System.Int32[]) | 0 == arr | 1 < arr.0_Length) ~> <ERROR: (HeapRef 6)>
-	| (!(ArrayTypeVariable1 <: System.Int32[]) | 0 == arr | 1 < arr.0_Length) & ((!(1 < arr.0_Length) | !(1 < arr.1_Length) | !(1 < arr.2_Length)) & (!(ArrayTypeVariable1 <: System.Int32[,,]) | 0 == arr) | 1 < arr.0_Length & 1 < arr.1_Length & 1 < arr.2_Length) & ((!(1 < arr.0_Length) | !(1 < arr.1_Length)) & (!(ArrayTypeVariable1 <: System.Int32[,]) | 0 == arr) | 1 < arr.0_Length & 1 < arr.1_Length) ~> (HeapRef arr)]
+	| !(0 == arr) & !(1 < arr.0_Length) & (!(0 == arr) & (!(1 < arr.0_Length) | !(1 < arr.1_Length) | !(1 < arr.2_Length)) & (!(1 < arr.0_Length) | !(1 < arr.1_Length)) & (ArrayTypeVariable{arr} <: System.Int32[,,]) & (ArrayTypeVariable{arr} <: System.Int32[,]) | !(0 == arr) & (!(1 < arr.0_Length) | !(1 < arr.1_Length)) & ((!(1 < arr.0_Length) | !(1 < arr.1_Length) | !(1 < arr.2_Length)) & (!(ArrayTypeVariable{arr} <: System.Int32[,,]) | 0 == arr) | 1 < arr.0_Length & 1 < arr.1_Length & 1 < arr.2_Length) & (ArrayTypeVariable{arr} <: System.Int32[,])) & (ArrayTypeVariable{arr} <: System.Int32[]) | !(0 == arr) & !(1 < arr.0_Length) & ((!(1 < arr.0_Length) | !(1 < arr.1_Length) | !(1 < arr.2_Length)) & (!(ArrayTypeVariable{arr} <: System.Int32[,,]) | 0 == arr) | 1 < arr.0_Length & 1 < arr.1_Length & 1 < arr.2_Length) & ((!(1 < arr.0_Length) | !(1 < arr.1_Length)) & (!(ArrayTypeVariable{arr} <: System.Int32[,]) | 0 == arr) | 1 < arr.0_Length & 1 < arr.1_Length) & (ArrayTypeVariable{arr} <: System.Int32[]) | !(0 == arr) & !(1 < arr.0_Length) & ((!(1 < arr.0_Length) | !(1 < arr.1_Length)) & (!(ArrayTypeVariable{arr} <: System.Int32[,]) | 0 == arr) | 1 < arr.0_Length & 1 < arr.1_Length) & (ArrayTypeVariable{arr} <: System.Int32[,,]) & (ArrayTypeVariable{arr} <: System.Int32[]) ~> <ERROR: (HeapRef 1)>
+	| !(0 == arr) & (!(1 < arr.0_Length) | !(1 < arr.1_Length) | !(1 < arr.2_Length)) & (!(ArrayTypeVariable{arr} <: System.Int32[]) | 1 < arr.0_Length) & ((!(1 < arr.0_Length) | !(1 < arr.1_Length)) & (!(ArrayTypeVariable{arr} <: System.Int32[,]) | 0 == arr) | 1 < arr.0_Length & 1 < arr.1_Length) & (ArrayTypeVariable{arr} <: System.Int32[,,]) ~> <ERROR: (HeapRef 9)>
+	| (!(0 == arr) & (!(1 < arr.0_Length) | !(1 < arr.1_Length) | !(1 < arr.2_Length)) & (!(1 < arr.0_Length) | !(1 < arr.1_Length)) & (ArrayTypeVariable{arr} <: System.Int32[,,]) & (ArrayTypeVariable{arr} <: System.Int32[,]) | !(0 == arr) & (!(1 < arr.0_Length) | !(1 < arr.1_Length)) & ((!(1 < arr.0_Length) | !(1 < arr.1_Length) | !(1 < arr.2_Length)) & (!(ArrayTypeVariable{arr} <: System.Int32[,,]) | 0 == arr) | 1 < arr.0_Length & 1 < arr.1_Length & 1 < arr.2_Length) & (ArrayTypeVariable{arr} <: System.Int32[,])) & (!(ArrayTypeVariable{arr} <: System.Int32[]) | 0 == arr | 1 < arr.0_Length) ~> <ERROR: (HeapRef 6)>
+	| (!(ArrayTypeVariable{arr} <: System.Int32[]) | 0 == arr | 1 < arr.0_Length) & ((!(1 < arr.0_Length) | !(1 < arr.1_Length) | !(1 < arr.2_Length)) & (!(ArrayTypeVariable{arr} <: System.Int32[,,]) | 0 == arr) | 1 < arr.0_Length & 1 < arr.1_Length & 1 < arr.2_Length) & ((!(1 < arr.0_Length) | !(1 < arr.1_Length)) & (!(ArrayTypeVariable{arr} <: System.Int32[,]) | 0 == arr) | 1 < arr.0_Length & 1 < arr.1_Length) ~> (HeapRef arr)]
 HEAP:
 { heap = h0, statics = s1 } where
 ---------- h0 = ----------
@@ -11085,6 +12590,7 @@ HEAP:
 	| System.Runtime.Serialization.SafeSerializationManager.m_serializedStates ~> UNION[
 		| !(0 == arr) & (!(1 < arr.0_Length) | !(1 < arr.1_Length)) & (!(ArrayTypeVariable1 <: System.Int32[]) | 1 < arr.0_Length) & (ArrayTypeVariable1 <: System.Int32[,]) ~> null]]
 9 ==> STRUCT System.IndexOutOfRangeException[
+<<<<<<< HEAD
 	| System.Exception._HResult ~> UNION[
 		| !(0 == arr) & (!(1 < arr.0_Length) | !(1 < arr.1_Length) | !(1 < arr.2_Length)) & (!(ArrayTypeVariable1 <: System.Int32[,]) | 1 < arr.0_Length & 1 < arr.1_Length) & (!(ArrayTypeVariable1 <: System.Int32[]) | 1 < arr.0_Length) & (ArrayTypeVariable1 <: System.Int32[,,]) ~> -2146233080]
 	| System.Exception._className ~> UNION[
@@ -11121,10 +12627,38 @@ arr ==> TypeVariable1{System.Object}: [|
 		| True ~> STRUCT TypeVariable10{TypeVariable1{System.Object}}[]];
 	1, 1: STRUCT TypeVariable12{TypeVariable1{System.Object}}[];
 	1: STRUCT TypeVariable4{TypeVariable1{System.Object}}[];
+=======
+	| System.Exception._HResult ~> -2146233080
+	| System.Exception._className ~> null
+	| System.Exception._data ~> null
+	| System.Exception._dynamicMethods ~> null
+	| System.Exception._helpURL ~> null
+	| System.Exception._innerException ~> null
+	| System.Exception._message ~> (HeapRef 10)
+	| System.Exception._remoteStackIndex ~> 0
+	| System.Exception._remoteStackTraceString ~> null
+	| System.Exception._safeSerializationManager ~> (HeapRef 11)
+	| System.Exception._source ~> null
+	| System.Exception._stackTrace ~> null
+	| System.Exception._stackTraceString ~> null
+	| System.Exception.captured_traces ~> null
+	| System.Exception.native_trace_ips ~> null]
+arr ==> TypeVariable{arr}{System.Object}: [|
+	1, 1, 1: UNION[
+		| !(0 == arr) & !(1 < arr.0_Length) & (!(0 == arr) & (!(1 < arr.0_Length) | !(1 < arr.1_Length)) & (ArrayTypeVariable{arr} <: System.Int32[,]) | !(0 == arr) & (!(ArrayTypeVariable{arr} <: System.Int32[,]) | 1 < arr.0_Length & 1 < arr.1_Length) & (ArrayTypeVariable{arr} <: System.Int32[,,]) & 1 < arr.0_Length & 1 < arr.1_Length & 1 < arr.2_Length | (!(1 < arr.0_Length) | !(1 < arr.1_Length) | !(1 < arr.2_Length) | !(ArrayTypeVariable{arr} <: System.Int32[,,]) | 0 == arr) & (!(ArrayTypeVariable{arr} <: System.Int32[,]) | 0 == arr | 1 < arr.0_Length & 1 < arr.1_Length)) & (ArrayTypeVariable{arr} <: System.Int32[]) | (!(0 == arr) & (!(1 < arr.0_Length) | !(1 < arr.1_Length)) & (ArrayTypeVariable{arr} <: System.Int32[,]) | (!(1 < arr.0_Length) | !(1 < arr.1_Length) | !(1 < arr.2_Length) | !(ArrayTypeVariable{arr} <: System.Int32[,,]) | 0 == arr) & (!(ArrayTypeVariable{arr} <: System.Int32[,]) | 0 == arr | 1 < arr.0_Length & 1 < arr.1_Length)) & (!(ArrayTypeVariable{arr} <: System.Int32[]) | 0 == arr | 1 < arr.0_Length) ~> arr.[1, 1, 1]
+		| !(0 == arr) & (!(ArrayTypeVariable{arr} <: System.Int32[,]) | 1 < arr.0_Length & 1 < arr.1_Length) & (ArrayTypeVariable{arr} <: System.Int32[,,]) & 1 < arr.0_Length & 1 < arr.1_Length & 1 < arr.2_Length ~> 42];
+	1, 1: UNION[
+		| !(0 == arr) & !(1 < arr.0_Length) & (!(0 == arr) & (!(1 < arr.0_Length) | !(1 < arr.1_Length)) & (ArrayTypeVariable{arr} <: System.Int32[,]) | !(0 == arr) & (ArrayTypeVariable{arr} <: System.Int32[,]) & 1 < arr.0_Length & 1 < arr.1_Length | (!(0 == arr) & ((!(1 < arr.0_Length) | !(1 < arr.1_Length) | !(1 < arr.2_Length)) & (!(1 < arr.0_Length) | !(1 < arr.1_Length) | !(ArrayTypeVariable{arr} <: System.Int32[,]) | 0 == arr) | (!(ArrayTypeVariable{arr} <: System.Int32[,]) | 0 == arr) & 1 < arr.0_Length & 1 < arr.1_Length & 1 < arr.2_Length) & (ArrayTypeVariable{arr} <: System.Int32[,,]) | (!(1 < arr.0_Length) | !(1 < arr.1_Length) | !(ArrayTypeVariable{arr} <: System.Int32[,]) | 0 == arr) & (!(ArrayTypeVariable{arr} <: System.Int32[,,]) | 0 == arr)) & (!(ArrayTypeVariable{arr} <: System.Int32[,]) | 0 == arr | 1 < arr.0_Length & 1 < arr.1_Length)) & (ArrayTypeVariable{arr} <: System.Int32[]) | (!(0 == arr) & (!(1 < arr.0_Length) | !(1 < arr.1_Length)) & (ArrayTypeVariable{arr} <: System.Int32[,]) | (!(0 == arr) & ((!(1 < arr.0_Length) | !(1 < arr.1_Length) | !(1 < arr.2_Length)) & (!(1 < arr.0_Length) | !(1 < arr.1_Length) | !(ArrayTypeVariable{arr} <: System.Int32[,]) | 0 == arr) | (!(ArrayTypeVariable{arr} <: System.Int32[,]) | 0 == arr) & 1 < arr.0_Length & 1 < arr.1_Length & 1 < arr.2_Length) & (ArrayTypeVariable{arr} <: System.Int32[,,]) | (!(1 < arr.0_Length) | !(1 < arr.1_Length) | !(ArrayTypeVariable{arr} <: System.Int32[,]) | 0 == arr) & (!(ArrayTypeVariable{arr} <: System.Int32[,,]) | 0 == arr)) & (!(ArrayTypeVariable{arr} <: System.Int32[,]) | 0 == arr | 1 < arr.0_Length & 1 < arr.1_Length)) & (!(ArrayTypeVariable{arr} <: System.Int32[]) | 0 == arr | 1 < arr.0_Length) ~> arr.[1, 1]
+		| !(0 == arr) & (ArrayTypeVariable{arr} <: System.Int32[,]) & 1 < arr.0_Length & 1 < arr.1_Length ~> 7];
+	1: UNION[
+		| !(0 == arr) & !(1 < arr.0_Length) & (ArrayTypeVariable{arr} <: System.Int32[]) | (!(0 == arr) & (!(0 == arr) & ((!(1 < arr.0_Length) | !(1 < arr.1_Length)) & (!(1 < arr.0_Length) | !(ArrayTypeVariable{arr} <: System.Int32[]) | 0 == arr) | (!(ArrayTypeVariable{arr} <: System.Int32[]) | 0 == arr) & 1 < arr.0_Length & 1 < arr.1_Length) & (ArrayTypeVariable{arr} <: System.Int32[,]) | (!(1 < arr.0_Length) | !(ArrayTypeVariable{arr} <: System.Int32[]) | 0 == arr) & (!(ArrayTypeVariable{arr} <: System.Int32[,]) | 0 == arr)) & (!(1 < arr.0_Length) | !(1 < arr.1_Length)) & (ArrayTypeVariable{arr} <: System.Int32[,]) | (!(0 == arr) & ((!(0 == arr) & ((!(1 < arr.0_Length) | !(1 < arr.1_Length)) & (!(1 < arr.0_Length) | !(ArrayTypeVariable{arr} <: System.Int32[]) | 0 == arr) | (!(ArrayTypeVariable{arr} <: System.Int32[]) | 0 == arr) & 1 < arr.0_Length & 1 < arr.1_Length) & (ArrayTypeVariable{arr} <: System.Int32[,]) | (!(1 < arr.0_Length) | !(ArrayTypeVariable{arr} <: System.Int32[]) | 0 == arr) & (!(ArrayTypeVariable{arr} <: System.Int32[,]) | 0 == arr)) & (!(1 < arr.0_Length) | !(1 < arr.1_Length) | !(1 < arr.2_Length)) | (!(0 == arr) & ((!(1 < arr.0_Length) | !(1 < arr.1_Length)) & (!(1 < arr.0_Length) | !(ArrayTypeVariable{arr} <: System.Int32[]) | 0 == arr) | (!(ArrayTypeVariable{arr} <: System.Int32[]) | 0 == arr) & 1 < arr.0_Length & 1 < arr.1_Length) & (ArrayTypeVariable{arr} <: System.Int32[,]) | (!(1 < arr.0_Length) | !(ArrayTypeVariable{arr} <: System.Int32[]) | 0 == arr) & (!(ArrayTypeVariable{arr} <: System.Int32[,]) | 0 == arr)) & 1 < arr.0_Length & 1 < arr.1_Length & 1 < arr.2_Length) & (ArrayTypeVariable{arr} <: System.Int32[,,]) | (!(0 == arr) & ((!(1 < arr.0_Length) | !(1 < arr.1_Length)) & (!(1 < arr.0_Length) | !(ArrayTypeVariable{arr} <: System.Int32[]) | 0 == arr) | (!(ArrayTypeVariable{arr} <: System.Int32[]) | 0 == arr) & 1 < arr.0_Length & 1 < arr.1_Length) & (ArrayTypeVariable{arr} <: System.Int32[,]) | (!(1 < arr.0_Length) | !(ArrayTypeVariable{arr} <: System.Int32[]) | 0 == arr) & (!(ArrayTypeVariable{arr} <: System.Int32[,]) | 0 == arr)) & (!(ArrayTypeVariable{arr} <: System.Int32[,,]) | 0 == arr)) & (!(ArrayTypeVariable{arr} <: System.Int32[,]) | 0 == arr | 1 < arr.0_Length & 1 < arr.1_Length)) & (!(ArrayTypeVariable{arr} <: System.Int32[]) | 0 == arr | 1 < arr.0_Length) ~> arr.[1]
+		| (!(0 == arr) & !(1 < arr.1_Length) & (ArrayTypeVariable{arr} <: System.Int32[,]) & (ArrayTypeVariable{arr} <: System.Int32[]) & 1 < arr.0_Length | (!(0 == arr) & !(ArrayTypeVariable{arr} <: System.Int32[,,]) & (ArrayTypeVariable{arr} <: System.Int32[]) & 1 < arr.0_Length | !(0 == arr) & (!(0 == arr) & (!(1 < arr.1_Length) | !(1 < arr.2_Length)) & (ArrayTypeVariable{arr} <: System.Int32[]) & 1 < arr.0_Length | !(0 == arr) & (ArrayTypeVariable{arr} <: System.Int32[]) & 1 < arr.0_Length & 1 < arr.1_Length & 1 < arr.2_Length) & (ArrayTypeVariable{arr} <: System.Int32[,,])) & (!(ArrayTypeVariable{arr} <: System.Int32[,]) | 0 == arr | 1 < arr.0_Length & 1 < arr.1_Length)) & (!(ArrayTypeVariable{arr} <: System.Int32[]) | 0 == arr | 1 < arr.0_Length) ~> 5];
+>>>>>>> origin/mergeWithRead
 	 ...  ... |]
 ---------- s1 = ----------
 System.Environment ==> STRUCT System.Environment[
 	| System.Environment.<Platform>k__BackingField ~> UNION[
+<<<<<<< HEAD
 		| !(0 == arr) & !(1 < arr.0_Length) & !hasKey#2 & (ArrayTypeVariable1 <: System.Int32[]) ~> Win32S
 		| !(ArrayTypeVariable1 <: System.Int32[]) | 0 == arr | 1 < arr.0_Length | hasKey#2 ~> System.Environment.<Platform>k__BackingField]
 	| System.Environment.mono_corlib_version ~> UNION[
@@ -11143,12 +12677,37 @@ System.Exception ==> STRUCT System.Exception[
 	| System.Exception.s_EDILock ~> UNION[
 		| !(0 == arr) & !(1 < arr.0_Length) & !hasKey#4 & (ArrayTypeVariable1 <: System.Int32[]) ~> (HeapRef 3)
 		| !(ArrayTypeVariable1 <: System.Int32[]) | 0 == arr | 1 < arr.0_Length | hasKey#4 ~> (HeapRef System.Exception.s_EDILock)]]
+=======
+		| !(0 == arr) & !(1 < arr.0_Length) & !hasKey#2 & (ArrayTypeVariable{arr} <: System.Int32[]) ~> Win32S
+		| !(ArrayTypeVariable{arr} <: System.Int32[]) | 0 == arr | 1 < arr.0_Length | hasKey#2 ~> System.Environment.<Platform>k__BackingField]
+	| System.Environment.mono_corlib_version ~> UNION[
+		| !(0 == arr) & !(1 < arr.0_Length) & !hasKey#2 & (ArrayTypeVariable{arr} <: System.Int32[]) ~> 1051600014
+		| !(ArrayTypeVariable{arr} <: System.Int32[]) | 0 == arr | 1 < arr.0_Length | hasKey#2 ~> System.Environment.mono_corlib_version]
+	| System.Environment.nl ~> UNION[
+		| !(0 == arr) & !(1 < arr.0_Length) & !hasKey#2 & (ArrayTypeVariable{arr} <: System.Int32[]) ~> null
+		| !(ArrayTypeVariable{arr} <: System.Int32[]) | 0 == arr | 1 < arr.0_Length | hasKey#2 ~> (HeapRef System.Environment.nl)]
+	| System.Environment.os ~> UNION[
+		| !(0 == arr) & !(1 < arr.0_Length) & !hasKey#2 & (ArrayTypeVariable{arr} <: System.Int32[]) ~> null
+		| !(ArrayTypeVariable{arr} <: System.Int32[]) | 0 == arr | 1 < arr.0_Length | hasKey#2 ~> (HeapRef System.Environment.os)]]
+System.Exception ==> STRUCT System.Exception[
+	| System.Exception._COMPlusExceptionCode ~> UNION[
+		| !(0 == arr) & !(1 < arr.0_Length) & !hasKey#4 & (ArrayTypeVariable{arr} <: System.Int32[]) ~> -532462766
+		| !(ArrayTypeVariable{arr} <: System.Int32[]) | 0 == arr | 1 < arr.0_Length | hasKey#4 ~> System.Exception._COMPlusExceptionCode]
+	| System.Exception.s_EDILock ~> UNION[
+		| !(0 == arr) & !(1 < arr.0_Length) & !hasKey#4 & (ArrayTypeVariable{arr} <: System.Int32[]) ~> (HeapRef 3)
+		| !(ArrayTypeVariable{arr} <: System.Int32[]) | 0 == arr | 1 < arr.0_Length | hasKey#4 ~> (HeapRef System.Exception.s_EDILock)]]
+>>>>>>> origin/mergeWithRead
 System.IndexOutOfRangeException ==> STRUCT System.IndexOutOfRangeException[]
 System.Object ==> STRUCT System.Object[]
 System.Runtime.Serialization.SafeSerializationManager ==> STRUCT System.Runtime.Serialization.SafeSerializationManager[
 	| System.Runtime.Serialization.SafeSerializationManager.RealTypeSerializationName ~> UNION[
+<<<<<<< HEAD
 		| !(0 == arr) & !(1 < arr.0_Length) & !hasKey#6 & (ArrayTypeVariable1 <: System.Int32[]) ~> (HeapRef 5)
 		| !(ArrayTypeVariable1 <: System.Int32[]) | 0 == arr | 1 < arr.0_Length | hasKey#6 ~> (HeapRef System.Runtime.Serialization.SafeSerializationManager.RealTypeSerializationName)]]
+=======
+		| !(0 == arr) & !(1 < arr.0_Length) & !hasKey#6 & (ArrayTypeVariable{arr} <: System.Int32[]) ~> (HeapRef 5)
+		| !(ArrayTypeVariable{arr} <: System.Int32[]) | 0 == arr | 1 < arr.0_Length | hasKey#6 ~> (HeapRef System.Runtime.Serialization.SafeSerializationManager.RealTypeSerializationName)]]
+>>>>>>> origin/mergeWithRead
 System.SystemException ==> STRUCT System.SystemException[]
 VSharp.CSharpUtils.Tests.Lists ==> STRUCT VSharp.CSharpUtils.Tests.Lists[]
 METHOD: System.Int32 VSharp.CSharpUtils.Tests.Unsafe.ChangeThroughIndirection()
@@ -11218,227 +12777,72 @@ HEAP:
 ---------- s0 = ----------
 VSharp.CSharpUtils.Tests.Unsafe ==> STRUCT VSharp.CSharpUtils.Tests.Unsafe[]
 METHOD: System.Int32 VSharp.CSharpUtils.Tests.Methods.VirtualB.F()
-RESULT: 8
+RESULT: UNION[
+	| !(VSharp.CSharpUtils.Tests.Methods.VirtualB <: TypeVariable{this}{VSharp.CSharpUtils.Tests.Methods.VirtualB}) ~> λ[F]_1
+	| (VSharp.CSharpUtils.Tests.Methods.VirtualB <: TypeVariable{this}{VSharp.CSharpUtils.Tests.Methods.VirtualB}) ~> 8]
 HEAP:
-{ heap = <empty>, statics = s0 } where
+{ heap = merge[
+	((VSharp.CSharpUtils.Tests.Methods.VirtualB <: TypeVariable{this}{VSharp.CSharpUtils.Tests.Methods.VirtualB}), <empty>),
+	(!(VSharp.CSharpUtils.Tests.Methods.VirtualB <: TypeVariable{this}{VSharp.CSharpUtils.Tests.Methods.VirtualB}), app(λ[F]_1))], statics = merge[
+	((VSharp.CSharpUtils.Tests.Methods.VirtualB <: TypeVariable{this}{VSharp.CSharpUtils.Tests.Methods.VirtualB}), s0),
+	(!(VSharp.CSharpUtils.Tests.Methods.VirtualB <: TypeVariable{this}{VSharp.CSharpUtils.Tests.Methods.VirtualB}), app(λ[F]_1))] } where
 ---------- s0 = ----------
 VSharp.CSharpUtils.Tests.Methods.VirtualB ==> STRUCT VSharp.CSharpUtils.Tests.Methods.VirtualB[]
 METHOD: System.Int32 VSharp.CSharpUtils.Tests.Methods.VirtualE.F()
-RESULT: 9
+RESULT: UNION[
+	| !(VSharp.CSharpUtils.Tests.Methods.VirtualE <: TypeVariable{this}{VSharp.CSharpUtils.Tests.Methods.VirtualE}) ~> λ[F]_1
+	| (VSharp.CSharpUtils.Tests.Methods.VirtualE <: TypeVariable{this}{VSharp.CSharpUtils.Tests.Methods.VirtualE}) ~> 9]
 HEAP:
-{ heap = <empty>, statics = s0 } where
+{ heap = merge[
+	((VSharp.CSharpUtils.Tests.Methods.VirtualE <: TypeVariable{this}{VSharp.CSharpUtils.Tests.Methods.VirtualE}), <empty>),
+	(!(VSharp.CSharpUtils.Tests.Methods.VirtualE <: TypeVariable{this}{VSharp.CSharpUtils.Tests.Methods.VirtualE}), app(λ[F]_1))], statics = merge[
+	((VSharp.CSharpUtils.Tests.Methods.VirtualE <: TypeVariable{this}{VSharp.CSharpUtils.Tests.Methods.VirtualE}), s0),
+	(!(VSharp.CSharpUtils.Tests.Methods.VirtualE <: TypeVariable{this}{VSharp.CSharpUtils.Tests.Methods.VirtualE}), app(λ[F]_1))] } where
 ---------- s0 = ----------
 VSharp.CSharpUtils.Tests.Methods.VirtualE ==> STRUCT VSharp.CSharpUtils.Tests.Methods.VirtualE[]
 METHOD: System.Int32 VSharp.CSharpUtils.Tests.Methods.VirtualC.F()
-RESULT: 7
+RESULT: UNION[
+	| !(VSharp.CSharpUtils.Tests.Methods.VirtualC <: TypeVariable{this}{VSharp.CSharpUtils.Tests.Methods.VirtualC}) ~> λ[F]_1
+	| (VSharp.CSharpUtils.Tests.Methods.VirtualC <: TypeVariable{this}{VSharp.CSharpUtils.Tests.Methods.VirtualC}) ~> 7]
 HEAP:
-{ heap = <empty>, statics = s0 } where
+{ heap = merge[
+	((VSharp.CSharpUtils.Tests.Methods.VirtualC <: TypeVariable{this}{VSharp.CSharpUtils.Tests.Methods.VirtualC}), <empty>),
+	(!(VSharp.CSharpUtils.Tests.Methods.VirtualC <: TypeVariable{this}{VSharp.CSharpUtils.Tests.Methods.VirtualC}), app(λ[F]_1))], statics = merge[
+	((VSharp.CSharpUtils.Tests.Methods.VirtualC <: TypeVariable{this}{VSharp.CSharpUtils.Tests.Methods.VirtualC}), s0),
+	(!(VSharp.CSharpUtils.Tests.Methods.VirtualC <: TypeVariable{this}{VSharp.CSharpUtils.Tests.Methods.VirtualC}), app(λ[F]_1))] } where
 ---------- s0 = ----------
 VSharp.CSharpUtils.Tests.Methods.VirtualC ==> STRUCT VSharp.CSharpUtils.Tests.Methods.VirtualC[]
 METHOD: System.Int32 VSharp.CSharpUtils.Tests.Methods.VirtualG.F()
-RESULT: 66
+RESULT: UNION[
+	| !(VSharp.CSharpUtils.Tests.Methods.VirtualG <: TypeVariable{this}{VSharp.CSharpUtils.Tests.Methods.VirtualG}) ~> λ[F]_1
+	| (VSharp.CSharpUtils.Tests.Methods.VirtualG <: TypeVariable{this}{VSharp.CSharpUtils.Tests.Methods.VirtualG}) ~> 66]
 HEAP:
-{ heap = <empty>, statics = s0 } where
+{ heap = merge[
+	((VSharp.CSharpUtils.Tests.Methods.VirtualG <: TypeVariable{this}{VSharp.CSharpUtils.Tests.Methods.VirtualG}), <empty>),
+	(!(VSharp.CSharpUtils.Tests.Methods.VirtualG <: TypeVariable{this}{VSharp.CSharpUtils.Tests.Methods.VirtualG}), app(λ[F]_1))], statics = merge[
+	((VSharp.CSharpUtils.Tests.Methods.VirtualG <: TypeVariable{this}{VSharp.CSharpUtils.Tests.Methods.VirtualG}), s0),
+	(!(VSharp.CSharpUtils.Tests.Methods.VirtualG <: TypeVariable{this}{VSharp.CSharpUtils.Tests.Methods.VirtualG}), app(λ[F]_1))] } where
 ---------- s0 = ----------
 VSharp.CSharpUtils.Tests.Methods.VirtualG ==> STRUCT VSharp.CSharpUtils.Tests.Methods.VirtualG[]
 METHOD: VSharp.CSharpUtils.Tests.Typecast.IMovable VSharp.CSharpUtils.Tests.Methods.VirtualMethod.MakeVirtualMove(VSharp.CSharpUtils.Tests.Typecast.Pawn, VSharp.CSharpUtils.Tests.Typecast.Coord)
 RESULT: UNION[
 	| !(0 == p) ~> (HeapRef p)
-	| 0 == p ~> <ERROR: (HeapRef 3)>]
+	| 0 == p ~> null]
 HEAP:
 { heap = merge[
+<<<<<<< HEAD
 	((VSharp.CSharpUtils.Tests.Typecast.Pawn <: TypeVariable1{VSharp.CSharpUtils.Tests.Typecast.Pawn}) | 0 == p, h0),
 	(!(0 == p) & !(VSharp.CSharpUtils.Tests.Typecast.Pawn <: TypeVariable1{VSharp.CSharpUtils.Tests.Typecast.Pawn}), { heap = <empty>, statics = s1 } ⚪ app(MakeMove((HeapRef p), STRUCT VSharp.CSharpUtils.Tests.Typecast.Coord[])))], statics = s2 } where
+=======
+	((VSharp.CSharpUtils.Tests.Typecast.Pawn <: TypeVariable{p}{VSharp.CSharpUtils.Tests.Typecast.Pawn}) | 0 == p, h0),
+	(!(0 == p) & !(VSharp.CSharpUtils.Tests.Typecast.Pawn <: TypeVariable{p}{VSharp.CSharpUtils.Tests.Typecast.Pawn}), app(STRUCT TypeVariable{λ[MakeMove]_1}{VSharp.CSharpUtils.Tests.Typecast.IMovable}[]))], statics = merge[
+	((VSharp.CSharpUtils.Tests.Typecast.Pawn <: TypeVariable{p}{VSharp.CSharpUtils.Tests.Typecast.Pawn}) | 0 == p, s1),
+	(!(0 == p) & !(VSharp.CSharpUtils.Tests.Typecast.Pawn <: TypeVariable{p}{VSharp.CSharpUtils.Tests.Typecast.Pawn}), app(STRUCT TypeVariable{λ[MakeMove]_1}{VSharp.CSharpUtils.Tests.Typecast.IMovable}[]))] } where
+>>>>>>> origin/mergeWithRead
 ---------- h0 = ----------
-2 ==> STRUCT System.String[
-	| System.String.m_FirstChar ~> [|
-		0: UNION[
-			| 0 == p ~> 'S'];
-		10: UNION[
-			| 0 == p ~> 'c'];
-		11: UNION[
-			| 0 == p ~> 'a'];
-		12: UNION[
-			| 0 == p ~> 's'];
-		13: UNION[
-			| 0 == p ~> 't'];
-		14: UNION[
-			| 0 == p ~> ' '];
-		15: UNION[
-			| 0 == p ~> 'i'];
-		16: UNION[
-			| 0 == p ~> 's'];
-		17: UNION[
-			| 0 == p ~> ' '];
-		18: UNION[
-			| 0 == p ~> 'n'];
-		19: UNION[
-			| 0 == p ~> 'o'];
-		1: UNION[
-			| 0 == p ~> 'p'];
-		20: UNION[
-			| 0 == p ~> 't'];
-		21: UNION[
-			| 0 == p ~> ' '];
-		22: UNION[
-			| 0 == p ~> 'v'];
-		23: UNION[
-			| 0 == p ~> 'a'];
-		24: UNION[
-			| 0 == p ~> 'l'];
-		25: UNION[
-			| 0 == p ~> 'i'];
-		26: UNION[
-			| 0 == p ~> 'd'];
-		27: UNION[
-			| 0 == p ~> '.'];
-		28: UNION[
-			| 0 == p ~> '\000'];
-		2: UNION[
-			| 0 == p ~> 'e'];
-		3: UNION[
-			| 0 == p ~> 'c'];
-		4: UNION[
-			| 0 == p ~> 'i'];
-		5: UNION[
-			| 0 == p ~> 'f'];
-		6: UNION[
-			| 0 == p ~> 'i'];
-		7: UNION[
-			| 0 == p ~> 'e'];
-		8: UNION[
-			| 0 == p ~> 'd'];
-		9: UNION[
-			| 0 == p ~> ' '];
-		 ... UNION[
-	| 0 == p ~> 29] ... |]
-	| System.String.m_StringLength ~> UNION[
-		| 0 == p ~> 28]]
-3 ==> STRUCT System.InvalidCastException[
-	| System.Exception._HResult ~> UNION[
-		| 0 == p ~> -2147467262]
-	| System.Exception._className ~> UNION[
-		| 0 == p ~> null]
-	| System.Exception._data ~> UNION[
-		| 0 == p ~> null]
-	| System.Exception._dynamicMethods ~> UNION[
-		| 0 == p ~> null]
-	| System.Exception._helpURL ~> UNION[
-		| 0 == p ~> null]
-	| System.Exception._innerException ~> UNION[
-		| 0 == p ~> null]
-	| System.Exception._message ~> UNION[
-		| 0 == p ~> (HeapRef 2)]
-	| System.Exception._remoteStackIndex ~> UNION[
-		| 0 == p ~> 0]
-	| System.Exception._remoteStackTraceString ~> UNION[
-		| 0 == p ~> null]
-	| System.Exception._safeSerializationManager ~> UNION[
-		| 0 == p ~> (HeapRef 5)]
-	| System.Exception._source ~> UNION[
-		| 0 == p ~> null]
-	| System.Exception._stackTrace ~> UNION[
-		| 0 == p ~> null]
-	| System.Exception._stackTraceString ~> UNION[
-		| 0 == p ~> null]
-	| System.Exception.captured_traces ~> UNION[
-		| 0 == p ~> null]
-	| System.Exception.native_trace_ips ~> UNION[
-		| 0 == p ~> null]]
-4 ==> STRUCT System.Object[]
-5 ==> STRUCT System.Runtime.Serialization.SafeSerializationManager[
-	| System.Runtime.Serialization.SafeSerializationManager.m_realObject ~> UNION[
-		| 0 == p ~> null]
-	| System.Runtime.Serialization.SafeSerializationManager.m_realType ~> UNION[
-		| 0 == p ~> null]
-	| System.Runtime.Serialization.SafeSerializationManager.m_savedSerializationInfo ~> UNION[
-		| 0 == p ~> null]
-	| System.Runtime.Serialization.SafeSerializationManager.m_serializedStates ~> UNION[
-		| 0 == p ~> null]]
-6 ==> STRUCT System.String[
-	| System.String.m_FirstChar ~> [|
-		0: UNION[
-			| !hasKey#7 & 0 == p ~> 'C'];
-		10: UNION[
-			| !hasKey#7 & 0 == p ~> 'r'];
-		11: UNION[
-			| !hasKey#7 & 0 == p ~> 'i'];
-		12: UNION[
-			| !hasKey#7 & 0 == p ~> 'a'];
-		13: UNION[
-			| !hasKey#7 & 0 == p ~> 'l'];
-		14: UNION[
-			| !hasKey#7 & 0 == p ~> 'i'];
-		15: UNION[
-			| !hasKey#7 & 0 == p ~> 'z'];
-		16: UNION[
-			| !hasKey#7 & 0 == p ~> 'a'];
-		17: UNION[
-			| !hasKey#7 & 0 == p ~> 't'];
-		18: UNION[
-			| !hasKey#7 & 0 == p ~> 'i'];
-		19: UNION[
-			| !hasKey#7 & 0 == p ~> 'o'];
-		1: UNION[
-			| !hasKey#7 & 0 == p ~> 'L'];
-		20: UNION[
-			| !hasKey#7 & 0 == p ~> 'n'];
-		21: UNION[
-			| !hasKey#7 & 0 == p ~> 'M'];
-		22: UNION[
-			| !hasKey#7 & 0 == p ~> 'a'];
-		23: UNION[
-			| !hasKey#7 & 0 == p ~> 'n'];
-		24: UNION[
-			| !hasKey#7 & 0 == p ~> 'a'];
-		25: UNION[
-			| !hasKey#7 & 0 == p ~> 'g'];
-		26: UNION[
-			| !hasKey#7 & 0 == p ~> 'e'];
-		27: UNION[
-			| !hasKey#7 & 0 == p ~> 'r'];
-		28: UNION[
-			| !hasKey#7 & 0 == p ~> '_'];
-		29: UNION[
-			| !hasKey#7 & 0 == p ~> 'R'];
-		2: UNION[
-			| !hasKey#7 & 0 == p ~> 'R'];
-		30: UNION[
-			| !hasKey#7 & 0 == p ~> 'e'];
-		31: UNION[
-			| !hasKey#7 & 0 == p ~> 'a'];
-		32: UNION[
-			| !hasKey#7 & 0 == p ~> 'l'];
-		33: UNION[
-			| !hasKey#7 & 0 == p ~> 'T'];
-		34: UNION[
-			| !hasKey#7 & 0 == p ~> 'y'];
-		35: UNION[
-			| !hasKey#7 & 0 == p ~> 'p'];
-		36: UNION[
-			| !hasKey#7 & 0 == p ~> 'e'];
-		37: UNION[
-			| !hasKey#7 & 0 == p ~> '\000'];
-		3: UNION[
-			| !hasKey#7 & 0 == p ~> '_'];
-		4: UNION[
-			| !hasKey#7 & 0 == p ~> 'S'];
-		5: UNION[
-			| !hasKey#7 & 0 == p ~> 'a'];
-		6: UNION[
-			| !hasKey#7 & 0 == p ~> 'f'];
-		7: UNION[
-			| !hasKey#7 & 0 == p ~> 'e'];
-		8: UNION[
-			| !hasKey#7 & 0 == p ~> 'S'];
-		9: UNION[
-			| !hasKey#7 & 0 == p ~> 'e'];
-		 ... UNION[
-	| !hasKey#7 & 0 == p ~> 38] ... |]
-	| System.String.m_StringLength ~> UNION[
-		| !hasKey#7 & 0 == p ~> 37]]
-p ==> STRUCT TypeVariable1{VSharp.CSharpUtils.Tests.Typecast.Pawn}[
+p ==> STRUCT TypeVariable{p}{VSharp.CSharpUtils.Tests.Typecast.Pawn}[
 	| VSharp.CSharpUtils.Tests.Typecast.Piece._xCoord ~> UNION[
+<<<<<<< HEAD
 		| !(0 == p) & (VSharp.CSharpUtils.Tests.Typecast.Pawn <: TypeVariable1{VSharp.CSharpUtils.Tests.Typecast.Pawn}) ~> VSharp.CSharpUtils.Tests.Typecast.Coord.X + VSharp.CSharpUtils.Tests.Typecast.Coord.Y
 		| 0 == p ~> p.VSharp.CSharpUtils.Tests.Typecast.Piece._xCoord]
 	| VSharp.CSharpUtils.Tests.Typecast.Piece._yCoord ~> UNION[
@@ -11462,21 +12866,31 @@ System.Runtime.Serialization.SafeSerializationManager ==> STRUCT System.Runtime.
 		| !(0 == p) | hasKey#7 ~> (HeapRef System.Runtime.Serialization.SafeSerializationManager.RealTypeSerializationName)
 		| !hasKey#7 & 0 == p ~> (HeapRef 6)]]
 System.SystemException ==> STRUCT System.SystemException[]
+=======
+		| !(0 == p) & (VSharp.CSharpUtils.Tests.Typecast.Pawn <: TypeVariable{p}{VSharp.CSharpUtils.Tests.Typecast.Pawn}) ~> VSharp.CSharpUtils.Tests.Typecast.Coord.X + VSharp.CSharpUtils.Tests.Typecast.Coord.Y
+		| 0 == p ~> p.VSharp.CSharpUtils.Tests.Typecast.Piece._xCoord]
+	| VSharp.CSharpUtils.Tests.Typecast.Piece._yCoord ~> UNION[
+		| !(0 == p) & (VSharp.CSharpUtils.Tests.Typecast.Pawn <: TypeVariable{p}{VSharp.CSharpUtils.Tests.Typecast.Pawn}) ~> -VSharp.CSharpUtils.Tests.Typecast.Coord.Y + VSharp.CSharpUtils.Tests.Typecast.Coord.X
+		| 0 == p ~> p.VSharp.CSharpUtils.Tests.Typecast.Piece._yCoord]]
+---------- s1 = ----------
+>>>>>>> origin/mergeWithRead
 VSharp.CSharpUtils.Tests.Methods.VirtualMethod ==> STRUCT VSharp.CSharpUtils.Tests.Methods.VirtualMethod[]
 VSharp.CSharpUtils.Tests.Typecast.Coord ==> STRUCT VSharp.CSharpUtils.Tests.Typecast.Coord[]
 VSharp.CSharpUtils.Tests.Typecast.Piece ==> STRUCT VSharp.CSharpUtils.Tests.Typecast.Piece[]
 METHOD: VSharp.CSharpUtils.Tests.Typecast.IMovable VSharp.CSharpUtils.Tests.Methods.VirtualMethod.MakeInterfaceMove(VSharp.CSharpUtils.Tests.Typecast.IMovable, VSharp.CSharpUtils.Tests.Typecast.Coord)
 RESULT: UNION[
-	| !(0 == p) ~> MakeMove((HeapRef p), STRUCT VSharp.CSharpUtils.Tests.Typecast.Coord[])
+	| !(0 == p) ~> STRUCT TypeVariable{λ[MakeMove]_1}{VSharp.CSharpUtils.Tests.Typecast.IMovable}[]
 	| 0 == p ~> null]
 HEAP:
 { heap = merge[
-	(!(0 == p) & !(VSharp.CSharpUtils.Tests.Typecast.IMovable <: TypeVariable1{VSharp.CSharpUtils.Tests.Typecast.IMovable}), { heap = <empty>, statics = s0 } ⚪ app(MakeMove((HeapRef p), STRUCT VSharp.CSharpUtils.Tests.Typecast.Coord[]))),
-	(!(0 == p) & (VSharp.CSharpUtils.Tests.Typecast.IMovable <: TypeVariable1{VSharp.CSharpUtils.Tests.Typecast.IMovable}), { heap = <empty>, statics = s0 } ⚪ app(MakeMove((HeapRef p), STRUCT VSharp.CSharpUtils.Tests.Typecast.Coord[]))),
-	(0 == p, <empty>)], statics = s0 } where
+	(!(0 == p) & !(VSharp.CSharpUtils.Tests.Typecast.IMovable <: TypeVariable{p}{VSharp.CSharpUtils.Tests.Typecast.IMovable}), app(STRUCT TypeVariable{λ[MakeMove]_2}{VSharp.CSharpUtils.Tests.Typecast.IMovable}[])),
+	(!(0 == p) & (VSharp.CSharpUtils.Tests.Typecast.IMovable <: TypeVariable{p}{VSharp.CSharpUtils.Tests.Typecast.IMovable}), app(STRUCT TypeVariable{λ[MakeMove]_1}{VSharp.CSharpUtils.Tests.Typecast.IMovable}[])),
+	(0 == p, <empty>)], statics = merge[
+	(!(0 == p) & !(VSharp.CSharpUtils.Tests.Typecast.IMovable <: TypeVariable{p}{VSharp.CSharpUtils.Tests.Typecast.IMovable}), app(STRUCT TypeVariable{λ[MakeMove]_2}{VSharp.CSharpUtils.Tests.Typecast.IMovable}[])),
+	(!(0 == p) & (VSharp.CSharpUtils.Tests.Typecast.IMovable <: TypeVariable{p}{VSharp.CSharpUtils.Tests.Typecast.IMovable}), app(STRUCT TypeVariable{λ[MakeMove]_1}{VSharp.CSharpUtils.Tests.Typecast.IMovable}[])),
+	(0 == p, s0)] } where
 ---------- s0 = ----------
 VSharp.CSharpUtils.Tests.Methods.VirtualMethod ==> STRUCT VSharp.CSharpUtils.Tests.Methods.VirtualMethod[]
-VSharp.CSharpUtils.Tests.Typecast.IMovable ==> STRUCT VSharp.CSharpUtils.Tests.Typecast.IMovable[]
 METHOD: VSharp.CSharpUtils.Tests.Typecast.IMovable VSharp.CSharpUtils.Tests.Methods.VirtualMethod.MakeConcreteMove(VSharp.CSharpUtils.Tests.Typecast.Coord)
 RESULT: (HeapRef 1)
 HEAP:
@@ -11493,34 +12907,34 @@ VSharp.CSharpUtils.Tests.Typecast.Coord ==> STRUCT VSharp.CSharpUtils.Tests.Type
 VSharp.CSharpUtils.Tests.Typecast.Piece ==> STRUCT VSharp.CSharpUtils.Tests.Typecast.Piece[]
 METHOD: System.Int32 VSharp.CSharpUtils.Tests.Methods.VirtualMethod.VirtualCall(VSharp.CSharpUtils.Tests.Methods.IVirtual)
 RESULT: UNION[
-	| !(0 == a) & !(TypeVariable1{VSharp.CSharpUtils.Tests.Methods.IVirtual} <: VSharp.CSharpUtils.Tests.Methods.VirtualC) ~> F((HeapRef a))
-	| !(0 == a) & !(VSharp.CSharpUtils.Tests.Methods.VirtualC <: TypeVariable1{VSharp.CSharpUtils.Tests.Methods.IVirtual}) & (TypeVariable1{VSharp.CSharpUtils.Tests.Methods.IVirtual} <: VSharp.CSharpUtils.Tests.Methods.VirtualC) ~> F((HeapRef a))
-	| !(0 == a) & (TypeVariable1{VSharp.CSharpUtils.Tests.Methods.IVirtual} <: VSharp.CSharpUtils.Tests.Methods.VirtualC) & (VSharp.CSharpUtils.Tests.Methods.VirtualC <: TypeVariable1{VSharp.CSharpUtils.Tests.Methods.IVirtual}) ~> 7
+	| !(0 == a) & !(TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.IVirtual} <: VSharp.CSharpUtils.Tests.Methods.VirtualC) & !(VSharp.CSharpUtils.Tests.Methods.IVirtual <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.IVirtual}) ~> λ[F]_3
+	| !(0 == a) & !(TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.IVirtual} <: VSharp.CSharpUtils.Tests.Methods.VirtualC) & (VSharp.CSharpUtils.Tests.Methods.IVirtual <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.IVirtual}) ~> λ[F]_2
+	| !(0 == a) & !(VSharp.CSharpUtils.Tests.Methods.VirtualC <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.IVirtual}) & (TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.IVirtual} <: VSharp.CSharpUtils.Tests.Methods.VirtualC) ~> λ[F]_1
+	| !(0 == a) & (TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.IVirtual} <: VSharp.CSharpUtils.Tests.Methods.VirtualC) & (VSharp.CSharpUtils.Tests.Methods.VirtualC <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.IVirtual}) ~> 7
 	| 0 == a ~> 0]
 HEAP:
 { heap = merge[
-	(!(0 == a) & !(VSharp.CSharpUtils.Tests.Methods.VirtualC <: TypeVariable1{VSharp.CSharpUtils.Tests.Methods.IVirtual}) & (TypeVariable1{VSharp.CSharpUtils.Tests.Methods.IVirtual} <: VSharp.CSharpUtils.Tests.Methods.VirtualC), { heap = h0, statics = s1 } ⚪ app(F((HeapRef a)))),
-	(!(0 == a) & !(TypeVariable1{VSharp.CSharpUtils.Tests.Methods.IVirtual} <: VSharp.CSharpUtils.Tests.Methods.VirtualC) & (VSharp.CSharpUtils.Tests.Methods.IVirtual <: TypeVariable1{VSharp.CSharpUtils.Tests.Methods.IVirtual}), { heap = h0, statics = s2 } ⚪ app(F((HeapRef a)))),
-	(!(0 == a) & !(TypeVariable1{VSharp.CSharpUtils.Tests.Methods.IVirtual} <: VSharp.CSharpUtils.Tests.Methods.VirtualC) & !(VSharp.CSharpUtils.Tests.Methods.IVirtual <: TypeVariable1{VSharp.CSharpUtils.Tests.Methods.IVirtual}), { heap = h0, statics = s2 } ⚪ app(F((HeapRef a)))),
-	((TypeVariable1{VSharp.CSharpUtils.Tests.Methods.IVirtual} <: VSharp.CSharpUtils.Tests.Methods.VirtualC) & (VSharp.CSharpUtils.Tests.Methods.VirtualC <: TypeVariable1{VSharp.CSharpUtils.Tests.Methods.IVirtual}) | 0 == a, h0)], statics = s2 } where
----------- h0 = ----------
-a ==> STRUCT TypeVariable1{VSharp.CSharpUtils.Tests.Methods.IVirtual}[]
----------- s1 = ----------
-VSharp.CSharpUtils.Tests.Methods.VirtualC ==> STRUCT VSharp.CSharpUtils.Tests.Methods.VirtualC[]
-VSharp.CSharpUtils.Tests.Methods.VirtualMethod ==> STRUCT VSharp.CSharpUtils.Tests.Methods.VirtualMethod[]
----------- s2 = ----------
-VSharp.CSharpUtils.Tests.Methods.IVirtual ==> STRUCT VSharp.CSharpUtils.Tests.Methods.IVirtual[]
+	(!(0 == a) & !(VSharp.CSharpUtils.Tests.Methods.VirtualC <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.IVirtual}) & (TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.IVirtual} <: VSharp.CSharpUtils.Tests.Methods.VirtualC), app(λ[F]_1)),
+	(!(0 == a) & !(TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.IVirtual} <: VSharp.CSharpUtils.Tests.Methods.VirtualC) & !(VSharp.CSharpUtils.Tests.Methods.IVirtual <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.IVirtual}), app(λ[F]_3)),
+	(!(0 == a) & !(TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.IVirtual} <: VSharp.CSharpUtils.Tests.Methods.VirtualC) & (VSharp.CSharpUtils.Tests.Methods.IVirtual <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.IVirtual}), app(λ[F]_2)),
+	((TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.IVirtual} <: VSharp.CSharpUtils.Tests.Methods.VirtualC) & (VSharp.CSharpUtils.Tests.Methods.VirtualC <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.IVirtual}) | 0 == a, <empty>)], statics = merge[
+	(!(0 == a) & !(VSharp.CSharpUtils.Tests.Methods.VirtualC <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.IVirtual}) & (TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.IVirtual} <: VSharp.CSharpUtils.Tests.Methods.VirtualC), app(λ[F]_1)),
+	(!(0 == a) & !(TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.IVirtual} <: VSharp.CSharpUtils.Tests.Methods.VirtualC) & !(VSharp.CSharpUtils.Tests.Methods.IVirtual <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.IVirtual}), app(λ[F]_3)),
+	(!(0 == a) & !(TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.IVirtual} <: VSharp.CSharpUtils.Tests.Methods.VirtualC) & (VSharp.CSharpUtils.Tests.Methods.IVirtual <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.IVirtual}), app(λ[F]_2)),
+	((TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.IVirtual} <: VSharp.CSharpUtils.Tests.Methods.VirtualC) & (VSharp.CSharpUtils.Tests.Methods.VirtualC <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.IVirtual}) | 0 == a, s0)] } where
+---------- s0 = ----------
 VSharp.CSharpUtils.Tests.Methods.VirtualC ==> STRUCT VSharp.CSharpUtils.Tests.Methods.VirtualC[]
 VSharp.CSharpUtils.Tests.Methods.VirtualMethod ==> STRUCT VSharp.CSharpUtils.Tests.Methods.VirtualMethod[]
 METHOD: System.Int32 VSharp.CSharpUtils.Tests.Methods.VirtualMethod.VirtualCall1(VSharp.CSharpUtils.Tests.Methods.VirtualC, System.Int32)
 RESULT: UNION[
-	| !(0 == a) & !(VSharp.CSharpUtils.Tests.Methods.VirtualC <: TypeVariable1{VSharp.CSharpUtils.Tests.Methods.VirtualC}) & !(n <= 10) ~> F((HeapRef a))
-	| !(0 == a) & !(VSharp.CSharpUtils.Tests.Methods.VirtualC <: TypeVariable1{VSharp.CSharpUtils.Tests.Methods.VirtualC}) & n <= 10 ~> F((HeapRef a))
-	| !(0 == a) & !(n <= 10) & (VSharp.CSharpUtils.Tests.Methods.VirtualC <: TypeVariable1{VSharp.CSharpUtils.Tests.Methods.VirtualC}) ~> 7
-	| !(0 == a) & (VSharp.CSharpUtils.Tests.Methods.VirtualC <: TypeVariable1{VSharp.CSharpUtils.Tests.Methods.VirtualC}) & n <= 10 ~> 71
+	| !(0 == a) & !(VSharp.CSharpUtils.Tests.Methods.VirtualC <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.VirtualC}) & !(n <= 10) ~> λ[F]_1
+	| !(0 == a) & !(VSharp.CSharpUtils.Tests.Methods.VirtualC <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.VirtualC}) & n <= 10 ~> λ[F]_2
+	| !(0 == a) & !(n <= 10) & (VSharp.CSharpUtils.Tests.Methods.VirtualC <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.VirtualC}) ~> 7
+	| !(0 == a) & (VSharp.CSharpUtils.Tests.Methods.VirtualC <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.VirtualC}) & n <= 10 ~> 71
 	| 0 == a ~> 0]
 HEAP:
 { heap = merge[
+<<<<<<< HEAD
 	(!(0 == a) & !(VSharp.CSharpUtils.Tests.Methods.VirtualC <: TypeVariable1{VSharp.CSharpUtils.Tests.Methods.VirtualC}) & !(n <= 10), { heap = <empty>, statics = s0 } ⚪ app(F((HeapRef a)))),
 	(!(0 == a) & !(VSharp.CSharpUtils.Tests.Methods.VirtualC <: TypeVariable1{VSharp.CSharpUtils.Tests.Methods.VirtualC}) & n <= 10, { heap = <empty>, statics = s1 } ⚪ app(F((HeapRef a)))),
 	((VSharp.CSharpUtils.Tests.Methods.VirtualC <: TypeVariable1{VSharp.CSharpUtils.Tests.Methods.VirtualC}) | 0 == a, <empty>)], statics = s1 } where
@@ -11528,27 +12942,34 @@ HEAP:
 VSharp.CSharpUtils.Tests.Methods.VirtualC ==> STRUCT VSharp.CSharpUtils.Tests.Methods.VirtualC[]
 VSharp.CSharpUtils.Tests.Methods.VirtualMethod ==> STRUCT VSharp.CSharpUtils.Tests.Methods.VirtualMethod[]
 ---------- s1 = ----------
+=======
+	(!(0 == a) & (!(VSharp.CSharpUtils.Tests.Methods.VirtualC <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.VirtualC}) & !(n <= 10) | (!(VSharp.CSharpUtils.Tests.Methods.VirtualC <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.VirtualC}) & !(n <= 10) & !hasKey#3 & (!(VSharp.CSharpUtils.Tests.Methods.VirtualC <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.VirtualC}) & !(n <= 10) | !hasKey#2) | !(VSharp.CSharpUtils.Tests.Methods.VirtualC <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.VirtualC}) & !(n <= 10) & (!(VSharp.CSharpUtils.Tests.Methods.VirtualC <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.VirtualC}) & !(n <= 10) & hasKey#3 | ((VSharp.CSharpUtils.Tests.Methods.VirtualC <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.VirtualC}) | n <= 10) & hasKey#2)) & (VSharp.CSharpUtils.Tests.Methods.VirtualC <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.VirtualC}) & n <= 10), app(λ[F]_1)),
+	(!(0 == a) & !(VSharp.CSharpUtils.Tests.Methods.VirtualC <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.VirtualC}) & n <= 10, app(λ[F]_2)),
+	(!(n <= 10) & (VSharp.CSharpUtils.Tests.Methods.VirtualC <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.VirtualC}) | ((!(VSharp.CSharpUtils.Tests.Methods.VirtualC <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.VirtualC}) & !(n <= 10) & hasKey#3 | ((VSharp.CSharpUtils.Tests.Methods.VirtualC <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.VirtualC}) | n <= 10) & hasKey#2) & ((VSharp.CSharpUtils.Tests.Methods.VirtualC <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.VirtualC}) | n <= 10) | (!(VSharp.CSharpUtils.Tests.Methods.VirtualC <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.VirtualC}) & !(n <= 10) | !hasKey#2) & (!hasKey#3 | (VSharp.CSharpUtils.Tests.Methods.VirtualC <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.VirtualC}) | n <= 10) & ((VSharp.CSharpUtils.Tests.Methods.VirtualC <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.VirtualC}) | n <= 10)) & (VSharp.CSharpUtils.Tests.Methods.VirtualC <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.VirtualC}) & n <= 10 | 0 == a, <empty>)], statics = merge[
+	(!(0 == a) & !(VSharp.CSharpUtils.Tests.Methods.VirtualC <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.VirtualC}) & !(n <= 10), app(λ[F]_1)),
+	(!(0 == a) & !(VSharp.CSharpUtils.Tests.Methods.VirtualC <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.VirtualC}) & n <= 10, app(λ[F]_2)),
+	(!(n <= 10) & (VSharp.CSharpUtils.Tests.Methods.VirtualC <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.VirtualC}) | ((!(VSharp.CSharpUtils.Tests.Methods.VirtualC <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.VirtualC}) & !(n <= 10) & hasKey#3 | ((VSharp.CSharpUtils.Tests.Methods.VirtualC <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.VirtualC}) | n <= 10) & hasKey#2) & ((VSharp.CSharpUtils.Tests.Methods.VirtualC <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.VirtualC}) | n <= 10) | (!(VSharp.CSharpUtils.Tests.Methods.VirtualC <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.VirtualC}) & !(n <= 10) | !hasKey#2) & (!hasKey#3 | (VSharp.CSharpUtils.Tests.Methods.VirtualC <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.VirtualC}) | n <= 10) & ((VSharp.CSharpUtils.Tests.Methods.VirtualC <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.VirtualC}) | n <= 10)) & (VSharp.CSharpUtils.Tests.Methods.VirtualC <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.VirtualC}) & n <= 10 | 0 == a, s0)] } where
+---------- s0 = ----------
+>>>>>>> origin/mergeWithRead
 VSharp.CSharpUtils.Tests.Methods.IVirtual ==> STRUCT VSharp.CSharpUtils.Tests.Methods.IVirtual[]
 VSharp.CSharpUtils.Tests.Methods.VirtualC ==> STRUCT VSharp.CSharpUtils.Tests.Methods.VirtualC[]
 VSharp.CSharpUtils.Tests.Methods.VirtualMethod ==> STRUCT VSharp.CSharpUtils.Tests.Methods.VirtualMethod[]
 METHOD: System.Int32 VSharp.CSharpUtils.Tests.Methods.VirtualMethod.VirtualCall3(VSharp.CSharpUtils.Tests.Methods.VirtualG, System.Int32)
 RESULT: UNION[
-	| !(0 == a) & !(VSharp.CSharpUtils.Tests.Methods.VirtualG <: TypeVariable1{VSharp.CSharpUtils.Tests.Methods.VirtualG}) & !(n <= 10) ~> F((HeapRef a))
-	| !(0 == a) & !(VSharp.CSharpUtils.Tests.Methods.VirtualG <: TypeVariable1{VSharp.CSharpUtils.Tests.Methods.VirtualG}) & n <= 10 ~> F((HeapRef a))
-	| !(0 == a) & !(n <= 10) & (VSharp.CSharpUtils.Tests.Methods.VirtualG <: TypeVariable1{VSharp.CSharpUtils.Tests.Methods.VirtualG}) ~> 8
-	| !(0 == a) & (VSharp.CSharpUtils.Tests.Methods.VirtualG <: TypeVariable1{VSharp.CSharpUtils.Tests.Methods.VirtualG}) & n <= 10 ~> 66
+	| !(0 == a) & !(VSharp.CSharpUtils.Tests.Methods.VirtualG <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.VirtualG}) & !(n <= 10) ~> λ[F]_1
+	| !(0 == a) & !(VSharp.CSharpUtils.Tests.Methods.VirtualG <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.VirtualG}) & n <= 10 ~> λ[F]_2
+	| !(0 == a) & !(n <= 10) & (VSharp.CSharpUtils.Tests.Methods.VirtualG <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.VirtualG}) ~> 8
+	| !(0 == a) & (VSharp.CSharpUtils.Tests.Methods.VirtualG <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.VirtualG}) & n <= 10 ~> 66
 	| 0 == a ~> 0]
 HEAP:
 { heap = merge[
-	(!(0 == a) & !(VSharp.CSharpUtils.Tests.Methods.VirtualG <: TypeVariable1{VSharp.CSharpUtils.Tests.Methods.VirtualG}) & !(n <= 10), { heap = h0, statics = s1 } ⚪ app(F((HeapRef a)))),
-	(!(0 == a) & !(VSharp.CSharpUtils.Tests.Methods.VirtualG <: TypeVariable1{VSharp.CSharpUtils.Tests.Methods.VirtualG}) & n <= 10, { heap = h0, statics = s2 } ⚪ app(F((HeapRef a)))),
-	((VSharp.CSharpUtils.Tests.Methods.VirtualG <: TypeVariable1{VSharp.CSharpUtils.Tests.Methods.VirtualG}) | 0 == a, h0)], statics = s2 } where
----------- h0 = ----------
-a ==> STRUCT TypeVariable1{VSharp.CSharpUtils.Tests.Methods.VirtualG}[]
----------- s1 = ----------
-VSharp.CSharpUtils.Tests.Methods.VirtualB ==> STRUCT VSharp.CSharpUtils.Tests.Methods.VirtualB[]
-VSharp.CSharpUtils.Tests.Methods.VirtualMethod ==> STRUCT VSharp.CSharpUtils.Tests.Methods.VirtualMethod[]
----------- s2 = ----------
+	(!(0 == a) & (!(VSharp.CSharpUtils.Tests.Methods.VirtualG <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.VirtualG}) & !(n <= 10) | (!(VSharp.CSharpUtils.Tests.Methods.VirtualG <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.VirtualG}) & !(n <= 10) & !hasKey#3 & (!(VSharp.CSharpUtils.Tests.Methods.VirtualG <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.VirtualG}) & !(n <= 10) | !hasKey#2) | !(VSharp.CSharpUtils.Tests.Methods.VirtualG <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.VirtualG}) & !(n <= 10) & (!(VSharp.CSharpUtils.Tests.Methods.VirtualG <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.VirtualG}) & !(n <= 10) & hasKey#3 | ((VSharp.CSharpUtils.Tests.Methods.VirtualG <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.VirtualG}) | n <= 10) & hasKey#2)) & (VSharp.CSharpUtils.Tests.Methods.VirtualG <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.VirtualG}) & n <= 10), app(λ[F]_1)),
+	(!(0 == a) & !(VSharp.CSharpUtils.Tests.Methods.VirtualG <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.VirtualG}) & n <= 10, app(λ[F]_2)),
+	(!(n <= 10) & (VSharp.CSharpUtils.Tests.Methods.VirtualG <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.VirtualG}) | ((!(VSharp.CSharpUtils.Tests.Methods.VirtualG <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.VirtualG}) & !(n <= 10) & hasKey#3 | ((VSharp.CSharpUtils.Tests.Methods.VirtualG <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.VirtualG}) | n <= 10) & hasKey#2) & ((VSharp.CSharpUtils.Tests.Methods.VirtualG <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.VirtualG}) | n <= 10) | (!(VSharp.CSharpUtils.Tests.Methods.VirtualG <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.VirtualG}) & !(n <= 10) | !hasKey#2) & (!hasKey#3 | (VSharp.CSharpUtils.Tests.Methods.VirtualG <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.VirtualG}) | n <= 10) & ((VSharp.CSharpUtils.Tests.Methods.VirtualG <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.VirtualG}) | n <= 10)) & (VSharp.CSharpUtils.Tests.Methods.VirtualG <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.VirtualG}) | 0 == a, <empty>)], statics = merge[
+	(!(0 == a) & !(VSharp.CSharpUtils.Tests.Methods.VirtualG <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.VirtualG}) & !(n <= 10), app(λ[F]_1)),
+	(!(0 == a) & !(VSharp.CSharpUtils.Tests.Methods.VirtualG <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.VirtualG}) & n <= 10, app(λ[F]_2)),
+	(!(n <= 10) & (VSharp.CSharpUtils.Tests.Methods.VirtualG <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.VirtualG}) | ((!(VSharp.CSharpUtils.Tests.Methods.VirtualG <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.VirtualG}) & !(n <= 10) & hasKey#3 | ((VSharp.CSharpUtils.Tests.Methods.VirtualG <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.VirtualG}) | n <= 10) & hasKey#2) & ((VSharp.CSharpUtils.Tests.Methods.VirtualG <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.VirtualG}) | n <= 10) | (!(VSharp.CSharpUtils.Tests.Methods.VirtualG <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.VirtualG}) & !(n <= 10) | !hasKey#2) & (!hasKey#3 | (VSharp.CSharpUtils.Tests.Methods.VirtualG <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.VirtualG}) | n <= 10) & ((VSharp.CSharpUtils.Tests.Methods.VirtualG <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.VirtualG}) | n <= 10)) & (VSharp.CSharpUtils.Tests.Methods.VirtualG <: TypeVariable{a}{VSharp.CSharpUtils.Tests.Methods.VirtualG}) | 0 == a, s0)] } where
+---------- s0 = ----------
 VSharp.CSharpUtils.Tests.Methods.VirtualB ==> STRUCT VSharp.CSharpUtils.Tests.Methods.VirtualB[]
 VSharp.CSharpUtils.Tests.Methods.VirtualC ==> STRUCT VSharp.CSharpUtils.Tests.Methods.VirtualC[]
 VSharp.CSharpUtils.Tests.Methods.VirtualMethod ==> STRUCT VSharp.CSharpUtils.Tests.Methods.VirtualMethod[]
@@ -11612,24 +13033,19 @@ System.Math ==> STRUCT System.Math[
 VSharp.CSharpUtils.Tests.Typecast.Coord ==> STRUCT VSharp.CSharpUtils.Tests.Typecast.Coord[]
 METHOD: System.Int32 VSharp.CSharpUtils.Tests.Typecast.Typecast.DownCastObject(System.Object)
 RESULT: UNION[
-	| !(0 == obj) & (TypeVariable1{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Piece) ~> 5
-	| !(TypeVariable1{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Piece) | 0 == obj ~> 6]
+	| !(0 == obj) & (TypeVariable{obj}{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Piece) ~> 5
+	| !(TypeVariable{obj}{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Piece) | 0 == obj ~> 6]
 HEAP:
-{ heap = h0, statics = s1 } where
----------- h0 = ----------
-obj ==> STRUCT TypeVariable1{System.Object}[]
----------- s1 = ----------
+{ heap = <empty>, statics = s0 } where
+---------- s0 = ----------
 VSharp.CSharpUtils.Tests.Typecast.Typecast ==> STRUCT VSharp.CSharpUtils.Tests.Typecast.Typecast[]
 METHOD: System.Int32 VSharp.CSharpUtils.Tests.Typecast.Typecast.DownCastObject2(System.Object, System.Object)
 RESULT: UNION[
-	| !(0 == obj1) & !(0 == obj2) & (TypeVariable1{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Piece) & (TypeVariable2{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Pawn) | !(0 == obj1) & (TypeVariable1{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Pawn) & (TypeVariable1{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Piece) ~> 5
-	| (!(TypeVariable1{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Pawn) | !(TypeVariable1{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Piece) | 0 == obj1) & (!(TypeVariable1{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Piece) | !(TypeVariable2{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Pawn) | 0 == obj1 | 0 == obj2) ~> 6]
+	| !(0 == obj1) & !(0 == obj2) & (TypeVariable{obj1}{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Piece) & (TypeVariable{obj2}{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Pawn) | !(0 == obj1) & (TypeVariable{obj1}{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Pawn) & (TypeVariable{obj1}{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Piece) ~> 5
+	| (!(TypeVariable{obj1}{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Pawn) | !(TypeVariable{obj1}{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Piece) | 0 == obj1) & (!(TypeVariable{obj1}{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Piece) | !(TypeVariable{obj2}{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Pawn) | 0 == obj1 | 0 == obj2) ~> 6]
 HEAP:
-{ heap = h0, statics = s1 } where
----------- h0 = ----------
-obj1 ==> STRUCT TypeVariable1{System.Object}[]
-obj2 ==> STRUCT TypeVariable2{System.Object}[]
----------- s1 = ----------
+{ heap = <empty>, statics = s0 } where
+---------- s0 = ----------
 VSharp.CSharpUtils.Tests.Typecast.Typecast ==> STRUCT VSharp.CSharpUtils.Tests.Typecast.Typecast[]
 METHOD: System.Int32 VSharp.CSharpUtils.Tests.Typecast.Typecast.UpCast()
 RESULT: 15
@@ -11648,13 +13064,11 @@ VSharp.CSharpUtils.Tests.Typecast.Piece ==> STRUCT VSharp.CSharpUtils.Tests.Type
 VSharp.CSharpUtils.Tests.Typecast.Typecast ==> STRUCT VSharp.CSharpUtils.Tests.Typecast.Typecast[]
 METHOD: System.Int32 VSharp.CSharpUtils.Tests.Typecast.Typecast.DownCastPiece(VSharp.CSharpUtils.Tests.Typecast.Piece)
 RESULT: UNION[
-	| !(0 == piece) & (TypeVariable1{VSharp.CSharpUtils.Tests.Typecast.Piece} <: VSharp.CSharpUtils.Tests.Typecast.Pawn) ~> 10
-	| !(TypeVariable1{VSharp.CSharpUtils.Tests.Typecast.Piece} <: VSharp.CSharpUtils.Tests.Typecast.Pawn) | 0 == piece ~> 20]
+	| !(0 == piece) & (TypeVariable{piece}{VSharp.CSharpUtils.Tests.Typecast.Piece} <: VSharp.CSharpUtils.Tests.Typecast.Pawn) ~> 10
+	| !(TypeVariable{piece}{VSharp.CSharpUtils.Tests.Typecast.Piece} <: VSharp.CSharpUtils.Tests.Typecast.Pawn) | 0 == piece ~> 20]
 HEAP:
-{ heap = h0, statics = s1 } where
----------- h0 = ----------
-piece ==> STRUCT TypeVariable1{VSharp.CSharpUtils.Tests.Typecast.Piece}[]
----------- s1 = ----------
+{ heap = <empty>, statics = s0 } where
+---------- s0 = ----------
 VSharp.CSharpUtils.Tests.Typecast.Typecast ==> STRUCT VSharp.CSharpUtils.Tests.Typecast.Typecast[]
 METHOD: System.Int32 VSharp.CSharpUtils.Tests.Typecast.Typecast.CheckCastNullWithTrick()
 RESULT: 20
@@ -11677,8 +13091,9 @@ VSharp.CSharpUtils.Tests.Typecast.Piece ==> STRUCT VSharp.CSharpUtils.Tests.Type
 VSharp.CSharpUtils.Tests.Typecast.Typecast ==> STRUCT VSharp.CSharpUtils.Tests.Typecast.Typecast[]
 METHOD: VSharp.CSharpUtils.Tests.Typecast.Pawn VSharp.CSharpUtils.Tests.Typecast.Typecast.TypeCast(System.Object)
 RESULT: UNION[
-	| !(0 == obj) & (TypeVariable1{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Pawn) ~> (HeapRef obj)
-	| !(TypeVariable1{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Pawn) | 0 == obj ~> <ERROR: (HeapRef 2)>]
+	| !(0 == obj) & !(TypeVariable{obj}{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Pawn) ~> <ERROR: (HeapRef 2)>
+	| !(0 == obj) & (TypeVariable{obj}{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Pawn) ~> (HeapRef obj)
+	| 0 == obj ~> null]
 HEAP:
 { heap = h0, statics = s1 } where
 ---------- h0 = ----------
@@ -11789,6 +13204,7 @@ HEAP:
 		| !(TypeVariable1{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Pawn) | 0 == obj ~> null]]
 5 ==> STRUCT System.String[
 	| System.String.m_FirstChar ~> [|
+<<<<<<< HEAD
 		0: UNION[
 			| !hasKey#5 & (!(TypeVariable1{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Pawn) | 0 == obj) ~> 'C'];
 		10: UNION[
@@ -11878,39 +13294,91 @@ System.Exception ==> STRUCT System.Exception[
 	| System.Exception.s_EDILock ~> UNION[
 		| !(0 == obj) & (TypeVariable1{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Pawn) | (!(TypeVariable1{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Pawn) | 0 == obj) & hasKey#3 ~> (HeapRef System.Exception.s_EDILock)
 		| !hasKey#3 & (!(TypeVariable1{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Pawn) | 0 == obj) ~> (HeapRef 3)]]
+=======
+		0: 'C';
+		10: 'r';
+		11: 'i';
+		12: 'a';
+		13: 'l';
+		14: 'i';
+		15: 'z';
+		16: 'a';
+		17: 't';
+		18: 'i';
+		19: 'o';
+		1: 'L';
+		20: 'n';
+		21: 'M';
+		22: 'a';
+		23: 'n';
+		24: 'a';
+		25: 'g';
+		26: 'e';
+		27: 'r';
+		28: '_';
+		29: 'R';
+		2: 'R';
+		30: 'e';
+		31: 'a';
+		32: 'l';
+		33: 'T';
+		34: 'y';
+		35: 'p';
+		36: 'e';
+		37: '\000';
+		3: '_';
+		4: 'S';
+		5: 'a';
+		6: 'f';
+		7: 'e';
+		8: 'S';
+		9: 'e';
+		 ... 38 ... |]
+	| System.String.m_StringLength ~> 37]
+---------- s1 = ----------
+System.Exception ==> STRUCT System.Exception[
+	| System.Exception._COMPlusExceptionCode ~> UNION[
+		| !(0 == obj) & !(TypeVariable{obj}{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Pawn) & !hasKey#3 ~> -532462766
+		| (TypeVariable{obj}{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Pawn) | 0 == obj | hasKey#3 ~> System.Exception._COMPlusExceptionCode]
+	| System.Exception.s_EDILock ~> UNION[
+		| !(0 == obj) & !(TypeVariable{obj}{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Pawn) & !hasKey#3 ~> (HeapRef 3)
+		| (TypeVariable{obj}{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Pawn) | 0 == obj | hasKey#3 ~> (HeapRef System.Exception.s_EDILock)]]
+>>>>>>> origin/mergeWithRead
 System.InvalidCastException ==> STRUCT System.InvalidCastException[]
 System.Object ==> STRUCT System.Object[]
 System.Runtime.Serialization.SafeSerializationManager ==> STRUCT System.Runtime.Serialization.SafeSerializationManager[
 	| System.Runtime.Serialization.SafeSerializationManager.RealTypeSerializationName ~> UNION[
+<<<<<<< HEAD
 		| !(0 == obj) & (TypeVariable1{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Pawn) | (!(TypeVariable1{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Pawn) | 0 == obj) & hasKey#5 ~> (HeapRef System.Runtime.Serialization.SafeSerializationManager.RealTypeSerializationName)
 		| !hasKey#5 & (!(TypeVariable1{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Pawn) | 0 == obj) ~> (HeapRef 5)]]
+=======
+		| !(0 == obj) & !(TypeVariable{obj}{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Pawn) & !hasKey#5 ~> (HeapRef 5)
+		| (TypeVariable{obj}{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Pawn) | 0 == obj | hasKey#5 ~> (HeapRef System.Runtime.Serialization.SafeSerializationManager.RealTypeSerializationName)]]
+>>>>>>> origin/mergeWithRead
 System.SystemException ==> STRUCT System.SystemException[]
 VSharp.CSharpUtils.Tests.Typecast.Typecast ==> STRUCT VSharp.CSharpUtils.Tests.Typecast.Typecast[]
 METHOD: System.Int32 VSharp.CSharpUtils.Tests.Typecast.Typecast.Unboxing(System.Object)
 RESULT: UNION[
-	| !(0 == obj) & (TypeVariable1{System.Object} <: System.Int32) ~> 13
-	| !(TypeVariable1{System.Object} <: System.Int32) | 0 == obj ~> 23]
+	| !(0 == obj) & (TypeVariable{obj}{System.Object} <: System.Int32) ~> 13
+	| !(TypeVariable{obj}{System.Object} <: System.Int32) | 0 == obj ~> 23]
 HEAP:
-{ heap = h0, statics = s1 } where
----------- h0 = ----------
-obj ==> STRUCT TypeVariable1{System.Object}[]
----------- s1 = ----------
+{ heap = <empty>, statics = s0 } where
+---------- s0 = ----------
 VSharp.CSharpUtils.Tests.Typecast.Typecast ==> STRUCT VSharp.CSharpUtils.Tests.Typecast.Typecast[]
 METHOD: System.Int32 VSharp.CSharpUtils.Tests.Typecast.Typecast.TryCast(System.Object)
 RESULT: UNION[
-	| !(0 == obj) & (TypeVariable1{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Piece) ~> 33
-	| !(TypeVariable1{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Piece) | 0 == obj ~> 42]
+	| !(0 == obj) & (TypeVariable{obj}{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Piece) ~> 33
+	| !(TypeVariable{obj}{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Piece) | 0 == obj ~> 42]
 HEAP:
-{ heap = h0, statics = s1 } where
----------- h0 = ----------
-obj ==> STRUCT TypeVariable1{System.Object}[]
----------- s1 = ----------
+{ heap = <empty>, statics = s0 } where
+---------- s0 = ----------
 VSharp.CSharpUtils.Tests.Typecast.Typecast ==> STRUCT VSharp.CSharpUtils.Tests.Typecast.Typecast[]
 METHOD: System.Int32 VSharp.CSharpUtils.Tests.Typecast.Typecast.TryUpCast(VSharp.CSharpUtils.Tests.Typecast.Piece)
 RESULT: UNION[
 	| !(0 == piece) ~> 33
 	| 0 == piece ~> 42]
 HEAP:
+<<<<<<< HEAD
 { heap = h0, statics = s1 } where
 ---------- h0 = ----------
 1 ==> STRUCT System.String[
@@ -12116,34 +13584,36 @@ System.Runtime.Serialization.SafeSerializationManager ==> STRUCT System.Runtime.
 		| !(0 == piece) | hasKey#5 ~> (HeapRef System.Runtime.Serialization.SafeSerializationManager.RealTypeSerializationName)
 		| !hasKey#5 & 0 == piece ~> (HeapRef 5)]]
 System.SystemException ==> STRUCT System.SystemException[]
+=======
+{ heap = <empty>, statics = s0 } where
+---------- s0 = ----------
+>>>>>>> origin/mergeWithRead
 VSharp.CSharpUtils.Tests.Typecast.Typecast ==> STRUCT VSharp.CSharpUtils.Tests.Typecast.Typecast[]
 METHOD: VSharp.CSharpUtils.Tests.Typecast.Coord VSharp.CSharpUtils.Tests.Typecast.Piece.GetCoord()
 RESULT: STRUCT VSharp.CSharpUtils.Tests.Typecast.Coord[
 	| VSharp.CSharpUtils.Tests.Typecast.Coord.X ~> this.VSharp.CSharpUtils.Tests.Typecast.Piece._xCoord
 	| VSharp.CSharpUtils.Tests.Typecast.Coord.Y ~> this.VSharp.CSharpUtils.Tests.Typecast.Piece._yCoord]
 HEAP:
-{ heap = h0, statics = s1 } where
----------- h0 = ----------
-this ==> STRUCT VSharp.CSharpUtils.Tests.Typecast.Piece[]
----------- s1 = ----------
+{ heap = <empty>, statics = s0 } where
+---------- s0 = ----------
 VSharp.CSharpUtils.Tests.Typecast.Piece ==> STRUCT VSharp.CSharpUtils.Tests.Typecast.Piece[]
 METHOD: System.Int32 VSharp.CSharpUtils.Tests.Typecast.Piece.GetRate()
 RESULT: this.VSharp.CSharpUtils.Tests.Typecast.Piece.Rate
 HEAP:
-{ heap = h0, statics = s1 } where
----------- h0 = ----------
-this ==> STRUCT VSharp.CSharpUtils.Tests.Typecast.Piece[]
----------- s1 = ----------
+{ heap = <empty>, statics = s0 } where
+---------- s0 = ----------
 VSharp.CSharpUtils.Tests.Typecast.Piece ==> STRUCT VSharp.CSharpUtils.Tests.Typecast.Piece[]
 METHOD: System.Int32 VSharp.CSharpUtils.Tests.Typecast.Piece.RetRate(System.Object)
 RESULT: UNION[
-	| !(0 == obj) & (TypeVariable1{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Piece) ~> obj.VSharp.CSharpUtils.Tests.Typecast.Piece.Rate
-	| !(TypeVariable1{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Piece) | 0 == obj ~> <ERROR: (HeapRef 2)>]
+	| !(0 == obj) & !(TypeVariable{obj}{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Piece) ~> <ERROR: (HeapRef 2)>
+	| !(0 == obj) & (TypeVariable{obj}{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Piece) ~> obj.VSharp.CSharpUtils.Tests.Typecast.Piece.Rate
+	| 0 == obj ~> <ERROR: (HeapRef 6)>]
 HEAP:
 { heap = h0, statics = s1 } where
 ---------- h0 = ----------
 1 ==> STRUCT System.String[
 	| System.String.m_FirstChar ~> [|
+<<<<<<< HEAD
 		0: UNION[
 			| !(TypeVariable1{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Piece) | 0 == obj ~> 'S'];
 		10: UNION[
@@ -12501,21 +13971,387 @@ System.Exception ==> STRUCT System.Exception[
 	| System.Exception.s_EDILock ~> UNION[
 		| !(0 == obj) & (TypeVariable1{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Piece) | (!(TypeVariable1{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Piece) | 0 == obj) & hasKey#3 ~> (HeapRef System.Exception.s_EDILock)
 		| !hasKey#3 & (!(TypeVariable1{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Piece) | 0 == obj) ~> (HeapRef 3)]]
+=======
+		0: 'S';
+		10: 'c';
+		11: 'a';
+		12: 's';
+		13: 't';
+		14: ' ';
+		15: 'i';
+		16: 's';
+		17: ' ';
+		18: 'n';
+		19: 'o';
+		1: 'p';
+		20: 't';
+		21: ' ';
+		22: 'v';
+		23: 'a';
+		24: 'l';
+		25: 'i';
+		26: 'd';
+		27: '.';
+		28: '\000';
+		2: 'e';
+		3: 'c';
+		4: 'i';
+		5: 'f';
+		6: 'i';
+		7: 'e';
+		8: 'd';
+		9: ' ';
+		 ... 29 ... |]
+	| System.String.m_StringLength ~> 28]
+10 ==> STRUCT System.String[
+	| System.String.m_FirstChar ~> [|
+		0: 'O';
+		10: 'e';
+		11: 'r';
+		12: 'e';
+		13: 'n';
+		14: 'c';
+		15: 'e';
+		16: ' ';
+		17: 'n';
+		18: 'o';
+		19: 't';
+		1: 'b';
+		20: ' ';
+		21: 's';
+		22: 'e';
+		23: 't';
+		24: ' ';
+		25: 't';
+		26: 'o';
+		27: ' ';
+		28: 'a';
+		29: 'n';
+		2: 'j';
+		30: ' ';
+		31: 'i';
+		32: 'n';
+		33: 's';
+		34: 't';
+		35: 'a';
+		36: 'n';
+		37: 'c';
+		38: 'e';
+		39: ' ';
+		3: 'e';
+		40: 'o';
+		41: 'f';
+		42: ' ';
+		43: 'a';
+		44: 'n';
+		45: ' ';
+		46: 'o';
+		47: 'b';
+		48: 'j';
+		49: 'e';
+		4: 'c';
+		50: 'c';
+		51: 't';
+		52: '.';
+		53: '\000';
+		5: 't';
+		6: ' ';
+		7: 'r';
+		8: 'e';
+		9: 'f';
+		 ... 54 ... |]
+	| System.String.m_StringLength ~> 53]
+11 ==> STRUCT System.Runtime.Serialization.SafeSerializationManager[
+	| System.Runtime.Serialization.SafeSerializationManager.m_realObject ~> null
+	| System.Runtime.Serialization.SafeSerializationManager.m_realType ~> null
+	| System.Runtime.Serialization.SafeSerializationManager.m_savedSerializationInfo ~> null
+	| System.Runtime.Serialization.SafeSerializationManager.m_serializedStates ~> null]
+12 ==> STRUCT System.NullReferenceException[
+	| System.Exception._HResult ~> -2147467261
+	| System.Exception._className ~> null
+	| System.Exception._data ~> null
+	| System.Exception._dynamicMethods ~> null
+	| System.Exception._helpURL ~> null
+	| System.Exception._innerException ~> null
+	| System.Exception._message ~> (HeapRef 13)
+	| System.Exception._remoteStackIndex ~> 0
+	| System.Exception._remoteStackTraceString ~> null
+	| System.Exception._safeSerializationManager ~> (HeapRef 14)
+	| System.Exception._source ~> null
+	| System.Exception._stackTrace ~> null
+	| System.Exception._stackTraceString ~> null
+	| System.Exception.captured_traces ~> null
+	| System.Exception.native_trace_ips ~> null]
+13 ==> STRUCT System.String[
+	| System.String.m_FirstChar ~> [|
+		0: 'O';
+		10: 'e';
+		11: 'r';
+		12: 'e';
+		13: 'n';
+		14: 'c';
+		15: 'e';
+		16: ' ';
+		17: 'n';
+		18: 'o';
+		19: 't';
+		1: 'b';
+		20: ' ';
+		21: 's';
+		22: 'e';
+		23: 't';
+		24: ' ';
+		25: 't';
+		26: 'o';
+		27: ' ';
+		28: 'a';
+		29: 'n';
+		2: 'j';
+		30: ' ';
+		31: 'i';
+		32: 'n';
+		33: 's';
+		34: 't';
+		35: 'a';
+		36: 'n';
+		37: 'c';
+		38: 'e';
+		39: ' ';
+		3: 'e';
+		40: 'o';
+		41: 'f';
+		42: ' ';
+		43: 'a';
+		44: 'n';
+		45: ' ';
+		46: 'o';
+		47: 'b';
+		48: 'j';
+		49: 'e';
+		4: 'c';
+		50: 'c';
+		51: 't';
+		52: '.';
+		53: '\000';
+		5: 't';
+		6: ' ';
+		7: 'r';
+		8: 'e';
+		9: 'f';
+		 ... 54 ... |]
+	| System.String.m_StringLength ~> 53]
+14 ==> STRUCT System.Runtime.Serialization.SafeSerializationManager[
+	| System.Runtime.Serialization.SafeSerializationManager.m_realObject ~> null
+	| System.Runtime.Serialization.SafeSerializationManager.m_realType ~> null
+	| System.Runtime.Serialization.SafeSerializationManager.m_savedSerializationInfo ~> null
+	| System.Runtime.Serialization.SafeSerializationManager.m_serializedStates ~> null]
+2 ==> STRUCT System.InvalidCastException[
+	| System.Exception._HResult ~> -2147467262
+	| System.Exception._className ~> null
+	| System.Exception._data ~> null
+	| System.Exception._dynamicMethods ~> null
+	| System.Exception._helpURL ~> null
+	| System.Exception._innerException ~> null
+	| System.Exception._message ~> (HeapRef 1)
+	| System.Exception._remoteStackIndex ~> 0
+	| System.Exception._remoteStackTraceString ~> null
+	| System.Exception._safeSerializationManager ~> (HeapRef 4)
+	| System.Exception._source ~> null
+	| System.Exception._stackTrace ~> null
+	| System.Exception._stackTraceString ~> null
+	| System.Exception.captured_traces ~> null
+	| System.Exception.native_trace_ips ~> null]
+3 ==> STRUCT System.Object[]
+4 ==> STRUCT System.Runtime.Serialization.SafeSerializationManager[
+	| System.Runtime.Serialization.SafeSerializationManager.m_realObject ~> null
+	| System.Runtime.Serialization.SafeSerializationManager.m_realType ~> null
+	| System.Runtime.Serialization.SafeSerializationManager.m_savedSerializationInfo ~> null
+	| System.Runtime.Serialization.SafeSerializationManager.m_serializedStates ~> null]
+5 ==> STRUCT System.String[
+	| System.String.m_FirstChar ~> [|
+		0: 'C';
+		10: 'r';
+		11: 'i';
+		12: 'a';
+		13: 'l';
+		14: 'i';
+		15: 'z';
+		16: 'a';
+		17: 't';
+		18: 'i';
+		19: 'o';
+		1: 'L';
+		20: 'n';
+		21: 'M';
+		22: 'a';
+		23: 'n';
+		24: 'a';
+		25: 'g';
+		26: 'e';
+		27: 'r';
+		28: '_';
+		29: 'R';
+		2: 'R';
+		30: 'e';
+		31: 'a';
+		32: 'l';
+		33: 'T';
+		34: 'y';
+		35: 'p';
+		36: 'e';
+		37: '\000';
+		3: '_';
+		4: 'S';
+		5: 'a';
+		6: 'f';
+		7: 'e';
+		8: 'S';
+		9: 'e';
+		 ... 38 ... |]
+	| System.String.m_StringLength ~> 37]
+6 ==> STRUCT System.NullReferenceException[
+	| System.Exception._HResult ~> -2147467261
+	| System.Exception._className ~> null
+	| System.Exception._data ~> null
+	| System.Exception._dynamicMethods ~> null
+	| System.Exception._helpURL ~> null
+	| System.Exception._innerException ~> null
+	| System.Exception._message ~> (HeapRef 7)
+	| System.Exception._remoteStackIndex ~> 0
+	| System.Exception._remoteStackTraceString ~> null
+	| System.Exception._safeSerializationManager ~> (HeapRef 8)
+	| System.Exception._source ~> null
+	| System.Exception._stackTrace ~> null
+	| System.Exception._stackTraceString ~> null
+	| System.Exception.captured_traces ~> null
+	| System.Exception.native_trace_ips ~> null]
+7 ==> STRUCT System.String[
+	| System.String.m_FirstChar ~> [|
+		0: 'O';
+		10: 'e';
+		11: 'r';
+		12: 'e';
+		13: 'n';
+		14: 'c';
+		15: 'e';
+		16: ' ';
+		17: 'n';
+		18: 'o';
+		19: 't';
+		1: 'b';
+		20: ' ';
+		21: 's';
+		22: 'e';
+		23: 't';
+		24: ' ';
+		25: 't';
+		26: 'o';
+		27: ' ';
+		28: 'a';
+		29: 'n';
+		2: 'j';
+		30: ' ';
+		31: 'i';
+		32: 'n';
+		33: 's';
+		34: 't';
+		35: 'a';
+		36: 'n';
+		37: 'c';
+		38: 'e';
+		39: ' ';
+		3: 'e';
+		40: 'o';
+		41: 'f';
+		42: ' ';
+		43: 'a';
+		44: 'n';
+		45: ' ';
+		46: 'o';
+		47: 'b';
+		48: 'j';
+		49: 'e';
+		4: 'c';
+		50: 'c';
+		51: 't';
+		52: '.';
+		53: '\000';
+		5: 't';
+		6: ' ';
+		7: 'r';
+		8: 'e';
+		9: 'f';
+		 ... 54 ... |]
+	| System.String.m_StringLength ~> 53]
+8 ==> STRUCT System.Runtime.Serialization.SafeSerializationManager[
+	| System.Runtime.Serialization.SafeSerializationManager.m_realObject ~> null
+	| System.Runtime.Serialization.SafeSerializationManager.m_realType ~> null
+	| System.Runtime.Serialization.SafeSerializationManager.m_savedSerializationInfo ~> null
+	| System.Runtime.Serialization.SafeSerializationManager.m_serializedStates ~> null]
+9 ==> STRUCT System.NullReferenceException[
+	| System.Exception._HResult ~> -2147467261
+	| System.Exception._className ~> null
+	| System.Exception._data ~> null
+	| System.Exception._dynamicMethods ~> null
+	| System.Exception._helpURL ~> null
+	| System.Exception._innerException ~> null
+	| System.Exception._message ~> (HeapRef 10)
+	| System.Exception._remoteStackIndex ~> 0
+	| System.Exception._remoteStackTraceString ~> null
+	| System.Exception._safeSerializationManager ~> (HeapRef 11)
+	| System.Exception._source ~> null
+	| System.Exception._stackTrace ~> null
+	| System.Exception._stackTraceString ~> null
+	| System.Exception.captured_traces ~> null
+	| System.Exception.native_trace_ips ~> null]
+---------- s1 = ----------
+System.Environment ==> STRUCT System.Environment[
+	| System.Environment.<Platform>k__BackingField ~> UNION[
+		| !(0 == obj) | hasKey#9 ~> System.Environment.<Platform>k__BackingField
+		| !hasKey#9 & 0 == obj ~> Win32S]
+	| System.Environment.mono_corlib_version ~> UNION[
+		| !(0 == obj) | hasKey#9 ~> System.Environment.mono_corlib_version
+		| !hasKey#9 & 0 == obj ~> 1051600014]
+	| System.Environment.nl ~> UNION[
+		| !(0 == obj) | hasKey#9 ~> (HeapRef System.Environment.nl)
+		| !hasKey#9 & 0 == obj ~> null]
+	| System.Environment.os ~> UNION[
+		| !(0 == obj) | hasKey#9 ~> (HeapRef System.Environment.os)
+		| !hasKey#9 & 0 == obj ~> null]]
+System.Exception ==> STRUCT System.Exception[
+	| System.Exception._COMPlusExceptionCode ~> UNION[
+		| !(0 == obj) & !(TypeVariable{obj}{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Piece) & !hasKey#3 ~> -532462766
+		| (TypeVariable{obj}{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Piece) | 0 == obj | hasKey#3 ~> System.Exception._COMPlusExceptionCode]
+	| System.Exception.s_EDILock ~> UNION[
+		| !(0 == obj) & !(TypeVariable{obj}{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Piece) & !hasKey#3 ~> (HeapRef 3)
+		| (TypeVariable{obj}{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Piece) | 0 == obj | hasKey#3 ~> (HeapRef System.Exception.s_EDILock)]]
+>>>>>>> origin/mergeWithRead
 System.InvalidCastException ==> STRUCT System.InvalidCastException[]
 System.NullReferenceException ==> STRUCT System.NullReferenceException[]
 System.Object ==> STRUCT System.Object[]
 System.Runtime.Serialization.SafeSerializationManager ==> STRUCT System.Runtime.Serialization.SafeSerializationManager[
 	| System.Runtime.Serialization.SafeSerializationManager.RealTypeSerializationName ~> UNION[
+<<<<<<< HEAD
 		| !(0 == obj) & (TypeVariable1{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Piece) | (!(TypeVariable1{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Piece) | 0 == obj) & hasKey#5 ~> (HeapRef System.Runtime.Serialization.SafeSerializationManager.RealTypeSerializationName)
 		| !hasKey#5 & (!(TypeVariable1{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Piece) | 0 == obj) ~> (HeapRef 5)]]
+=======
+		| !(0 == obj) & !(TypeVariable{obj}{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Piece) & !hasKey#5 ~> (HeapRef 5)
+		| (TypeVariable{obj}{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Piece) | 0 == obj | hasKey#5 ~> (HeapRef System.Runtime.Serialization.SafeSerializationManager.RealTypeSerializationName)]]
+>>>>>>> origin/mergeWithRead
 System.SystemException ==> STRUCT System.SystemException[]
 VSharp.CSharpUtils.Tests.Typecast.Piece ==> STRUCT VSharp.CSharpUtils.Tests.Typecast.Piece[]
 METHOD: VSharp.CSharpUtils.Tests.Typecast.IMovable VSharp.CSharpUtils.Tests.Typecast.Piece.MakeMove(VSharp.CSharpUtils.Tests.Typecast.Coord)
-RESULT: (HeapRef this)
+RESULT: UNION[
+	| !(VSharp.CSharpUtils.Tests.Typecast.Piece <: TypeVariable{this}{VSharp.CSharpUtils.Tests.Typecast.Piece}) ~> STRUCT TypeVariable{λ[MakeMove]_1}{VSharp.CSharpUtils.Tests.Typecast.IMovable}[]
+	| (VSharp.CSharpUtils.Tests.Typecast.Piece <: TypeVariable{this}{VSharp.CSharpUtils.Tests.Typecast.Piece}) ~> (HeapRef this)]
 HEAP:
-{ heap = h0, statics = s1 } where
+{ heap = merge[
+	((VSharp.CSharpUtils.Tests.Typecast.Piece <: TypeVariable{this}{VSharp.CSharpUtils.Tests.Typecast.Piece}), h0),
+	(!(VSharp.CSharpUtils.Tests.Typecast.Piece <: TypeVariable{this}{VSharp.CSharpUtils.Tests.Typecast.Piece}), app(STRUCT TypeVariable{λ[MakeMove]_1}{VSharp.CSharpUtils.Tests.Typecast.IMovable}[]))], statics = merge[
+	((VSharp.CSharpUtils.Tests.Typecast.Piece <: TypeVariable{this}{VSharp.CSharpUtils.Tests.Typecast.Piece}), s1),
+	(!(VSharp.CSharpUtils.Tests.Typecast.Piece <: TypeVariable{this}{VSharp.CSharpUtils.Tests.Typecast.Piece}), app(STRUCT TypeVariable{λ[MakeMove]_1}{VSharp.CSharpUtils.Tests.Typecast.IMovable}[]))] } where
 ---------- h0 = ----------
-this ==> STRUCT VSharp.CSharpUtils.Tests.Typecast.Piece[
+this ==> STRUCT TypeVariable{this}{VSharp.CSharpUtils.Tests.Typecast.Piece}[
 	| VSharp.CSharpUtils.Tests.Typecast.Piece._xCoord ~> VSharp.CSharpUtils.Tests.Typecast.Coord.X
 	| VSharp.CSharpUtils.Tests.Typecast.Piece._yCoord ~> VSharp.CSharpUtils.Tests.Typecast.Coord.Y]
 ---------- s1 = ----------
@@ -12524,26 +14360,30 @@ VSharp.CSharpUtils.Tests.Typecast.Piece ==> STRUCT VSharp.CSharpUtils.Tests.Type
 METHOD: System.Int32 VSharp.CSharpUtils.Tests.Typecast.Pawn.GetNewField()
 RESULT: this.VSharp.CSharpUtils.Tests.Typecast.Pawn._newField
 HEAP:
-{ heap = h0, statics = s1 } where
----------- h0 = ----------
-this ==> STRUCT VSharp.CSharpUtils.Tests.Typecast.Pawn[]
----------- s1 = ----------
+{ heap = <empty>, statics = s0 } where
+---------- s0 = ----------
 VSharp.CSharpUtils.Tests.Typecast.Pawn ==> STRUCT VSharp.CSharpUtils.Tests.Typecast.Pawn[]
 METHOD: System.Void VSharp.CSharpUtils.Tests.Typecast.Pawn.SetNewField(System.Int32)
 RESULT: <VOID>
 HEAP:
 { heap = h0, statics = s1 } where
 ---------- h0 = ----------
-this ==> STRUCT VSharp.CSharpUtils.Tests.Typecast.Pawn[
+this ==> STRUCT TypeVariable{this}{VSharp.CSharpUtils.Tests.Typecast.Pawn}[
 	| VSharp.CSharpUtils.Tests.Typecast.Pawn._newField ~> field]
 ---------- s1 = ----------
 VSharp.CSharpUtils.Tests.Typecast.Pawn ==> STRUCT VSharp.CSharpUtils.Tests.Typecast.Pawn[]
 METHOD: VSharp.CSharpUtils.Tests.Typecast.IMovable VSharp.CSharpUtils.Tests.Typecast.Pawn.MakeMove(VSharp.CSharpUtils.Tests.Typecast.Coord)
-RESULT: (HeapRef this)
+RESULT: UNION[
+	| !(VSharp.CSharpUtils.Tests.Typecast.Pawn <: TypeVariable{this}{VSharp.CSharpUtils.Tests.Typecast.Pawn}) ~> STRUCT TypeVariable{λ[MakeMove]_1}{VSharp.CSharpUtils.Tests.Typecast.IMovable}[]
+	| (VSharp.CSharpUtils.Tests.Typecast.Pawn <: TypeVariable{this}{VSharp.CSharpUtils.Tests.Typecast.Pawn}) ~> (HeapRef this)]
 HEAP:
-{ heap = h0, statics = s1 } where
+{ heap = merge[
+	((VSharp.CSharpUtils.Tests.Typecast.Pawn <: TypeVariable{this}{VSharp.CSharpUtils.Tests.Typecast.Pawn}), h0),
+	(!(VSharp.CSharpUtils.Tests.Typecast.Pawn <: TypeVariable{this}{VSharp.CSharpUtils.Tests.Typecast.Pawn}), app(STRUCT TypeVariable{λ[MakeMove]_1}{VSharp.CSharpUtils.Tests.Typecast.IMovable}[]))], statics = merge[
+	((VSharp.CSharpUtils.Tests.Typecast.Pawn <: TypeVariable{this}{VSharp.CSharpUtils.Tests.Typecast.Pawn}), s1),
+	(!(VSharp.CSharpUtils.Tests.Typecast.Pawn <: TypeVariable{this}{VSharp.CSharpUtils.Tests.Typecast.Pawn}), app(STRUCT TypeVariable{λ[MakeMove]_1}{VSharp.CSharpUtils.Tests.Typecast.IMovable}[]))] } where
 ---------- h0 = ----------
-this ==> STRUCT VSharp.CSharpUtils.Tests.Typecast.Pawn[
+this ==> STRUCT TypeVariable{this}{VSharp.CSharpUtils.Tests.Typecast.Pawn}[
 	| VSharp.CSharpUtils.Tests.Typecast.Piece._xCoord ~> VSharp.CSharpUtils.Tests.Typecast.Coord.X + VSharp.CSharpUtils.Tests.Typecast.Coord.Y
 	| VSharp.CSharpUtils.Tests.Typecast.Piece._yCoord ~> -VSharp.CSharpUtils.Tests.Typecast.Coord.Y + VSharp.CSharpUtils.Tests.Typecast.Coord.X]
 ---------- s1 = ----------
@@ -12554,7 +14394,7 @@ RESULT: (HeapRef this)
 HEAP:
 { heap = h0, statics = s1 } where
 ---------- h0 = ----------
-this ==> STRUCT VSharp.CSharpUtils.Tests.Typecast.BlackPawn[
+this ==> STRUCT TypeVariable{this}{VSharp.CSharpUtils.Tests.Typecast.BlackPawn}[
 	| VSharp.CSharpUtils.Tests.Typecast.Piece._xCoord ~> VSharp.CSharpUtils.Tests.Typecast.Coord.X + VSharp.CSharpUtils.Tests.Typecast.Coord.Y
 	| VSharp.CSharpUtils.Tests.Typecast.Piece._yCoord ~> -VSharp.CSharpUtils.Tests.Typecast.Coord.Y + VSharp.CSharpUtils.Tests.Typecast.Coord.X]
 ---------- s1 = ----------
@@ -12565,7 +14405,7 @@ RESULT: (HeapRef this)
 HEAP:
 { heap = h0, statics = s1 } where
 ---------- h0 = ----------
-this ==> STRUCT VSharp.CSharpUtils.Tests.Typecast.Knight[
+this ==> STRUCT TypeVariable{this}{VSharp.CSharpUtils.Tests.Typecast.Knight}[
 	| VSharp.CSharpUtils.Tests.Typecast.Piece._xCoord ~> VSharp.CSharpUtils.Tests.Typecast.Coord.X + VSharp.CSharpUtils.Tests.Typecast.Coord.Y
 	| VSharp.CSharpUtils.Tests.Typecast.Piece._yCoord ~> -VSharp.CSharpUtils.Tests.Typecast.Coord.Y + VSharp.CSharpUtils.Tests.Typecast.Coord.X]
 ---------- s1 = ----------
@@ -12639,6 +14479,7 @@ HEAP:
 	| System.String.m_StringLength ~> UNION[
 		| !hasKey#1 ~> 4]]
 ---------- s1 = ----------
+<<<<<<< HEAD
 System.Collections.Generic.LinkedList`1 ==> STRUCT System.Collections.Generic.LinkedList`1[System.Int32][
 	| System.Collections.Generic.LinkedList`1.CountName ~> UNION[
 		| !hasKey#1 ~> (HeapRef 3)
@@ -12651,6 +14492,24 @@ System.Collections.Generic.LinkedList`1 ==> STRUCT System.Collections.Generic.Li
 		| hasKey#1 ~> (HeapRef System.Collections.Generic.LinkedList`1.VersionName)]]
 System.Object ==> STRUCT System.Object[]
 VSharp.CSharpUtils.Tests.Generic.GenericInitialize`6 ==> STRUCT VSharp.CSharpUtils.Tests.Generic.GenericInitialize`6[T,U,P,K,N,Z][]
+=======
+System.Collections.Generic.LinkedList`1[System.Int32] ==> UNION[
+	| !(System.Collections.Generic.LinkedList`1[System.Int32] <: VSharp.CSharpUtils.Tests.Generic.GenericInitialize`6[T,U,P,K,N,Z]) | !(VSharp.CSharpUtils.Tests.Generic.GenericInitialize`6[T,U,P,K,N,Z] <: System.Collections.Generic.LinkedList`1[System.Int32]) | !hasKey#1 ~> STRUCT System.Collections.Generic.LinkedList`1[System.Int32][
+		| System.Collections.Generic.LinkedList`1.CountName ~> UNION[
+			| !hasKey#1 ~> (HeapRef 3)
+			| (!(System.Collections.Generic.LinkedList`1[System.Int32] <: VSharp.CSharpUtils.Tests.Generic.GenericInitialize`6[T,U,P,K,N,Z]) | !(VSharp.CSharpUtils.Tests.Generic.GenericInitialize`6[T,U,P,K,N,Z] <: System.Collections.Generic.LinkedList`1[System.Int32])) & hasKey#1 ~> (HeapRef System.Collections.Generic.LinkedList`1.CountName)]
+		| System.Collections.Generic.LinkedList`1.ValuesName ~> UNION[
+			| !hasKey#1 ~> (HeapRef 4)
+			| (!(System.Collections.Generic.LinkedList`1[System.Int32] <: VSharp.CSharpUtils.Tests.Generic.GenericInitialize`6[T,U,P,K,N,Z]) | !(VSharp.CSharpUtils.Tests.Generic.GenericInitialize`6[T,U,P,K,N,Z] <: System.Collections.Generic.LinkedList`1[System.Int32])) & hasKey#1 ~> (HeapRef System.Collections.Generic.LinkedList`1.ValuesName)]
+		| System.Collections.Generic.LinkedList`1.VersionName ~> UNION[
+			| !hasKey#1 ~> (HeapRef 2)
+			| (!(System.Collections.Generic.LinkedList`1[System.Int32] <: VSharp.CSharpUtils.Tests.Generic.GenericInitialize`6[T,U,P,K,N,Z]) | !(VSharp.CSharpUtils.Tests.Generic.GenericInitialize`6[T,U,P,K,N,Z] <: System.Collections.Generic.LinkedList`1[System.Int32])) & hasKey#1 ~> (HeapRef System.Collections.Generic.LinkedList`1.VersionName)]]
+	| (System.Collections.Generic.LinkedList`1[System.Int32] <: VSharp.CSharpUtils.Tests.Generic.GenericInitialize`6[T,U,P,K,N,Z]) & (VSharp.CSharpUtils.Tests.Generic.GenericInitialize`6[T,U,P,K,N,Z] <: System.Collections.Generic.LinkedList`1[System.Int32]) & hasKey#1 ~> STRUCT VSharp.CSharpUtils.Tests.Generic.GenericInitialize`6[T,U,P,K,N,Z][]]
+System.Object ==> UNION[
+	| !(System.Object <: VSharp.CSharpUtils.Tests.Generic.GenericInitialize`6[T,U,P,K,N,Z]) | !hasKey#2 ~> STRUCT System.Object[]
+	| (System.Object <: VSharp.CSharpUtils.Tests.Generic.GenericInitialize`6[T,U,P,K,N,Z]) & hasKey#2 ~> STRUCT VSharp.CSharpUtils.Tests.Generic.GenericInitialize`6[T,U,P,K,N,Z][]]
+VSharp.CSharpUtils.Tests.Generic.GenericInitialize`6[T,U,P,K,N,Z] ==> STRUCT VSharp.CSharpUtils.Tests.Generic.GenericInitialize`6[T,U,P,K,N,Z][]
+>>>>>>> origin/mergeWithRead
 METHOD: System.Collections.Generic.List`1[System.Double] VSharp.CSharpUtils.Tests.Generic.GenericInitialize`6[T,U,P,K,N,Z].RetList()
 RESULT: (HeapRef 1)
 HEAP:
@@ -12659,13 +14518,19 @@ HEAP:
 1 ==> STRUCT System.Collections.Generic.List`1[System.Double][
 	| System.Collections.Generic.List`1._items ~> UNION[
 		| !hasKey#1 ~> (HeapRef 2)
+<<<<<<< HEAD
 		| hasKey#1 ~> (HeapRef System.Collections.Generic.List`1._emptyArray)]
+=======
+		| (!(System.Collections.Generic.List`1[System.Double] <: VSharp.CSharpUtils.Tests.Generic.GenericInitialize`6[T,U,P,K,N,Z]) | !(VSharp.CSharpUtils.Tests.Generic.GenericInitialize`6[T,U,P,K,N,Z] <: System.Collections.Generic.List`1[System.Double])) & hasKey#1 ~> (HeapRef System.Collections.Generic.List`1.s_emptyArray)
+		| (System.Collections.Generic.List`1[System.Double] <: VSharp.CSharpUtils.Tests.Generic.GenericInitialize`6[T,U,P,K,N,Z]) & (VSharp.CSharpUtils.Tests.Generic.GenericInitialize`6[T,U,P,K,N,Z] <: System.Collections.Generic.List`1[System.Double]) & hasKey#1 ~> (HeapRef System.Collections.Generic.List`1.s_emptyArray)]
+>>>>>>> origin/mergeWithRead
 	| System.Collections.Generic.List`1._size ~> 0
 	| System.Collections.Generic.List`1._syncRoot ~> null
 	| System.Collections.Generic.List`1._version ~> 0]
 2 ==> [| ... UNION[
 	| !hasKey#1 ~> 0] ... |]
 ---------- s1 = ----------
+<<<<<<< HEAD
 System.Collections.Generic.List`1 ==> STRUCT System.Collections.Generic.List`1[System.Double][
 	| System.Collections.Generic.List`1._defaultCapacity ~> UNION[
 		| !hasKey#1 ~> 4
@@ -12675,75 +14540,86 @@ System.Collections.Generic.List`1 ==> STRUCT System.Collections.Generic.List`1[S
 		| hasKey#1 ~> (HeapRef System.Collections.Generic.List`1._emptyArray)]]
 System.Object ==> STRUCT System.Object[]
 VSharp.CSharpUtils.Tests.Generic.GenericInitialize`6 ==> STRUCT VSharp.CSharpUtils.Tests.Generic.GenericInitialize`6[T,U,P,K,N,Z][]
+=======
+System.Collections.Generic.List`1[System.Double] ==> UNION[
+	| !(System.Collections.Generic.List`1[System.Double] <: VSharp.CSharpUtils.Tests.Generic.GenericInitialize`6[T,U,P,K,N,Z]) | !(VSharp.CSharpUtils.Tests.Generic.GenericInitialize`6[T,U,P,K,N,Z] <: System.Collections.Generic.List`1[System.Double]) | !hasKey#1 ~> STRUCT System.Collections.Generic.List`1[System.Double][
+		| System.Collections.Generic.List`1.DefaultCapacity ~> UNION[
+			| !hasKey#1 ~> 4
+			| (!(System.Collections.Generic.List`1[System.Double] <: VSharp.CSharpUtils.Tests.Generic.GenericInitialize`6[T,U,P,K,N,Z]) | !(VSharp.CSharpUtils.Tests.Generic.GenericInitialize`6[T,U,P,K,N,Z] <: System.Collections.Generic.List`1[System.Double])) & hasKey#1 ~> System.Collections.Generic.List`1.DefaultCapacity]
+		| System.Collections.Generic.List`1.s_emptyArray ~> UNION[
+			| !hasKey#1 ~> (HeapRef 2)
+			| (!(System.Collections.Generic.List`1[System.Double] <: VSharp.CSharpUtils.Tests.Generic.GenericInitialize`6[T,U,P,K,N,Z]) | !(VSharp.CSharpUtils.Tests.Generic.GenericInitialize`6[T,U,P,K,N,Z] <: System.Collections.Generic.List`1[System.Double])) & hasKey#1 ~> (HeapRef System.Collections.Generic.List`1.s_emptyArray)]]
+	| (System.Collections.Generic.List`1[System.Double] <: VSharp.CSharpUtils.Tests.Generic.GenericInitialize`6[T,U,P,K,N,Z]) & (VSharp.CSharpUtils.Tests.Generic.GenericInitialize`6[T,U,P,K,N,Z] <: System.Collections.Generic.List`1[System.Double]) & hasKey#1 ~> STRUCT VSharp.CSharpUtils.Tests.Generic.GenericInitialize`6[T,U,P,K,N,Z][]]
+System.Object ==> UNION[
+	| !(System.Object <: VSharp.CSharpUtils.Tests.Generic.GenericInitialize`6[T,U,P,K,N,Z]) | !hasKey#2 ~> STRUCT System.Object[]
+	| (System.Object <: VSharp.CSharpUtils.Tests.Generic.GenericInitialize`6[T,U,P,K,N,Z]) & hasKey#2 ~> STRUCT VSharp.CSharpUtils.Tests.Generic.GenericInitialize`6[T,U,P,K,N,Z][]]
+VSharp.CSharpUtils.Tests.Generic.GenericInitialize`6[T,U,P,K,N,Z] ==> STRUCT VSharp.CSharpUtils.Tests.Generic.GenericInitialize`6[T,U,P,K,N,Z][]
+>>>>>>> origin/mergeWithRead
 METHOD: T VSharp.CSharpUtils.Tests.Generic.GenericInitialize`6[T,U,P,K,N,Z].RetT(T)
 RESULT: (HeapRef t)
 HEAP:
 { heap = <empty>, statics = s0 } where
 ---------- s0 = ----------
-VSharp.CSharpUtils.Tests.Generic.GenericInitialize`6 ==> STRUCT VSharp.CSharpUtils.Tests.Generic.GenericInitialize`6[T,U,P,K,N,Z][]
+VSharp.CSharpUtils.Tests.Generic.GenericInitialize`6[T,U,P,K,N,Z] ==> STRUCT VSharp.CSharpUtils.Tests.Generic.GenericInitialize`6[T,U,P,K,N,Z][]
 METHOD: T VSharp.CSharpUtils.Tests.Generic.GenericTest`6[T,U,P,K,N,Z].RetT(T)
 RESULT: (HeapRef t)
 HEAP:
 { heap = <empty>, statics = s0 } where
 ---------- s0 = ----------
-VSharp.CSharpUtils.Tests.Generic.GenericTest`6 ==> STRUCT VSharp.CSharpUtils.Tests.Generic.GenericTest`6[T,U,P,K,N,Z][]
+VSharp.CSharpUtils.Tests.Generic.GenericTest`6[T,U,P,K,N,Z] ==> STRUCT VSharp.CSharpUtils.Tests.Generic.GenericTest`6[T,U,P,K,N,Z][]
 METHOD: U VSharp.CSharpUtils.Tests.Generic.GenericTest`6[T,U,P,K,N,Z].RetU(U)
 RESULT: (HeapRef u)
 HEAP:
 { heap = <empty>, statics = s0 } where
 ---------- s0 = ----------
-VSharp.CSharpUtils.Tests.Generic.GenericTest`6 ==> STRUCT VSharp.CSharpUtils.Tests.Generic.GenericTest`6[T,U,P,K,N,Z][]
+VSharp.CSharpUtils.Tests.Generic.GenericTest`6[T,U,P,K,N,Z] ==> STRUCT VSharp.CSharpUtils.Tests.Generic.GenericTest`6[T,U,P,K,N,Z][]
 METHOD: P VSharp.CSharpUtils.Tests.Generic.GenericTest`6[T,U,P,K,N,Z].RetP(P)
-RESULT: STRUCT TypeVariable1{P}[]
+RESULT: STRUCT TypeVariable{p}{P}[]
 HEAP:
 { heap = <empty>, statics = s0 } where
 ---------- s0 = ----------
-VSharp.CSharpUtils.Tests.Generic.GenericTest`6 ==> STRUCT VSharp.CSharpUtils.Tests.Generic.GenericTest`6[T,U,P,K,N,Z][]
+VSharp.CSharpUtils.Tests.Generic.GenericTest`6[T,U,P,K,N,Z] ==> STRUCT VSharp.CSharpUtils.Tests.Generic.GenericTest`6[T,U,P,K,N,Z][]
 METHOD: K VSharp.CSharpUtils.Tests.Generic.GenericTest`6[T,U,P,K,N,Z].RetK(K)
 RESULT: (HeapRef k)
 HEAP:
 { heap = <empty>, statics = s0 } where
 ---------- s0 = ----------
-VSharp.CSharpUtils.Tests.Generic.GenericTest`6 ==> STRUCT VSharp.CSharpUtils.Tests.Generic.GenericTest`6[T,U,P,K,N,Z][]
+VSharp.CSharpUtils.Tests.Generic.GenericTest`6[T,U,P,K,N,Z] ==> STRUCT VSharp.CSharpUtils.Tests.Generic.GenericTest`6[T,U,P,K,N,Z][]
 METHOD: N VSharp.CSharpUtils.Tests.Generic.GenericTest`6[T,U,P,K,N,Z].RetT(N)
 RESULT: (HeapRef n)
 HEAP:
 { heap = <empty>, statics = s0 } where
 ---------- s0 = ----------
-VSharp.CSharpUtils.Tests.Generic.GenericTest`6 ==> STRUCT VSharp.CSharpUtils.Tests.Generic.GenericTest`6[T,U,P,K,N,Z][]
+VSharp.CSharpUtils.Tests.Generic.GenericTest`6[T,U,P,K,N,Z] ==> STRUCT VSharp.CSharpUtils.Tests.Generic.GenericTest`6[T,U,P,K,N,Z][]
 METHOD: Z VSharp.CSharpUtils.Tests.Generic.GenericTest`6[T,U,P,K,N,Z].RetU(Z)
 RESULT: (HeapRef z)
 HEAP:
 { heap = <empty>, statics = s0 } where
 ---------- s0 = ----------
-VSharp.CSharpUtils.Tests.Generic.GenericTest`6 ==> STRUCT VSharp.CSharpUtils.Tests.Generic.GenericTest`6[T,U,P,K,N,Z][]
+VSharp.CSharpUtils.Tests.Generic.GenericTest`6[T,U,P,K,N,Z] ==> STRUCT VSharp.CSharpUtils.Tests.Generic.GenericTest`6[T,U,P,K,N,Z][]
 METHOD: T VSharp.CSharpUtils.Tests.Generic.Foo`2[T,U].GetFields()
 RESULT: (HeapRef this.VSharp.CSharpUtils.Tests.Generic.Foo`2._filed)
 HEAP:
-{ heap = h0, statics = s1 } where
----------- h0 = ----------
-this ==> STRUCT VSharp.CSharpUtils.Tests.Generic.Foo`2[T,U][]
----------- s1 = ----------
-VSharp.CSharpUtils.Tests.Generic.Foo`2 ==> STRUCT VSharp.CSharpUtils.Tests.Generic.Foo`2[T,U][]
+{ heap = <empty>, statics = s0 } where
+---------- s0 = ----------
+VSharp.CSharpUtils.Tests.Generic.Foo`2[T,U] ==> STRUCT VSharp.CSharpUtils.Tests.Generic.Foo`2[T,U][]
 METHOD: System.Void VSharp.CSharpUtils.Tests.Generic.Foo`2[T,U].SetField(T)
 RESULT: <VOID>
 HEAP:
 { heap = h0, statics = s1 } where
 ---------- h0 = ----------
-this ==> STRUCT VSharp.CSharpUtils.Tests.Generic.Foo`2[T,U][
+this ==> STRUCT TypeVariable{this}{VSharp.CSharpUtils.Tests.Generic.Foo`2[T,U]}[
 	| VSharp.CSharpUtils.Tests.Generic.Foo`2._filed ~> (HeapRef f)]
 ---------- s1 = ----------
-VSharp.CSharpUtils.Tests.Generic.Foo`2 ==> STRUCT VSharp.CSharpUtils.Tests.Generic.Foo`2[T,U][]
+VSharp.CSharpUtils.Tests.Generic.Foo`2[T,U] ==> STRUCT VSharp.CSharpUtils.Tests.Generic.Foo`2[T,U][]
 METHOD: System.Int32 VSharp.CSharpUtils.Tests.Generic.GenericMethod.TestFoo(VSharp.CSharpUtils.Tests.Generic.Foo`2[System.Int32,VSharp.CSharpUtils.Tests.Typecast.Piece])
 RESULT: UNION[
-	| !(0 == f) ~> (HeapRef f.VSharp.CSharpUtils.Tests.Generic.Foo`2._filed)
+	| !(0 == f) ~> f.VSharp.CSharpUtils.Tests.Generic.Foo`2._filed
 	| 0 == f ~> 0]
 HEAP:
-{ heap = h0, statics = s1 } where
----------- h0 = ----------
-f ==> STRUCT TypeVariable1{VSharp.CSharpUtils.Tests.Generic.Foo`2[System.Int32,VSharp.CSharpUtils.Tests.Typecast.Piece]}[]
----------- s1 = ----------
-VSharp.CSharpUtils.Tests.Generic.Foo`2 ==> STRUCT VSharp.CSharpUtils.Tests.Generic.Foo`2[VSharp.CSharpUtils.Tests.Typecast.Piece,VSharp.CSharpUtils.Tests.Typecast.Piece][]
+{ heap = <empty>, statics = s0 } where
+---------- s0 = ----------
+VSharp.CSharpUtils.Tests.Generic.Foo`2[System.Int32,VSharp.CSharpUtils.Tests.Typecast.Piece] ==> STRUCT VSharp.CSharpUtils.Tests.Generic.Foo`2[System.Int32,VSharp.CSharpUtils.Tests.Typecast.Piece][]
 VSharp.CSharpUtils.Tests.Generic.GenericMethod ==> STRUCT VSharp.CSharpUtils.Tests.Generic.GenericMethod[]
 METHOD: System.Int32 VSharp.CSharpUtils.Tests.Generic.GenericMethod.TestFoo(System.Collections.Generic.LinkedList`1[System.Int32])
 RESULT: UNION[
@@ -12795,6 +14671,7 @@ HEAP:
 		| !(0 == l) & !hasKey#1 ~> 5]]
 3 ==> STRUCT System.String[
 	| System.String.m_FirstChar ~> [|
+<<<<<<< HEAD
 		0: UNION[
 			| !(0 == l) & !hasKey#1 ~> 'D'];
 		1: UNION[
@@ -12810,13 +14687,27 @@ HEAP:
 	| System.String.m_StringLength ~> UNION[
 		| !(0 == l) & !hasKey#1 ~> 4]]
 l ==> STRUCT TypeVariable1{System.Collections.Generic.LinkedList`1[System.Int32]}[]
+=======
+		0: 'D';
+		1: 'a';
+		2: 't';
+		3: 'a';
+		4: '\000';
+		 ... 5 ... |]
+	| System.String.m_StringLength ~> 4]
+>>>>>>> origin/mergeWithRead
 l.System.Collections.Generic.LinkedList`1.head ==> STRUCT System.Collections.Generic.LinkedListNode`1[System.Int32][
 	| System.Collections.Generic.LinkedListNode`1.item ~> UNION[
 		| !(0 == l) & !(0 == l.System.Collections.Generic.LinkedList`1.head) ~> 1 + l.System.Collections.Generic.LinkedList`1.head.System.Collections.Generic.LinkedListNode`1.item
 		| 0 == l | 0 == l.System.Collections.Generic.LinkedList`1.head ~> l.System.Collections.Generic.LinkedList`1.head.System.Collections.Generic.LinkedListNode`1.item]]
 ---------- s1 = ----------
+<<<<<<< HEAD
 System.Collections.Generic.LinkedListNode`1 ==> STRUCT System.Collections.Generic.LinkedListNode`1[System.Int32][]
 System.Collections.Generic.LinkedList`1 ==> STRUCT System.Collections.Generic.LinkedList`1[System.Int32][
+=======
+System.Collections.Generic.LinkedListNode`1[System.Int32] ==> STRUCT System.Collections.Generic.LinkedListNode`1[System.Int32][]
+System.Collections.Generic.LinkedList`1[System.Int32] ==> STRUCT System.Collections.Generic.LinkedList`1[System.Int32][
+>>>>>>> origin/mergeWithRead
 	| System.Collections.Generic.LinkedList`1.CountName ~> UNION[
 		| !(0 == l) & !hasKey#1 ~> (HeapRef 2)
 		| 0 == l | hasKey#1 ~> (HeapRef System.Collections.Generic.LinkedList`1.CountName)]
@@ -12829,13 +14720,11 @@ System.Collections.Generic.LinkedList`1 ==> STRUCT System.Collections.Generic.Li
 VSharp.CSharpUtils.Tests.Generic.GenericMethod ==> STRUCT VSharp.CSharpUtils.Tests.Generic.GenericMethod[]
 METHOD: System.Int32 VSharp.CSharpUtils.Tests.Generic.TetsUnion.RetWorked(System.Object, System.Int32)
 RESULT: UNION[
-	| !(0 == obj) & !(TypeVariable1{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.BlackPawn) & (!(0 == obj) & (TypeVariable1{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.BlackPawn) | !(0 == obj) & (TypeVariable1{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Pawn) | (!(TypeVariable1{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.BlackPawn) | 0 == obj) & (!(TypeVariable1{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Pawn) | 0 == obj)) & (TypeVariable1{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Pawn) ~> 6 + a
-	| !(0 == obj) & !(TypeVariable1{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Pawn) & (!(0 == obj) & (TypeVariable1{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.BlackPawn) | !(0 == obj) & (TypeVariable1{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Pawn) | (!(TypeVariable1{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.BlackPawn) | 0 == obj) & (!(TypeVariable1{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Pawn) | 0 == obj)) & (TypeVariable1{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.BlackPawn) ~> 5
-	| !(0 == obj) & (!(0 == obj) & (TypeVariable1{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.BlackPawn) | !(0 == obj) & (TypeVariable1{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Pawn) | (!(TypeVariable1{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.BlackPawn) | 0 == obj) & (!(TypeVariable1{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Pawn) | 0 == obj)) & (TypeVariable1{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.BlackPawn) & (TypeVariable1{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Pawn) ~> 11
-	| (!(TypeVariable1{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.BlackPawn) | 0 == obj) & (!(TypeVariable1{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Pawn) | 0 == obj) ~> a]
+	| !(0 == obj) & !(TypeVariable{obj}{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.BlackPawn) & (!(0 == obj) & (TypeVariable{obj}{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.BlackPawn) | !(0 == obj) & (TypeVariable{obj}{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Pawn) | (!(TypeVariable{obj}{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.BlackPawn) | 0 == obj) & (!(TypeVariable{obj}{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Pawn) | 0 == obj)) & (TypeVariable{obj}{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Pawn) ~> 6 + a
+	| !(0 == obj) & !(TypeVariable{obj}{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Pawn) & (!(0 == obj) & (TypeVariable{obj}{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.BlackPawn) | !(0 == obj) & (TypeVariable{obj}{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Pawn) | (!(TypeVariable{obj}{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.BlackPawn) | 0 == obj) & (!(TypeVariable{obj}{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Pawn) | 0 == obj)) & (TypeVariable{obj}{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.BlackPawn) ~> 5
+	| !(0 == obj) & (!(0 == obj) & (TypeVariable{obj}{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.BlackPawn) | !(0 == obj) & (TypeVariable{obj}{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Pawn) | (!(TypeVariable{obj}{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.BlackPawn) | 0 == obj) & (!(TypeVariable{obj}{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Pawn) | 0 == obj)) & (TypeVariable{obj}{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.BlackPawn) & (TypeVariable{obj}{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Pawn) ~> 11
+	| (!(TypeVariable{obj}{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.BlackPawn) | 0 == obj) & (!(TypeVariable{obj}{System.Object} <: VSharp.CSharpUtils.Tests.Typecast.Pawn) | 0 == obj) ~> a]
 HEAP:
-{ heap = h0, statics = s1 } where
----------- h0 = ----------
-obj ==> STRUCT TypeVariable1{System.Object}[]
----------- s1 = ----------
+{ heap = <empty>, statics = s0 } where
+---------- s0 = ----------
 VSharp.CSharpUtils.Tests.Generic.TetsUnion ==> STRUCT VSharp.CSharpUtils.Tests.Generic.TetsUnion[]

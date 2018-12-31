@@ -30,7 +30,7 @@ module API =
     let Call funcId state body k = Explorer.call m.Value funcId state body k
     let ComposeStatements rs statements isContinueConsumer reduceStatement k =
         ControlFlow.composeStatements statements isContinueConsumer reduceStatement (fun state -> Memory.newScope m.Value state []) rs k
-    let HigherOrderApply funcId state parameters returnType k = Explorer.higherOrderApply m.Value funcId state parameters returnType k
+    let HigherOrderApply funcId state k = Explorer.higherOrderApplication m.Value funcId state k
     let BranchStatements state condition thenBranch elseBranch k =
          Common.statedConditionalExecution state condition thenBranch elseBranch ControlFlow.mergeResults ControlFlow.merge2Results ControlFlow.throwOrIgnore k
     let BranchExpressions state condition thenExpression elseExpression k = Common.statedConditionalExecution state condition thenExpression elseExpression Merging.merge Merging.merge2Terms id k
@@ -76,25 +76,25 @@ module API =
         let True = True
         let False = False
 
-        let MakeNullRef typ = makeNullRef typ m.Value
-        let MakeDefault typ = Memory.mkDefault m.Value typ
+        let MakeNullRef () = makeNullRef m.Value
+        let MakeDefault typ = Memory.mkDefault m.Value typ None
         let MakeNumber n = makeNumber n m.Value
         let MakeLambda body signature = Lambdas.make m.Value body signature
-        let MakeDefaultArray dimensions typ = Arrays.makeDefault m.Value dimensions typ
-        let MakeInitializedArray rank typ initializer = Arrays.fromInitializer m.Value (Memory.tick()) rank typ initializer
 
         let TypeOf term = typeOf term
         let (|Lambda|_|) t = Lambdas.(|Lambda|_|) t
         let (|LazyInstantiation|_|) s = Memory.(|LazyInstantiation|_|) s
         let (|RecursionOutcome|_|) s = Explorer.(|RecursionOutcome|_|) s
+        let (|Conjunction|_|) term = Terms.(|Conjunction|_|) term.term
+        let (|Disjunction|_|) term = Terms.(|Disjunction|_|) term.term
 
-        let PersistentLocalAndConstraintTypes = Terms.persistentLocalAndConstraintTypes
+        let PersistentLocalAndConstraintTypes = TypeCasting.persistentLocalAndConstraintTypes m.Value
+        let ConstantsOf terms = discoverConstants terms
 
     module Types =
-        let FromDotNetType (state : state) t = t |> Types.Constructor.fromDotNetType |> State.substituteTypeVariables state
+        let FromDotNetType (state : state) t = t |> Types.Constructor.fromDotNetType |> State.substituteTypeVariables State.emptyCompositionContext state
         let ToDotNetType t = Types.toDotNetType t
         let WrapReferenceType t = Types.wrapReferenceType t
-        let NewTypeVariable t = Types.Variable.fromDotNetType t
 
         let SizeOf t = Types.sizeOf t
 
@@ -159,7 +159,7 @@ module API =
 
         let ReferenceField state followHeapRefs name typ parentRef = Memory.referenceField m.Value state followHeapRefs name typ parentRef
         let ReferenceLocalVariable state location followHeapRefs = Memory.referenceLocalVariable m.Value state location followHeapRefs
-        let ReferenceStaticField state followHeapRefs fieldName fieldType typeName = Memory.referenceStaticField m.Value state followHeapRefs fieldName fieldType typeName
+        let ReferenceStaticField state followHeapRefs fieldName fieldType targetType = Memory.referenceStaticField m.Value state followHeapRefs fieldName fieldType targetType
         let ReferenceArrayIndex state arrayRef indices = Memory.referenceArrayIndex m.Value state arrayRef indices
 
         let Dereference state reference = Memory.deref m.Value state reference
@@ -167,12 +167,40 @@ module API =
         let Mutate state reference value = Memory.mutate m.Value state reference value
 
         let AllocateOnStack state key term = Memory.allocateOnStack m.Value state key term
-        let AllocateInHeap state term = Memory.allocateInHeap m.Value state term
-        let AllocateDefaultStatic state termType qualifiedTypeName = Memory.mkDefaultStruct m.Value Timestamp.zero true termType |> Memory.allocateInStaticMemory m.Value state qualifiedTypeName
-        let MakeDefaultStruct termType = Memory.mkDefaultStruct m.Value Timestamp.zero false termType
-            let AllocateString str state = Strings.makeConcreteStringStruct m.Value (Memory.tick()) str |> Memory.allocateInHeap m.Value state
 
-        let IsTypeNameInitialized qualifiedTypeName state = Memory.typeNameInitialized m.Value qualifiedTypeName state
+        let AllocateInHeap state term =
+            let address = Memory.freshHeapLocation m.Value
+            Memory.allocateInHeap m.Value state address term
+
+        let AllocateDefaultStatic state targetType =
+            let fql = makeTopLevelFQL TopLevelStatics targetType
+            Memory.allocateInStaticMemory m.Value state targetType (Memory.mkDefaultStruct m.Value true targetType fql)
+
+        let MakeDefaultStruct termType fql = Some fql |> Memory.mkDefaultStruct m.Value false termType
+
+        let MakeAndAllocateDefaultStruct state typ =
+            let address = Memory.freshHeapLocation m.Value
+            let fql = TopLevelHeap(address, typ, typ), []
+            MakeDefaultStruct typ fql |> Memory.allocateInHeap m.Value state address
+
+        let MakeAndAllocateDefaultArray state dimensions typ =
+            let address = Memory.freshHeapLocation m.Value
+            let fql = makeTopLevelFQL TopLevelHeap (address, typ, typ)
+            Arrays.makeDefault m.Value dimensions typ fql |> Memory.allocateInHeap m.Value state address
+
+        let MakeAndAllocateInitializedArray state dimensions rank typ initializer =
+            let address = Memory.freshHeapLocation m.Value
+            let fql = makeTopLevelFQL TopLevelHeap (address, typ, typ)
+            let ref, state = Arrays.makeDefault m.Value dimensions typ fql |> Memory.allocateInHeap m.Value state address
+            let state = Arrays.fromInitializer m.Value (Memory.tick()) rank typ initializer fql |> Mutate state ref |> snd
+            ref, state
+
+        let AllocateString str state =
+            let address = Memory.freshHeapLocation m.Value
+            let fql = makeTopLevelFQL TopLevelHeap (address, Types.String, Types.String)
+            Strings.makeString m.Value (Memory.tick()) str fql |> Memory.allocateInHeap m.Value state address
+
+        let IsTypeNameInitialized termType state = Memory.termTypeInitialized m.Value termType state
         let Dump state = State.dumpMemory state
 
         let ArrayLength arrayTerm = Arrays.length arrayTerm
@@ -195,6 +223,9 @@ module API =
         let IsInternedString state strRef = Interning.isInterned m.Value state strRef
         let IsInternedLiteral state str = Interning.isInternedLiteral m.Value (Memory.tick()) state str
         let InternLiterals state strList = Interning.internLiterals m.Value state strList
+    module Database =
+        let QuerySummary funcId =
+            Database.querySummary funcId ||?? lazy(internalfailf "database does not contain exploration results for %O" funcId)
 
     module RuntimeExceptions =
         let NullReferenceException state thrower =

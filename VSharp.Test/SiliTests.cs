@@ -209,7 +209,7 @@ namespace VSharp.Test
                     AppDomain currentDomain = AppDomain.CurrentDomain;
                     currentDomain.AssemblyResolve += LoadFromTestFolder;
 
-                    IDictionary<MethodInfo, string> got = Interpreter.SVM.Run(Assembly.LoadFile(lib), ignoredTypes);
+                    IDictionary<MethodInfo, string> got = SVM.Run(Assembly.LoadFile(lib), ignoredTypes);
 
 //                    string os = Environment.OSVersion.Platform.ToString();
 //                    string goldFile = testDir + Path.DirectorySeparatorChar + os + IdealTestFileExtension;

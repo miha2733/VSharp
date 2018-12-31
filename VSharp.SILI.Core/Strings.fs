@@ -7,18 +7,20 @@ open Common
 
 module internal Strings =
 
-    let makeStringOfFields metadata time length array =
-        let fields = Heap.ofSeq (seq [ makeStringKey "System.String.m_StringLength", { value = length; created = time; modified = time; typ = lengthTermType };
-                                       makeStringKey "System.String.m_FirstChar", { value = array; created = time; modified = time; typ = String } ])
+    let makeStringOfFields metadata time length lengthFQL array arrayFQL =
+        let fields = Heap.ofSeq (seq [ makeKey "System.String.m_StringLength" lengthFQL, { value = length; created = time; modified = time; typ = lengthTermType };
+                                       makeKey "System.String.m_FirstChar" arrayFQL, { value = array; created = time; modified = time; typ = String } ])
         Struct metadata fields String
 
-    let makeConcreteStringStruct metadata time (str : string) =
+    let makeConcreteStringStruct metadata time (str : string) fql =
         let length = Concrete metadata str.Length lengthTermType
         let arraySource = (str + "\000").ToCharArray()
         let valMaker i = makeNumber arraySource.[i] metadata
-        let keyMaker i mtd = makeIntegerArray metadata (fun _ -> makeNumber i mtd) 1
-        let array = makeLinearConcreteArray metadata keyMaker valMaker (str.Length + 1) (Numeric typedefof<char>)
-        makeStringOfFields metadata time length array
+        let keyMaker i mtd = makeIndexArray metadata (fun _ -> makeNumber i mtd) 1
+        let arrayFQL = addToOptionFQL fql <| StructField(strArray, ArrayType(Char, Vector))
+        let lengthFQL = addToOptionFQL fql <| StructField(strLength, Arrays.lengthTermType)
+        let array = makeLinearConcreteArray metadata keyMaker valMaker (str.Length + 1) Char arrayFQL
+        makeStringOfFields metadata time length lengthFQL array arrayFQL
 
     let makeStringArray metadata time length instor (contents : symbolicHeap) elType =
         let arrLength = add metadata length <| makeNumber 1 metadata
@@ -73,12 +75,12 @@ module internal Strings =
     let private simplifyStructEq mtd x y k =
         match x.term, y.term with
         | Struct(fieldsOfX, StringType), Struct(fieldsOfY, StringType) ->
-            let str1Len = fieldsOfX.[makeStringKey "System.String.m_StringLength"].value
-            let str2Len = fieldsOfY.[makeStringKey "System.String.m_StringLength"].value
-            let str1Arr = fieldsOfX.[makeStringKey "System.String.m_FirstChar"].value
-            let str2Arr = fieldsOfY.[makeStringKey "System.String.m_FirstChar"].value
+            let str1Len = fieldsOfX.[strLength].value
+            let str2Len = fieldsOfY.[strLength].value
+            let str1Arr = fieldsOfX.[strArray].value
+            let str2Arr = fieldsOfY.[strArray].value
             simplifyEqual mtd str1Len str2Len (fun lengthEq ->
-            simplifyAnd mtd lengthEq (Arrays.equalsStringArrays mtd (__notImplemented__()) str1Arr str2Arr) k)
+            simplifyAnd mtd lengthEq (Arrays.equals mtd str1Arr str2Arr) k)
         | _ -> __notImplemented__()
 
     let rec simplifyEquality mtd x y k =
