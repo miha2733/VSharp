@@ -80,7 +80,7 @@ module Substitution =
         substitute subst typeSubst >> Merging.unguard >> Merging.guardedMapWithoutMerge mapper
 
     and private substituteSegment subst typeSubst = function
-        | StructField(f, t) -> ([True, StructField(f, typeSubst t)])
+        | StructField(f, t, offset) -> ([True, StructField(f, typeSubst t, offset)])
         | ArrayIndex(i, t) ->
             let t' = typeSubst t
             substituteAndMap subst typeSubst (fun i' -> ArrayIndex(i', t')) i

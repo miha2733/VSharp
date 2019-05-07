@@ -33,8 +33,8 @@ module internal Arrays =
         let instantiator = [makeTrue mtd, DefaultInstantiator(constant, elemTyp)]
         makeArray mtd length contents instantiator elemTyp fql
 
-    let makeIndexArray mtd maker length =
-        makeLinearConcreteArray mtd makeIndex maker length Types.indexType None
+    let makeIndexArray mtd valMaker length =
+        makeLinearConcreteArray mtd makeIndex valMaker length Types.indexType None
 
     let makeLinearSymbolicArray mtd length symbolicValue elemType =
         let instantiator = [Terms.True, LazyInstantiator (symbolicValue, elemType)]
@@ -107,6 +107,12 @@ module internal Arrays =
         | {term = Array(d, _, _, _, _, _, _)} -> d
         | t -> internalfailf "extracting rank of non-array object %O" t)
 
+    let contentsOf = function
+        | {term = Array(_, _, _, _, c, _, _)} -> c
+        | t -> internalfailf "extracting rank of non-array object %O" t
+
+    let accessArrayIndex (heap : heap<term, term, fql>) i = heap.[makeIndex Metadata.empty i].value
+
     let rec private guardsProduct mtd = function
         | [] -> [(makeTrue mtd, [])]
         | d::ds ->
@@ -118,10 +124,7 @@ module internal Arrays =
             FSharpx.Collections.List.lift2 (fun (g1, v1) (g2, v2) -> (g1 &&& g2, v1::v2)) current rest
 
     let rec makeDefault mtd lengthList typ fql =
-        let elemTyp =
-            match typ with
-            | ArrayType(e, _) -> e
-            | _ -> internalfail "unexpected type of array!"
+        let elemTyp = Types.elementType typ
         let unguardedLengths = guardsProduct mtd lengthList
         let makeArray (lengthList : term list) =
             let dim = List.length lengthList
@@ -133,10 +136,7 @@ module internal Arrays =
         unguardedLengths |> List.map (fun (g, ls) -> (g, makeArray ls)) |> Merging.merge
 
     let rec fromInitializer mtd time rank typ initializer fql =
-        let elemTyp =
-            match typ with
-            | ArrayType(e, _) -> e
-            | _ -> internalfail "unexpected type of array!"
+        let elemTyp = Types.elementType typ
         let rec flatten depth term =
             match term.term with
             | Concrete(:? (term list) as terms, _) ->
@@ -174,7 +174,7 @@ module internal Arrays =
     let (|Index|_|) = function
         // TODO: add check that keys are not Arrays if need
         | VectorT(ConcreteT(length, _), [_, DefaultInstantiator _], contents, elemTyp)
-            when length :?> int = 1 && elemTyp = Types.indexType -> Some(contents.[makeIndex Metadata.empty 0].value)
+            when length :?> int = 1 && elemTyp = Types.indexType -> Some(accessArrayIndex contents 0)
         | _ -> None
 
     type LengthExtractor() =

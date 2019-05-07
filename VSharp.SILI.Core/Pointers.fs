@@ -5,7 +5,7 @@ open VSharp.Core.Common
 
 module internal Pointers =
     let private underlyingPointerTypeSizeof mtd = term >> function // for `T* ptr` returns `sizeof(T)`
-        | Ptr(_, _, typ, _) -> makeNumber mtd (Types.sizeOf typ)
+        | Ptr(_, _, typ, _) -> makeNumber mtd (Types.sizeOfTermType typ)
         | t -> internalfailf "Taking sizeof underlying type of not pointer type: %O" t
 
     type private SymbolicPointerDifference(pos: list<term * int>, neg: list<term * int>) =
@@ -94,7 +94,7 @@ module internal Pointers =
         | _ -> internalfailf "expected pointer but got: %O" p
 
     let private isZero mtd x =
-        Arithmetics.simplifyEqual mtd x (makeZero mtd) id
+        Arithmetics.simplifyEqual mtd x (makeZeroAddress mtd) id
 
     let isZeroAddress mtd x = fastNumericCompare mtd x (makeZeroAddress mtd)
 
@@ -110,7 +110,7 @@ module internal Pointers =
 
     let private equalPathSegment mtd x y =
         match x, y with
-        | StructField(field1, typ1), StructField(field2, typ2) -> makeBool (field1 = field2) mtd &&& typesEqual mtd typ1 typ2
+        | StructField(field1, typ1, _), StructField(field2, typ2, _) -> makeBool (field1 = field2) mtd &&& typesEqual mtd typ1 typ2 // TODO: offset equality?
         | ArrayIndex(addr1, _), ArrayIndex(addr2, _) -> Arrays.equalsIndicesArrays mtd addr1 addr2
         | ArrayLowerBound x, ArrayLowerBound y
         | ArrayLength x, ArrayLength y -> fastNumericCompare mtd x y
@@ -135,7 +135,7 @@ module internal Pointers =
                     match shift1, shift2 with
                     | None, None -> refeq |> k
                     | Some shift, None
-                    | None, Some shift -> refeq &&& isZero mtd shift |> k
+                    | None, Some shift -> refeq &&& isZero mtd shift |> k // TODO: fastNumericCompare
                     | Some shift1, Some shift2 -> refeq &&& Arithmetics.simplifyEqual mtd shift1 shift2 id |> k
                 | _ -> makeFalse mtd |> k)
             (fun x y state k -> simplifyReferenceEqualityk mtd x y (withSnd state >> k))

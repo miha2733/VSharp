@@ -41,7 +41,7 @@ module internal Merging =
 
     and keysResolver<'a, 'b, 'c when 'c : equality> r (read : bool -> 'a -> 'b -> termType -> term memoryCell) keyMapper getter (k : heapKey<'c, fql>) hgvs =
         let key = keyMapper k
-        let typ = Option.get k.FQL |> typeOfFQL
+        let typ = getFQLOfKey k |> typeOfFQL
         let instIfShould = function
             | _, g, Some v -> (g, v)
             | i, g, _ -> (g, read r (getter i) key typ)
@@ -50,7 +50,7 @@ module internal Merging =
     and keysResolver2<'a, 'b, 'c, 'd when 'c : equality> r h1 h2 (read : bool -> 'a -> 'b -> termType -> term memoryCell) keyMapper resolve (k : heapKey<'c, fql>) v1 v2 : 'd =
         let read h =
             let key = keyMapper k
-            let typ = Option.get k.FQL |> typeOfFQL
+            let typ = getFQLOfKey k |> typeOfFQL
             read r h key typ
         match v1, v2 with
         | Some v1, Some v2 -> resolve v1 v2
@@ -66,15 +66,17 @@ module internal Merging =
             | _ -> [propagateGuard g v]
         | (x :: _) as gvs ->
             let t = x |> snd |> typeOf
+            let size = (snd x).term |> function Struct(_, _, size) -> size | _ -> 0 // TODO: do better!
             assert(gvs |> Seq.map (snd >> typeOf) |> Seq.forall ((=) t))
+            assert(gvs |> Seq.map (snd >> term >> function Struct(_, _, size) -> size | _ -> 0) |> Seq.forall ((=) size))
             let gs, vs = List.unzip gvs
             let extractFields = term >> function
-                | Struct(fs, _) -> fs
+                | Struct(fs, _, _) -> fs
                 | t -> internalfailf "Expected struct, got %O" t
             let fss = vs |> List.map extractFields
             let getter i = {value = List.item i vs; created = Timestamp.zero; modified = Timestamp.zero}
             let merged = keysResolver<term memoryCell, fql, string> false readTerm getFQLOfKey getter |> Heap.merge gs fss
-            [(Propositional.disjunction Metadata.empty gs, Struct (fst x).metadata merged t)]
+            [(Propositional.disjunction Metadata.empty gs, Struct (fst x).metadata merged t size)]
 
     and private arrayMerge = function
         | [] -> []

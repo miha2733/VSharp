@@ -33,7 +33,7 @@ module internal Explorer =
     let configure itprtr = interpreter <- itprtr
 
     let private formInitialStatics metadata typ =
-        let staticMemoryEntry = Struct metadata Heap.empty typ
+        let staticMemoryEntry = Struct metadata Heap.empty typ 0
         Heap.empty.Add(makeTopLevelKey TopLevelStatics typ, { value = staticMemoryEntry; created = Timestamp.zero; modified = Timestamp.zero })
 
     let private invoke id state this k =

@@ -9,13 +9,13 @@ module internal Strings =
     let strLength = "System.String.m_StringLength"
     let strArray = "System.String.m_FirstChar"
 
-    let makeArrayFQL fql = addToOptionFQL fql <| StructField(strArray, ArrayType(Char, Vector))
+    let makeArrayFQL fql = addToOptionFQL fql <| StructField(strArray, ArrayType(Char, Vector), None)
 
     let makeStringOfFields metadata time length array arrayFQL fql =
-        let lengthFQL = addToOptionFQL fql <| StructField(strLength, lengthType)
+        let lengthFQL = addToOptionFQL fql <| StructField(strLength, lengthType, None)
         let fields = Heap.ofSeq (seq [ makeKey strLength lengthFQL, { value = length; created = time; modified = time };
                                        makeKey strArray arrayFQL, { value = array; created = time; modified = time } ])
-        Struct metadata fields String
+        Struct metadata fields String 0
 
     let makeConcreteStringStruct metadata time (str : string) fql =
         let length = Concrete metadata str.Length lengthType
@@ -27,7 +27,7 @@ module internal Strings =
         makeStringOfFields metadata time length array arrayFQL fql
 
     let makeStringArray metadata time length instor contents elType arrayFQL =
-        let arrLength = makeNumber metadata 1 |> add metadata length
+        let arrLength = inc metadata length
         let indexLength = makeIndexArray metadata (always length) 1
         let indexLengthKey = makePathKey arrayFQL (mkArrayIndex Char) indexLength
         let contentsWithZero = Heap.add indexLengthKey { value = makeNumber metadata '\000'; created = time; modified = time } contents

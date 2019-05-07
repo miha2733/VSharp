@@ -37,7 +37,7 @@ module API =
         val Concrete : 'a -> termType -> term
         val Constant : string -> ISymbolicConstantSource -> termType -> term
         val Expression : operation -> term list -> termType -> term
-        val Struct : heap<string, term, fql> -> termType -> term
+        val Struct : heap<string, term, fql> -> termType -> int -> term
         val Union : (term * term) list -> term
 
         val True : term

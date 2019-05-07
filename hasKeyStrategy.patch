@@ -1,0 +1,402 @@
+Index: VSharp.SILI.Core/Memory.fs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- VSharp.SILI.Core/Memory.fs	(date 1553527804854)
++++ VSharp.SILI.Core/Memory.fs	(date 1553527804854)
+@@ -232,6 +232,7 @@
+         | InterfaceType _
+         | TypeVariable _
+         | ClassType _ as t ->
++            // TODO: init constant fields of Statics (use Reflection) (not HERE!)
+             let t = Types.Variable.fromTermType name typeSource t
+             Struct metadata Heap.empty t
+         | ArrayType(_, d) as t ->
+@@ -285,8 +286,7 @@
+             let name = sprintf "%O.%s_Length" array (idx.term.IndicesToString())
+             makeSymbolicArrayLength metadata name fql heap
+ 
+-    let private staticMemoryLazyInstantiator metadata typ () =
+-        // TODO: init constant fields using Reflection
++    let private staticMemoryLazyInstantiator metadata typ () = // TODO: or here about constant fields of statics
+         Struct metadata Heap.empty typ
+ 
+     let private selectLazyInstantiator<'a when 'a : equality> metadata (heap : 'a generalizedHeap option) time fql typ =
+@@ -376,51 +376,54 @@
+                 accessRec gavs lv h
+             | Some(a, v) -> accessRec ((makeTrue metadata, a, v)::restGavs) None h
+ 
+-    and private accessTerm read metadata (groundHeap: 'a generalizedHeap option) guard (update : term -> timestamp -> term * timestamp) contextList lazyInstantiator ptrTime ptrFql path ({created = c; modified = m} as cell) =
+-        let internalMerge gvs =
+-            let cells, newVs = List.fold (fun (cells, newVs) (g, (c, v)) -> (g, c)::cells, (g, v)::newVs) ([], []) gvs
+-            mergeCells cells, merge newVs
+-        let doAccess term =
+-            match path with
+-            | [] ->
+-                let newTerm, newModified = update term m
+-                { cell with value = newTerm; modified = newModified }, newTerm
+-            | location :: path' ->
+-                match term.term with
+-                | Struct(fields, t) ->
+-                    let fql' = addToFQL location ptrFql
+-                    match location with
+-                    | StructField(name, typ) ->
+-                        let instantiator = if read then lazyInstantiator else Some <| genericLazyInstantiator<'a> term.metadata groundHeap m fql' typ
+-                        let ptr' = { location = name; fullyQualifiedLocation = fql'; typ = typ; time = ptrTime; path = path' }
+-                        let mapper (k, term) (ctx, s) = k, fillHoles ctx s term
+-                        let resultCell, newFields = accessHeap<'a, string> read false metadata groundHeap guard update fields c compareStringKey contextList mapper instantiator ptr'
+-                        resultCell, Struct term.metadata newFields t
+-                    | _ -> __unreachable__()
+-                | Array(dimension, length, lower, constant, contents, lengths, arrTyp) ->
+-                    let fql' = addToFQL location ptrFql
+-                    let newHeap heap instor keyCompare ptr = accessHeap<'a, term> read false metadata groundHeap guard update heap c keyCompare contextList termKeyMapper (Some instor) ptr
+-                    let makePtr key typ = { location = key; fullyQualifiedLocation = fql'; typ = typ; time = ptrTime; path = path' }
+-                    let makeInstantiator key instantiator =
+-                        let realInstantiator, targetType = if read then lazyInstantiator, Some(typeOfPath path) else None, None
+-                        let doJob = lazy(guardedMap (fun c -> instantiator term.metadata realInstantiator targetType groundHeap m fql' key c ()) constant)
+-                        doJob.Force
+-                    match location with
+-                    | ArrayIndex(key, typ) ->
+-                        let instantiator = makeInstantiator key arrayElementLazyInstantiator
+-                        let resultCell, newContents = newHeap contents instantiator Arrays.equalsArrayIndices <| makePtr key typ
+-                        resultCell, Array term.metadata dimension length lower constant newContents lengths arrTyp
+-                    | ArrayLength key ->
+-                        let instantiator = makeInstantiator key arrayLengthLazyInstantiator
+-                        let resultCell, newLengths = newHeap lengths instantiator fastNumericCompare <| makePtr key lengthType
+-                        resultCell, Array term.metadata dimension length lower constant contents newLengths arrTyp
+-                    | ArrayLowerBound key ->
+-                        let instantiator = makeInstantiator key arrayLowerBoundLazyInstantiator
+-                        let resultCell, newLower = newHeap lower instantiator fastNumericCompare <| makePtr key lengthType
+-                        resultCell, Array term.metadata dimension length newLower constant contents lengths arrTyp
+-                    | _ -> __unreachable__()
+-                | t -> internalfailf "expected complex type, but got %O" t
+-        commonGuardedErroredApply doAccess (withFst cell) cell.value internalMerge
++    and private accessTerm read metadata (groundHeap: 'a generalizedHeap option) guard (update : term -> timestamp -> term * timestamp) contextList lazyInstantiator ptrTime ptrFql path ({value = v; created = c; modified = m} as cell) =
++        match path with
++        | [] ->
++            let newTerm, newModified = update v m
++            { cell with value = newTerm; modified = newModified }, newTerm
++        | location :: path' ->
++            match v.term with
++            | Error _ -> cell, v
++            | Struct(fields, t) ->
++                let fql' = addToFQL location ptrFql
++                match location with
++                | StructField(name, typ) ->
++                    let instantiator = if read then lazyInstantiator else Some <| genericLazyInstantiator<'a> v.metadata groundHeap m fql' typ
++                    let ptr' = { location = name; fullyQualifiedLocation = fql'; typ = typ; time = ptrTime; path = path' }
++                    let mapper (k, v) (ctx, s) = k, fillHoles ctx s v
++                    let resultCell, newFields = accessHeap<'a, string> read false metadata groundHeap guard update fields c compareStringKey contextList mapper instantiator ptr'
++                    resultCell, Struct v.metadata newFields t
++                | _ -> __unreachable__()
++            | Array(dimension, length, lower, constant, contents, lengths, arrTyp) ->
++                let fql' = addToFQL location ptrFql
++                let newHeap heap instor keyCompare ptr = accessHeap<'a, term> read false metadata groundHeap guard update heap c keyCompare contextList termKeyMapper (Some instor) ptr
++                let makePtr key typ = { location = key; fullyQualifiedLocation = fql'; typ = typ; time = ptrTime; path = path' }
++                let makeInstantiator key instantiator =
++                    let realInstantiator, targetType = if read then lazyInstantiator, Some(typeOfPath path) else None, None
++                    let doJob = lazy(Merging.guardedMap (fun c -> instantiator v.metadata realInstantiator targetType groundHeap m fql' key c ()) constant)
++                    doJob.Force
++                match location with
++                | ArrayIndex(key, typ) ->
++                    let instantiator = makeInstantiator key arrayElementLazyInstantiator
++                    let resultCell, newContents = newHeap contents instantiator Arrays.equalsArrayIndices <| makePtr key typ
++                    resultCell, Array v.metadata dimension length lower constant newContents lengths arrTyp
++                | ArrayLength key ->
++                    let instantiator = makeInstantiator key arrayLengthLazyInstantiator
++                    let resultCell, newLengths = newHeap lengths instantiator fastNumericCompare <| makePtr key lengthType
++                    resultCell, Array v.metadata dimension length lower constant contents newLengths arrTyp
++                | ArrayLowerBound key ->
++                    let instantiator = makeInstantiator key arrayLowerBoundLazyInstantiator
++                    let resultCell, newLower = newHeap lower instantiator fastNumericCompare <| makePtr key lengthType
++                    resultCell, Array v.metadata dimension length newLower constant contents lengths arrTyp
++                | _ -> __unreachable__()
++            | Union gvs ->
++                let internalMerge gvs =
++                    let cells, newVs = List.fold (fun (cells, newVs) (g, (c, v)) -> (g, c)::cells, (g, v)::newVs) ([], []) gvs
++                    mergeCells cells, merge newVs
++                let createCell v = { cell with value = v }
++                commonGuardedMap (accessTerm read metadata groundHeap guard update contextList lazyInstantiator ptrTime ptrFql path << createCell) gvs internalMerge
++            | t ->
++                internalfailf "expected complex type, but got %O" t
+ 
+     and private compareStringKey mtd loc key = makeBool (loc = key) mtd
+ 
+@@ -465,7 +468,7 @@
+         let typ' = removeTypeVariable typ
+         commonHierarchicalHeapAccess true restricted makePair metadata None heap [] None key typ' [] {v = Timestamp.infinity} |> fst
+ 
+-    and private commonHierarchicalStaticsAccess read restricted update metadata groundHeap statics contextList lazyInstantiator typ path =
++    and private commonHierarchicalStaticsAccess read restricted update metadata groundHeap statics contextList lazyInstantiator typ path = // TODO: why not keyInitialized here?
+         let typ' = if List.isEmpty path then typ else typeOfPath path
+         let lazyInstantiator =
+             if read then
+@@ -479,28 +482,21 @@
+     and readStatics metadata restricted statics key _ =
+         commonHierarchicalStaticsAccess true restricted makePair metadata None statics [] None key [] |> fst
+ 
+-    and commonInterningPoolAccess read restricted update metadata groundHeap pool contextList externalLI addr time =
+-        let location = TopLevelPool addr, []
+-        let typ = Reference String
+-        let ptr = {location = addr; fullyQualifiedLocation = location; typ = typ; time = time.v; path = []}
+-        let lazyInstor = externalLI |?? selectLazyInstantiator<term> metadata groundHeap time.v location typ
+-        accessHeap<term, term> read restricted metadata groundHeap (makeTrue metadata) update pool Timestamp.zero Strings.simplifyStructEq contextList termKeyMapper (Some lazyInstor) ptr
+-
+-    and readPool metadata restricted heap key _ =
+-        let lazyInstor = fun () -> Union metadata []
+-        commonInterningPoolAccess true restricted makePair metadata None heap [] (Some lazyInstor) key {v = Timestamp.infinity} |> fst
+-
+     and mutateStack metadata state location path time value =
+         commonHierarchicalStackAccess false (fun _ _ -> value, time) metadata state location path |> snd
+ 
+     and private mutateHeap restricted metadata h loc typ path time value =
+-        commonHierarchicalHeapAccess false restricted (fun _  _ -> value, time) metadata None h [] None loc typ path {v = time} |> snd
++        commonHierarchicalHeapAccess false restricted (fun _  _ -> value, time) metadata None h [] None loc typ path {v=time} |> snd
+ 
+     and private mutateStatics restricted metadata statics location _ path time value =
+         commonHierarchicalStaticsAccess false restricted (fun _ _ -> value, time) metadata None statics [] None location path |> snd
+ 
+-    and private mutatePool restricted metadata pool location _ _ time value =
+-        commonInterningPoolAccess false restricted (fun _ _ -> value, time) metadata None pool [] None location {v = time} |> snd
++    and private mutatePool restricted metadata pool location _ path time value = // TODO: unify and do better: use commonAccess with Some Instor
++        let fql = TopLevelPool(location), []
++        let typ = Reference String
++        let ptr = {location = location; fullyQualifiedLocation = fql; typ = typ; time = time; path = []}
++        let lazyInst = fun () -> Union metadata []
++        accessHeap<term, term> false restricted metadata None (makeTrue metadata) (fun _ _ -> value, time) pool Timestamp.zero Strings.simplifyStructEq [] termKeyMapper (Some lazyInst) ptr |> snd
+ 
+     and private independent<'a when 'a : equality> (exploredRecursiveIds : ImmutableHashSet<IFunctionIdentifier>) (read : ImmutableHashSet<IFunctionIdentifier> -> state -> term * 'a generalizedHeap) funcId location : bool =
+         exploredRecursiveIds.Contains funcId ||
+@@ -604,8 +600,6 @@
+             | _ -> __notImplemented__()
+         | Concrete(:? concreteHeapAddress as addr', t) ->
+             Concrete ctx.mtd (composeAddresses ctx.addr addr') t
+-        | Concrete(:? concreteStringAddress, _) ->
+-            { term with metadata = ctx.mtd }
+         | Pointers.SymbolicThisOnStack(token, path) ->
+             let id = ("this", token)
+             let reference = referenceLocalVariable term.metadata state id false |> deref term.metadata state |> fst
+@@ -630,6 +624,7 @@
+         let v = fillHoles ctx source cell.value
+         mutateStack ctx.mtd target addr path time v
+ 
++    // TODO: target -- old, addr -- new
+     and private fillAndMutateCommon<'a when 'a : equality> mutateHeap (fillKey : compositionContext -> state -> 'a -> 'a) (ctx : compositionContext) restricted source (target : heap<'a, term, fql>) addr typ path cell : heap<'a, term, fql> =
+         let time = Timestamp.compose ctx.time cell.modified
+         let addr = fillKey ctx source addr
+@@ -707,7 +702,7 @@
+     and composeStaticsOf ctx state statics =
+         composeGeneralizedHeaps (fillAndMutateCommon mutateStatics) substituteTypeVariables readStatics ctx staticsOf withStatics state statics
+ 
+-    and composePoolsOf ctx state pool =
++    and composePoolsOf ctx state pool = // TODO: make mutate function for pool
+         composeGeneralizedHeaps (fillAndMutateCommon mutatePool) fillHoles readPool ctx poolOf withPool state pool
+ 
+     and composeStates ctx state state' =
+@@ -737,11 +732,11 @@
+ 
+ // ------------------------------- Referencing -------------------------------
+ 
+-    and private referenceTerm name followHeapRefs =
+-        guardedErroredApply (fun term ->
+-            match term.term with
+-            | Ref _ when followHeapRefs -> term
+-            | _ -> StackRef term.metadata name [])
++    and private referenceTerm name followHeapRefs term =
++        match term.term with
++        | Ref _ when followHeapRefs -> term
++        | Union gvs -> guardedMap (referenceTerm name followHeapRefs) gvs
++        | _ -> StackRef term.metadata name []
+ 
+     and referenceLocalVariable metadata state location followHeapRefs =
+         let reference = StackRef metadata location []
+@@ -824,9 +819,6 @@
+     let freshHeapLocation metadata =
+         Concrete metadata ([freshAddress()]) pointerType
+ 
+-    let makeStringLocation metadata string =
+-        Concrete metadata string pointerType
+-
+     let allocateOnStack metadata s key term =
+         let time = tick()
+         let { func = frameMetadata; entries = oldFrame; time = frameTime } = Stack.peek s.frames.f
+@@ -847,7 +839,7 @@
+             Mutation(h, mutatedHeap)
+         | Mutation(gh, h) -> Mutation(gh, allocateInDefinedHeap h heapKey term time)
+         | Merged gvh ->
+-            commonGuardedMapk (fun h k -> k <| allocateInGeneralizedHeap heapKey term time h) gvh
++            commonGuardedMapk (fun h k -> k <| allocateInGeneralizedHeap heapKey term time h) gvh // TODO: accept
+                 (fun gvh ->
+                     let g, h = List.unzip gvh
+                     mergeGeneralizedHeaps (fun _ _ _ _ -> __unreachable__()) g h) id
+@@ -860,11 +852,11 @@
+         (ref, { s with heap = allocateInGeneralizedHeap heapKey term time s.heap } )
+ 
+     let allocateString metadata state string =
+-        let address = makeStringLocation metadata string
++        let address = freshHeapLocation metadata
+         let fql = makeTopLevelFQL TopLevelHeap (address, String, String)
+         Strings.makeConcreteStringStruct metadata (tick()) string fql |> allocateInHeap metadata state address
+ 
+-    let mkDefaultStaticStruct metadata state targetType fql =
++    let mkDefaultStaticStruct metadata state targetType fql = // TODO: smthn here about constant fields of statics
+         let dnt = toDotNetType targetType
+         let time = tick()
+         let mkDefaultField metadata name typ = StructField(name, typ) |> addToOptionFQL fql |> defaultOf time metadata typ
+@@ -904,24 +896,23 @@
+     let private mkKeyGuard mtd fillHolesInKey getter heap (key : 'a) =
+         Constant mtd (IdGenerator.startingWith "hasKey#") ({ heap = heap; key = key; getter = {v=getter}; fillHolesInKey = {v=fillHolesInKey} } : 'a keyInitializedSource) Bool
+ 
+-    let private guardOfDefinedHeap mtd  fillHolesInKey getter key r (h : heap<'key, term, fql>) =
++    let private guardOfDefinedHeap mtd fillHolesInKey getter key r (h : heap<'key, term, fql>) =
+         if Heap.contains key h then Merging.guardOf h.[key].value
+         elif r then False
+         else mkKeyGuard mtd fillHolesInKey getter (Defined r h) key
+ 
+     let rec private guardOfHeap (exploredRecursiveIds : ImmutableHashSet<IFunctionIdentifier>) mtd fillHolesInKey getter key = function
+-        | Defined(r, h) -> guardOfDefinedHeap mtd  fillHolesInKey getter key r h
+-        | Merged ghs -> guardedMap (guardOfHeap exploredRecursiveIds mtd  fillHolesInKey getter key) ghs
++        | Defined(r, h) -> guardOfDefinedHeap mtd fillHolesInKey getter key r h
++        | Merged ghs -> guardedMap (guardOfHeap exploredRecursiveIds mtd fillHolesInKey getter key) ghs
+         | Mutation(h, h') ->
+-            guardOfHeap exploredRecursiveIds mtd  fillHolesInKey getter key h ||| guardOfDefinedHeap mtd  fillHolesInKey getter key false h'
++            guardOfHeap exploredRecursiveIds mtd fillHolesInKey getter key h ||| guardOfDefinedHeap mtd fillHolesInKey getter key false h'
+         | Composition(s, ctx, h) ->
+-            let groundGuard = guardOfHeap exploredRecursiveIds mtd  fillHolesInKey getter key (getter s)
+-            groundGuard ||| guardOfHeap exploredRecursiveIds mtd  fillHolesInKey getter (fillHolesInKey ctx s key) h
++            guardOfHeap exploredRecursiveIds mtd fillHolesInKey getter key (getter s) ||| guardOfHeap exploredRecursiveIds mtd fillHolesInKey getter (fillHolesInKey ctx s key) h
+         | RecursiveApplication(f, _, _) when exploredRecursiveIds.Contains f -> False
+         | RecursiveApplication(f, _, _) ->
+             match Database.querySummary f with
+             | Some summary ->
+-                guardOfHeap (exploredRecursiveIds.Add f) mtd  fillHolesInKey getter key <| getter summary.state
++                guardOfHeap (exploredRecursiveIds.Add f) mtd fillHolesInKey getter key <| getter summary.state
+             | None -> True
+         | HigherOrderApplication _ as h ->
+             mkKeyGuard mtd fillHolesInKey getter h key
+@@ -937,14 +928,37 @@
+ 
+ // ------------------------------- Interning -------------------------------
+ 
++    let internal commonInterningPoolAccess read restricted metadata groundHeap pool contextList externalLI lazyValue addr time =
++        let location = TopLevelPool addr, []
++        let typ = Reference String
++        let ptr = {location = addr; fullyQualifiedLocation = location; typ = typ; time = time.v; path = []}
++        let generalizedPool = Defined restricted pool
++        let lazyHR = genericLazyInstantiator metadata groundHeap time.v location typ ()
++        let hasKeyCase k =
++            Common.statelessConditionalExecution
++                (fun k -> k (!! (Pointers.isNull metadata lazyHR)))
++                (fun k -> k lazyHR)
++                (fun k -> k (Union metadata []))
++                Merging.merge Merging.merge2Terms k
++        let internalLI =
++            lazy(Common.statelessConditionalExecution
++                    (fun k -> k (termLocInitialized metadata addr generalizedPool))
++                    (fun k -> hasKeyCase k)
++                    (fun k -> k lazyValue)
++                    Merging.merge Merging.merge2Terms id)
++        let lazyInstor = externalLI |?? internalLI.Force
++        accessHeap<term, term> read restricted metadata groundHeap (makeTrue metadata) makePair pool Timestamp.zero Strings.simplifyStructEq contextList termKeyMapper (Some lazyInstor) ptr
++
++    let private readPool metadata restricted heap key _ =
++        let lazyValue = Union metadata []
++        commonInterningPoolAccess true restricted metadata None heap [] None lazyValue key {v = Timestamp.infinity} |> fst
++
+     let private internCommon metadata state read lazyValue poolKey =
+-        let internalLI = lazy(lazyValue)
+         let intern state poolKey =
+             let poolRef = Ref metadata (TopLevelPool poolKey) []
+             let time = tick()
+-            let accessDefined contextList externalLI groundHeap r h =
+-                let lazyInstatiator = externalLI |?? internalLI.Force
+-                let cell, pool = commonInterningPoolAccess read r makePair metadata groundHeap h contextList (Some lazyInstatiator) poolKey {v = time}
++            let accessDefined contextList lazyInstatiator groundHeap r h =
++                let cell, pool = commonInterningPoolAccess read r metadata groundHeap h contextList lazyInstatiator lazyValue poolKey {v = time}
+                 cell.value, pool
+             mapsnd (withPool state) <| accessGeneralizedHeap read (readPool metadata) poolOf poolRef accessDefined state.iPool
+         Merging.guardedErroredStateApply intern state poolKey
+@@ -961,15 +975,19 @@
+         let poolKey = Strings.makeConcreteStringStruct metadata (tick()) stringLiteral None
+         internCommon metadata state true (makeNullRef metadata) poolKey
+ 
+-    let internLiteral metadata (state : state) stringLiteral =
+-        let address = makeStringLocation metadata stringLiteral
++    let internLiteral metadata (state : state) stringLiteral = // TODO: do everything better
++        let rec deterministicHasKey key = function // TODO: let rec: List.exists (Merged of all Difined heaps case) (after Kostya's pull request)
++            | Defined(_, h) -> Heap.contains key h // TODO: What if there will be composition with defined heap? termLocInitialized = True?
++            | Merged ghs -> List.exists (snd >> deterministicHasKey key) ghs
++            | _ -> false
++        let address = freshHeapLocation metadata
+         let fql = makeTopLevelFQL TopLevelHeap (address, String, String)
+         let poolKey = Strings.makeConcreteStringStruct metadata (tick()) stringLiteral fql
+-        let strRef = HeapRef metadata address String String []
+-        let ref, state' = internCommon metadata state false strRef poolKey
+-        if ref = strRef
+-            then allocateInHeap metadata state' address poolKey |> snd
+-            else state
++        let strRef, state =
++            if deterministicHasKey poolKey state.iPool
++                then Nop, state
++                else allocateInHeap metadata state address poolKey
++        internCommon metadata state false strRef poolKey |> snd
+ 
+     let internLiterals metadata state literals = List.fold (internLiteral metadata) state literals
+ 
+@@ -1002,3 +1020,55 @@
+         interface IStatedSymbolicConstantSource with
+             override x.Compose ctx state =
+                 keyInitialized ctx.mtd x.key x.fillHolesInKey.v x.getter.v (x.getter.v state)
++
++
++//
++//let internal commonInterningPoolAccess read restricted metadata groundHeap pool contextList lazyInstantiator lazyValue addr time =
++//        let location = TopLevelPool addr, []
++//        let typ = Reference String
++//        let ptr = {location = addr; fullyQualifiedLocation = location; typ = typ; time = time.v; path = []}
++//        let generalizedPool = Defined restricted pool
++//        accessHeap<term, term> read restricted metadata groundHeap (makeTrue metadata) makePair pool Timestamp.zero Strings.simplifyStructEq contextList termKeyMapper (Some lazyInstantiator) ptr
++//
++//    let private readPool metadata restricted pool key _ =
++//        let lazyValue = Union metadata []
++//        let iPool = Defined restricted pool
++//        let location = TopLevelPool key, []
++//        let lv = genericLazyInstantiator metadata None Timestamp.infinity location (Reference String) ()
++//        let lv = lazy(Common.statelessConditionalExecution // TODO: сделать отдельную функцию с инстанциатором. Тогда можно будет сделать со state и решить проблемы deterministic hasKey
++//                        (fun k -> k (termLocInitialized metadata key iPool))
++//                        (fun k -> k lv)
++//                        (fun k -> k lazyValue)
++//                        Merging.merge Merging.merge2Terms id)
++//        commonInterningPoolAccess true restricted metadata None pool [] (lv.Force) lazyValue key {v = Timestamp.infinity} |> fst
++//
++//    let private internCommon metadata state read lazyValue poolKey =
++//        let intern state poolKey =
++//            let fql = TopLevelPool poolKey, []
++//            let poolRef = makeFQLRef metadata fql
++//            let time = tick()
++//            let lv = genericLazyInstantiator metadata None time fql (Reference String) ()
++//            let states =
++//                if not read then // TODO: redo this
++//                    let address = Pointers.topLevelLocation lv
++//                    snd <| allocateInHeap metadata state address poolKey
++//                else state
++//            let accessDefined contextList lazyInstantiator groundHeap r h =
++//                let lazyValue = // TODO: mutability
++//                    let nullCheck = if read then True else !! (Pointers.isNull metadata lv) // TODO: isZeroAddress mb?
++//                    let addNullCheck k =
++//                        Common.statelessConditionalExecution
++//                            (fun k -> k nullCheck)
++//                            (fun k -> k lv)
++//                            (fun k -> k (Union metadata []))
++//                            Merging.merge Merging.merge2Terms k
++//                    lazy(Common.statelessConditionalExecution // TODO: сделать отдельную функцию с инстанциатором. Тогда можно будет сделать со state и решить проблемы deterministic hasKey
++//                            (fun k -> k (termLocInitialized metadata poolKey state.iPool))
++//                            (fun k -> addNullCheck k)
++//                            (fun k -> k lazyValue)
++//                            Merging.merge Merging.merge2Terms id)
++//                let lazyInstor = lazyInstantiator |?? lazyValue.Force
++//                let cell, pool = commonInterningPoolAccess read r metadata groundHeap h contextList lazyInstor lazyValue poolKey {v = time}
++//                cell.value, pool
++//            mapsnd (withPool states) <| accessGeneralizedHeap read (readPool metadata) poolOf poolRef accessDefined state.iPool
++//        Merging.guardedErroredStateApply intern state poolKey

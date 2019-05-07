@@ -55,7 +55,7 @@ module API =
         let Concrete obj typ = Concrete m.Value obj typ
         let Constant name source typ = Constant m.Value name source typ
         let Expression op args typ = Expression m.Value op args typ
-        let Struct fields typ = Struct m.Value fields typ
+        let Struct fields typ size = Struct m.Value fields typ size
         let Union gvs = Union m.Value gvs
 
         let True = True
@@ -81,7 +81,7 @@ module API =
         let ToDotNetType t = Types.toDotNetType t
         let WrapReferenceType t = Types.wrapReferenceType t
 
-        let SizeOf t = Types.sizeOf t
+        let SizeOf t = Types.sizeOfTermType t
 
         let TLength = Types.lengthType
         let IsBool t = Types.isBool t

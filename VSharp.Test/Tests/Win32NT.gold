@@ -1,0 +1,312 @@
+METHOD: System.String VSharp.CSharpUtils.Tests.Strings.ConcreteIntern()
+RESULT: UNION[
+	| !hasKey#7 ~> (HeapRef 2)
+	| hasKey#7 ~> (HeapRef abc)]
+HEAP:
+{ heap = h0, statics = s1, pool = p2 } where
+---------- h0 = ----------
+1 ==> STRUCT System.String[
+	| System.String.m_FirstChar ~> [|
+		0: '\000';
+		 ... 1 ... |]
+	| System.String.m_StringLength ~> 0]
+2 ==> STRUCT System.String[
+	| System.String.m_FirstChar ~> [|
+		0: 'a';
+		1: 'b';
+		2: 'c';
+		3: '\000';
+		 ... 4 ... |]
+	| System.String.m_StringLength ~> 3]
+3 ==> [|
+	0: 'a';
+	1: 'b';
+	2: 'c';
+	 ... 3 ... |]
+4 ==> STRUCT System.String[
+	| System.String.m_FirstChar ~> [|
+		0: 's';
+		1: 't';
+		2: 'r';
+		3: '\000';
+		 ... 4 ... |]
+	| System.String.m_StringLength ~> 3]
+5 ==> STRUCT System.String[
+	| System.String.m_FirstChar ~> [|
+		0: 'T';
+		10: 'e';
+		11: 'w';
+		12: 'o';
+		13: 'r';
+		14: 'k';
+		15: 'N';
+		16: 'a';
+		17: 'm';
+		18: 'e';
+		19: '\000';
+		1: 'a';
+		2: 'r';
+		3: 'g';
+		4: 'e';
+		5: 't';
+		6: 'F';
+		7: 'r';
+		8: 'a';
+		9: 'm';
+		 ... 20 ... |]
+	| System.String.m_StringLength ~> 19]
+---------- s1 = ----------
+System.AppDomain ==> STRUCT System.AppDomain[
+	| System.AppDomain.DefaultADID ~> UNION[
+		| !hasKey#3 ~> 1
+		| hasKey#3 ~> System.AppDomain.DefaultADID]
+	| System.AppDomain.TargetFrameworkNameAppCompatSetting ~> UNION[
+		| !hasKey#3 & !hasKey#4 ~> (HeapRef 5)
+		| !hasKey#3 & hasKey#4 ~> (HeapRef TargetFrameworkName)
+		| hasKey#3 ~> (HeapRef System.AppDomain.TargetFrameworkNameAppCompatSetting)]
+	| System.AppDomain.s_flags ~> UNION[
+		| !hasKey#3 ~> 0
+		| hasKey#3 ~> System.AppDomain.s_flags]]
+System.String ==> STRUCT System.String[
+	| System.String.Empty ~> UNION[
+		| !hasKey#1 ~> (HeapRef 1)
+		| hasKey#1 ~> (HeapRef System.String.Empty)]
+	| System.String.TrimBoth ~> UNION[
+		| !hasKey#1 ~> 2
+		| hasKey#1 ~> System.String.TrimBoth]
+	| System.String.TrimHead ~> UNION[
+		| !hasKey#1 ~> 0
+		| hasKey#1 ~> System.String.TrimHead]
+	| System.String.TrimTail ~> UNION[
+		| !hasKey#1 ~> 1
+		| hasKey#1 ~> System.String.TrimTail]
+	| System.String.alignConst ~> UNION[
+		| !hasKey#1 ~> 7
+		| hasKey#1 ~> System.String.alignConst]
+	| System.String.charPtrAlignConst ~> UNION[
+		| !hasKey#1 ~> 3
+		| hasKey#1 ~> System.String.charPtrAlignConst]]
+System.Threading.Thread ==> STRUCT System.Threading.Thread[
+	| System.Threading.Thread.ProcessorIdCacheCountDownMask ~> UNION[
+		| !hasKey#6 ~> 65535
+		| hasKey#6 ~> System.Threading.Thread.ProcessorIdCacheCountDownMask]
+	| System.Threading.Thread.ProcessorIdCacheShift ~> UNION[
+		| !hasKey#6 ~> 16
+		| hasKey#6 ~> System.Threading.Thread.ProcessorIdCacheShift]
+	| System.Threading.Thread.ProcessorIdRefreshRate ~> UNION[
+		| !hasKey#6 ~> 5000
+		| hasKey#6 ~> System.Threading.Thread.ProcessorIdRefreshRate]
+	| System.Threading.Thread.s_LocalDataStore ~> UNION[
+		| !hasKey#6 ~> null
+		| hasKey#6 ~> (HeapRef System.Threading.Thread.s_LocalDataStore)]
+	| System.Threading.Thread.s_LocalDataStoreMgr ~> UNION[
+		| !hasKey#6 ~> null
+		| hasKey#6 ~> (HeapRef System.Threading.Thread.s_LocalDataStoreMgr)]
+	| System.Threading.Thread.s_asyncLocalCurrentCulture ~> UNION[
+		| !hasKey#6 ~> null
+		| hasKey#6 ~> (HeapRef System.Threading.Thread.s_asyncLocalCurrentCulture)]
+	| System.Threading.Thread.s_asyncLocalCurrentUICulture ~> UNION[
+		| !hasKey#6 ~> null
+		| hasKey#6 ~> (HeapRef System.Threading.Thread.s_asyncLocalCurrentUICulture)]
+	| System.Threading.Thread.t_currentProcessorIdCache ~> UNION[
+		| !hasKey#6 ~> 0
+		| hasKey#6 ~> System.Threading.Thread.t_currentProcessorIdCache]]
+VSharp.CSharpUtils.Tests.Strings ==> STRUCT VSharp.CSharpUtils.Tests.Strings[]
+---------- p2 = ----------
+STRUCT System.String[
+	| System.String.m_FirstChar ~> [|
+		0: 'T';
+		10: 'e';
+		11: 'w';
+		12: 'o';
+		13: 'r';
+		14: 'k';
+		15: 'N';
+		16: 'a';
+		17: 'm';
+		18: 'e';
+		19: '\000';
+		1: 'a';
+		2: 'r';
+		3: 'g';
+		4: 'e';
+		5: 't';
+		6: 'F';
+		7: 'r';
+		8: 'a';
+		9: 'm';
+		 ... 20 ... |]
+	| System.String.m_StringLength ~> 19] ==> UNION[
+	| !hasKey#3 & !hasKey#4 ~> (HeapRef 5)
+	| hasKey#3 | hasKey#4 ~> (HeapRef TargetFrameworkName)]
+STRUCT System.String[
+	| System.String.m_FirstChar ~> [|
+		0: 'a';
+		1: 'b';
+		2: 'c';
+		3: '\000';
+		 ... 4 ... |]
+	| System.String.m_StringLength ~> 3] ==> UNION[
+	| !hasKey#7 ~> (HeapRef 2)
+	| hasKey#7 ~> (HeapRef abc)]
+STRUCT System.String[
+	| System.String.m_FirstChar ~> [|
+		0: 's';
+		1: 't';
+		2: 'r';
+		3: '\000';
+		 ... 4 ... |]
+	| System.String.m_StringLength ~> 3] ==> UNION[
+	| !hasKey#2 ~> (HeapRef 4)
+	| hasKey#2 ~> (HeapRef str)]
+METHOD: System.Object VSharp.CSharpUtils.Tests.Strings.NotInterned()
+RESULT: UNION[
+	| !(0 == abc) & hasKey#7 ~> (HeapRef abc)
+	| !hasKey#7 | 0 == abc ~> null]
+HEAP:
+{ heap = h0, statics = s1, pool = p2 } where
+---------- h0 = ----------
+1 ==> STRUCT System.String[
+	| System.String.m_FirstChar ~> [|
+		0: '\000';
+		 ... 1 ... |]
+	| System.String.m_StringLength ~> 0]
+2 ==> STRUCT System.String[
+	| System.String.m_FirstChar ~> [|
+		0: 'a';
+		1: 'b';
+		2: 'c';
+		3: '\000';
+		 ... 4 ... |]
+	| System.String.m_StringLength ~> 3]
+3 ==> [|
+	0: 'a';
+	1: 'b';
+	2: 'c';
+	 ... 3 ... |]
+4 ==> STRUCT System.String[
+	| System.String.m_FirstChar ~> [|
+		0: 's';
+		1: 't';
+		2: 'r';
+		3: '\000';
+		 ... 4 ... |]
+	| System.String.m_StringLength ~> 3]
+5 ==> STRUCT System.String[
+	| System.String.m_FirstChar ~> [|
+		0: 'T';
+		10: 'e';
+		11: 'w';
+		12: 'o';
+		13: 'r';
+		14: 'k';
+		15: 'N';
+		16: 'a';
+		17: 'm';
+		18: 'e';
+		19: '\000';
+		1: 'a';
+		2: 'r';
+		3: 'g';
+		4: 'e';
+		5: 't';
+		6: 'F';
+		7: 'r';
+		8: 'a';
+		9: 'm';
+		 ... 20 ... |]
+	| System.String.m_StringLength ~> 19]
+---------- s1 = ----------
+System.AppDomain ==> STRUCT System.AppDomain[
+	| System.AppDomain.DefaultADID ~> UNION[
+		| !hasKey#3 ~> 1
+		| hasKey#3 ~> System.AppDomain.DefaultADID]
+	| System.AppDomain.TargetFrameworkNameAppCompatSetting ~> UNION[
+		| !hasKey#3 & !hasKey#4 ~> (HeapRef 5)
+		| !hasKey#3 & hasKey#4 ~> (HeapRef TargetFrameworkName)
+		| hasKey#3 ~> (HeapRef System.AppDomain.TargetFrameworkNameAppCompatSetting)]
+	| System.AppDomain.s_flags ~> UNION[
+		| !hasKey#3 ~> 0
+		| hasKey#3 ~> System.AppDomain.s_flags]]
+System.String ==> STRUCT System.String[
+	| System.String.Empty ~> UNION[
+		| !hasKey#1 ~> (HeapRef 1)
+		| hasKey#1 ~> (HeapRef System.String.Empty)]
+	| System.String.TrimBoth ~> UNION[
+		| !hasKey#1 ~> 2
+		| hasKey#1 ~> System.String.TrimBoth]
+	| System.String.TrimHead ~> UNION[
+		| !hasKey#1 ~> 0
+		| hasKey#1 ~> System.String.TrimHead]
+	| System.String.TrimTail ~> UNION[
+		| !hasKey#1 ~> 1
+		| hasKey#1 ~> System.String.TrimTail]
+	| System.String.alignConst ~> UNION[
+		| !hasKey#1 ~> 7
+		| hasKey#1 ~> System.String.alignConst]
+	| System.String.charPtrAlignConst ~> UNION[
+		| !hasKey#1 ~> 3
+		| hasKey#1 ~> System.String.charPtrAlignConst]]
+System.Threading.Thread ==> STRUCT System.Threading.Thread[
+	| System.Threading.Thread.ProcessorIdCacheCountDownMask ~> UNION[
+		| !hasKey#6 ~> 65535
+		| hasKey#6 ~> System.Threading.Thread.ProcessorIdCacheCountDownMask]
+	| System.Threading.Thread.ProcessorIdCacheShift ~> UNION[
+		| !hasKey#6 ~> 16
+		| hasKey#6 ~> System.Threading.Thread.ProcessorIdCacheShift]
+	| System.Threading.Thread.ProcessorIdRefreshRate ~> UNION[
+		| !hasKey#6 ~> 5000
+		| hasKey#6 ~> System.Threading.Thread.ProcessorIdRefreshRate]
+	| System.Threading.Thread.s_LocalDataStore ~> UNION[
+		| !hasKey#6 ~> null
+		| hasKey#6 ~> (HeapRef System.Threading.Thread.s_LocalDataStore)]
+	| System.Threading.Thread.s_LocalDataStoreMgr ~> UNION[
+		| !hasKey#6 ~> null
+		| hasKey#6 ~> (HeapRef System.Threading.Thread.s_LocalDataStoreMgr)]
+	| System.Threading.Thread.s_asyncLocalCurrentCulture ~> UNION[
+		| !hasKey#6 ~> null
+		| hasKey#6 ~> (HeapRef System.Threading.Thread.s_asyncLocalCurrentCulture)]
+	| System.Threading.Thread.s_asyncLocalCurrentUICulture ~> UNION[
+		| !hasKey#6 ~> null
+		| hasKey#6 ~> (HeapRef System.Threading.Thread.s_asyncLocalCurrentUICulture)]
+	| System.Threading.Thread.t_currentProcessorIdCache ~> UNION[
+		| !hasKey#6 ~> 0
+		| hasKey#6 ~> System.Threading.Thread.t_currentProcessorIdCache]]
+VSharp.CSharpUtils.Tests.Strings ==> STRUCT VSharp.CSharpUtils.Tests.Strings[]
+---------- p2 = ----------
+STRUCT System.String[
+	| System.String.m_FirstChar ~> [|
+		0: 'T';
+		10: 'e';
+		11: 'w';
+		12: 'o';
+		13: 'r';
+		14: 'k';
+		15: 'N';
+		16: 'a';
+		17: 'm';
+		18: 'e';
+		19: '\000';
+		1: 'a';
+		2: 'r';
+		3: 'g';
+		4: 'e';
+		5: 't';
+		6: 'F';
+		7: 'r';
+		8: 'a';
+		9: 'm';
+		 ... 20 ... |]
+	| System.String.m_StringLength ~> 19] ==> UNION[
+	| !hasKey#3 & !hasKey#4 ~> (HeapRef 5)
+	| hasKey#3 | hasKey#4 ~> (HeapRef TargetFrameworkName)]
+STRUCT System.String[
+	| System.String.m_FirstChar ~> [|
+		0: 's';
+		1: 't';
+		2: 'r';
+		3: '\000';
+		 ... 4 ... |]
+	| System.String.m_StringLength ~> 3] ==> UNION[
+	| !hasKey#2 ~> (HeapRef 4)
+	| hasKey#2 ~> (HeapRef str)]

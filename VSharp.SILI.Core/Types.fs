@@ -208,20 +208,20 @@ module internal Types =
         | Pointer t -> (toDotNetType t).MakePointerType()
         | _ -> typedefof<obj>
 
-    let sizeOf typ = // Reflection hacks, don't touch! Marshal.SizeOf lies!
-        let internalSizeOf (typ: Type) : uint32 =
-            let meth = new Reflection.Emit.DynamicMethod("GetManagedSizeImpl", typeof<uint32>, null);
+    let sizeOfSystemType (typ: Type) : int = // Reflection hacks, don't touch! Marshal.SizeOf lies!
+        let meth = new Reflection.Emit.DynamicMethod("GetManagedSizeImpl", typeof<uint32>, null); // TODO: why uint?
 
-            let gen = meth.GetILGenerator()
-            gen.Emit(Reflection.Emit.OpCodes.Sizeof, typ)
-            gen.Emit(Reflection.Emit.OpCodes.Ret)
+        let gen = meth.GetILGenerator()
+        gen.Emit(Reflection.Emit.OpCodes.Sizeof, typ)
+        gen.Emit(Reflection.Emit.OpCodes.Ret)
 
-            meth.CreateDelegate(typeof<Func<uint32>>).DynamicInvoke()
-            |> unbox
-        typ |> toDotNetType |> internalSizeOf |> int
+        meth.CreateDelegate(typeof<Func<uint32>>).DynamicInvoke()
+        |> unbox
 
+    let sizeOfTermType typ =
+        typ |> toDotNetType |> sizeOfSystemType |> int
 
-    let bitSizeOfType t (resultingType : System.Type) = System.Convert.ChangeType(sizeOf(t) * 8, resultingType)
+    let bitSizeOfTermType t = sizeOfTermType t * 8
 
 
     module internal Constructor =
@@ -338,6 +338,7 @@ module internal Types =
             let termType = fromDotNetType dotnetType
             fromTermType name source termType
 
+    let public Byte = Numeric typedefof<byte>
     let public Char = Numeric typedefof<char>
 
     let public String = fromDotNetType typedefof<string>
@@ -361,9 +362,7 @@ module internal Types =
         let extractFieldInfo (field : FieldInfo) =
             // Events may appear at this point. Filtering them out...
             if field.FieldType.IsSubclassOf(typeof<MulticastDelegate>) then None
-            else
-                let fieldName = sprintf "%s.%s" ((safeGenericTypeDefinition field.DeclaringType).FullName) field.Name
-                Some (fieldName, fromDotNetType field.FieldType)
+            else Some field
         let ourFields = fields |> FSharp.Collections.Array.choose extractFieldInfo
         if isStatic || t.BaseType = null then ourFields
         else Array.append (fieldsOf t.BaseType false) ourFields

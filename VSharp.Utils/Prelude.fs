@@ -41,6 +41,10 @@ module public Prelude =
     let safeGenericTypeDefinition (t : System.Type) =
         if t.IsGenericType && not t.IsGenericTypeDefinition then t.GetGenericTypeDefinition() else t
 
+    let inline roundUpToPow2 x pow2 =
+        let pow2m1 = pow2 - 1
+        (x + pow2m1) &&& ~~~pow2m1
+
 [<CustomEquality;NoComparison>]
 type 'a transparent =
     { v : 'a }

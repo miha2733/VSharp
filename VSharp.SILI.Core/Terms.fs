@@ -51,10 +51,12 @@ type termNode =
                * symbolicHeap                             // Lengths by dimensions
                * termType                                 // Type
     | Expression of operation * term list * termType
-    | Struct of heap<string, term, fql> * termType
+    | Struct of heap<string, term, fql> * termType * int // heap * type * size TODO: need size?
     | Ref of topLevelAddress * pathSegment list
     | Ptr of topLevelAddress * pathSegment list * termType * term option // contents * type sight * indent
     | Union of (term * term) list
+    | Slice of term * int * int // from * to * term to slice // TODO: mb to operation?
+    | Combine of term list // * termType // TODO: need termType?
 
     member x.IndicesToString() =
         let sortKeyFromTerm = (fun t -> t.term) >> function
@@ -167,7 +169,7 @@ type termNode =
         and pathToString indent path =
             path 
             |> List.map (function
-                | StructField(field, _) -> field
+                | StructField(field, _, _) -> field
                 | ArrayIndex(idx, _) -> sprintf "[%s]" (toStringWithIndent indent idx)
                 | ArrayLowerBound idx -> sprintf "LowerBoundDimension_%O" idx
                 | ArrayLength idx -> sprintf "LengthDimension_%O" idx)
@@ -217,7 +219,7 @@ and topLevelAddress =
     | TopLevelPool of term
 
 and pathSegment =
-    | StructField of string * termType
+    | StructField of string * termType * int Option
     | ArrayIndex of term * termType
     | ArrayLowerBound of term
     | ArrayLength of term
@@ -253,6 +255,12 @@ and symbolicHeap = heap<term, term, fql>
 type INonComposableSymbolicConstantSource =
     inherit ISymbolicConstantSource
 
+type UndefinedBehavior =
+    struct end
+    interface INonComposableSymbolicConstantSource with
+        override x.SubTerms = Seq.empty
+
+
 [<AutoOpen>]
 module internal Terms =
 
@@ -282,7 +290,7 @@ module internal Terms =
     let Constant metadata name source typ = { term = Constant({v=name}, source, typ); metadata = metadata }
     let Array metadata dimension length lower constant contents lengths typ = { term = Array(dimension, length, lower, constant, contents, lengths, typ); metadata = metadata }
     let Expression metadata op args typ = { term = Expression(op, args, typ); metadata = metadata }
-    let Struct metadata fields typ = { term = Struct(fields, typ); metadata = metadata }
+    let Struct metadata fields typ size = { term = Struct(fields, typ, size); metadata = metadata }
     let StackRef metadata key path = { term = Ref(TopLevelStack key, path); metadata = metadata }
     let HeapRef metadata addr baseType sightType path = { term = Ref(TopLevelHeap(addr, baseType, sightType), path); metadata = metadata }
     let StaticRef metadata typ path = { term = Ref(TopLevelStatics typ, path); metadata = metadata }
@@ -293,6 +301,9 @@ module internal Terms =
     let Ref metadata topLevel path = { term = Ref(topLevel, path); metadata = metadata }
     let Ptr metadata topLevel path typ = { term = Ptr(topLevel, path, typ, None); metadata = metadata }
     let Union metadata gvs = { term = Union gvs; metadata = metadata }
+    let Slice metadata term fromBit toBit = { term = Slice(term, fromBit, toBit); metadata = metadata }
+    let Combine metadata list = { term = Combine list; metadata = metadata }
+    let UndefinedBehavior metadata typ = Constant metadata "Undefined Behavior" (UndefinedBehavior()) typ
 
     let reverseFQL fql = Option.map (mapsnd List.rev) fql
     let addToFQL key fql = mapsnd (cons key) fql
@@ -384,7 +395,7 @@ module internal Terms =
         | Expression(_, args, _) -> args
         | term -> internalfailf "expression expected, %O recieved" term
 
-    let private typeOfTopLevel = function
+    let typeOfTopLevel = function
         | NullAddress -> Null
         | TopLevelHeap(_, _, sightTyp) -> sightTyp
         | TopLevelStatics typ -> typ
@@ -392,7 +403,7 @@ module internal Terms =
         | TopLevelStack _ -> Core.Void // TODO: this is temporary hack, support normal typing
 
     let typeOfPath = List.last >> function
-        | StructField(_, t)
+        | StructField(_, t, _)
         | ArrayIndex(_, t) -> t
         | ArrayLowerBound _
         | ArrayLength _ -> Types.lengthType
@@ -408,7 +419,7 @@ module internal Terms =
         | Concrete(_, t)
         | Constant(_, _, t)
         | Expression(_, _, t)
-        | Struct(_, t)
+        | Struct(_, t, _)
         | Array(_, _, _, _, _, _, t) -> t
         | Ref(tl, []) -> typeOfTopLevel tl |> Reference
         | Ref(_, path) -> typeOfPath path |> Reference
@@ -427,8 +438,8 @@ module internal Terms =
                 else
                     internalfailf "evaluating type of unexpected union %O!" term
 
-    let sizeOf = typeOf >> Types.sizeOf
-    let bitSizeOf term resultingType = Types.bitSizeOfType (typeOf term) resultingType
+    let sizeOf = typeOf >> Types.sizeOfTermType
+    let bitSizeOf term (resultingType : System.Type) = System.Convert.ChangeType(Types.bitSizeOfTermType (typeOf term), resultingType)
 
     let isBool =                 typeOf >> Types.isBool
     let isInteger =              typeOf >> Types.isInteger
@@ -476,9 +487,6 @@ module internal Terms =
 
     let makeNullPtr metadata typ =
         Ptr metadata NullAddress [] typ
-
-    let makeZero metadata =
-        Concrete metadata [0] (Numeric typedefof<int>)
 
     let makeIndex metadata i =
         Concrete metadata i Types.indexType

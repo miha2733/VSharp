@@ -537,6 +537,8 @@ module internal Arithmetics =
     let add mtd x y =
         simplifyAddition mtd false State.empty (deduceArithmeticTargetType x y) x y fst
 
+    let inc mtd x = makeNumber mtd 1 |> add mtd x
+
     let sub mtd x y =
         simplifySubtraction mtd false State.empty (deduceArithmeticTargetType x y) x y fst
 
