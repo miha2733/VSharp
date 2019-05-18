@@ -51,7 +51,7 @@ type termNode =
                * symbolicHeap                             // Lengths by dimensions
                * termType                                 // Type
     | Expression of operation * term list * termType
-    | Struct of heap<string, term, fql> * termType * int // heap * type * size TODO: need size?
+    | Struct of heap<string, term, fql> * termType // heap * type
     | Ref of topLevelAddress * pathSegment list
     | Ptr of topLevelAddress * pathSegment list * termType * term option // contents * type sight * indent
     | Union of (term * term) list
@@ -164,6 +164,11 @@ type termNode =
                 match shift with
                 | Some shift -> sprintf "(IndentedPtr %O[%O])" basePtr shift
                 | None -> basePtr
+            | Combine args ->
+                let printedArguments = List.map toString args |> String.concat ", "
+                sprintf "Combine{%s}" printedArguments
+            | Slice(term, fromByte, toByte) ->
+                sprintf "Slice{%s, from %i, to %i}" (toString term) fromByte toByte
             | _ -> __unreachable__()
 
         and pathToString indent path =
@@ -290,7 +295,7 @@ module internal Terms =
     let Constant metadata name source typ = { term = Constant({v=name}, source, typ); metadata = metadata }
     let Array metadata dimension length lower constant contents lengths typ = { term = Array(dimension, length, lower, constant, contents, lengths, typ); metadata = metadata }
     let Expression metadata op args typ = { term = Expression(op, args, typ); metadata = metadata }
-    let Struct metadata fields typ size = { term = Struct(fields, typ, size); metadata = metadata }
+    let Struct metadata fields typ = { term = Struct(fields, typ); metadata = metadata }
     let StackRef metadata key path = { term = Ref(TopLevelStack key, path); metadata = metadata }
     let HeapRef metadata addr baseType sightType path = { term = Ref(TopLevelHeap(addr, baseType, sightType), path); metadata = metadata }
     let StaticRef metadata typ path = { term = Ref(TopLevelStatics typ, path); metadata = metadata }
@@ -314,9 +319,12 @@ module internal Terms =
     let makeTopLevelKey constr key = {key = key; FQL = makeTopLevelFQL constr key}
     let makePathKey fql constr key = {key = key; FQL = constr key |> addToOptionFQL fql |> reverseFQL}
     let getFQLOfKey = function
-        | {FQL = Some fql} -> fql
+        | {FQL = Some fql} -> fql // TODO: fix [bug]: reverse?! (fql goes to readTerm)
         | {FQL = None} as k -> internalfailf "requested fql from unexpected key %O" k
     let getFQLOfRef = term >> function
+        | Ref(tl, path) -> (tl, path)
+        | t -> internalfailf "Expected reference, got %O" t
+    let getReversedFQLOfRef = term >> function // TODO: getFQLOfRef >> reverseFQL ?
         | Ref(tl, path) -> (tl, List.rev path)
         | t -> internalfailf "Expected reference, got %O" t
 
@@ -419,7 +427,7 @@ module internal Terms =
         | Concrete(_, t)
         | Constant(_, _, t)
         | Expression(_, _, t)
-        | Struct(_, t, _)
+        | Struct(_, t)
         | Array(_, _, _, _, _, _, t) -> t
         | Ref(tl, []) -> typeOfTopLevel tl |> Reference
         | Ref(_, path) -> typeOfPath path |> Reference
@@ -439,7 +447,9 @@ module internal Terms =
                     internalfailf "evaluating type of unexpected union %O!" term
 
     let sizeOf = typeOf >> Types.sizeOfTermType
-    let bitSizeOf term (resultingType : System.Type) = System.Convert.ChangeType(Types.bitSizeOfTermType (typeOf term), resultingType)
+    let bitSizeOf term (resultingType : System.Type) =
+        let size = Types.sizeOfTermType (typeOf term) * 8
+        System.Convert.ChangeType(size, resultingType)
 
     let isBool =                 typeOf >> Types.isBool
     let isInteger =              typeOf >> Types.isInteger

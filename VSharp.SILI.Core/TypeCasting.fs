@@ -29,7 +29,7 @@ module internal TypeCasting =
         | Struct _ -> hierarchyCast targetType state term k
         | _ -> __notImplemented__()
 
-    let private doCast mtd term targetType isChecked =
+    let private doCast mtd term targetType isChecked = // TODO: do boxing and unboxing using cast from value type to object (valueType.Equals -> ((object) valueType).Equals)
         let castPointer term typ = // For Pointers
             match targetType with
             | Pointer typ' -> castReferenceToPointer mtd typ' term

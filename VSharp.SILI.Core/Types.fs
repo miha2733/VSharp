@@ -209,19 +209,16 @@ module internal Types =
         | _ -> typedefof<obj>
 
     let sizeOfSystemType (typ: Type) : int = // Reflection hacks, don't touch! Marshal.SizeOf lies!
-        let meth = new Reflection.Emit.DynamicMethod("GetManagedSizeImpl", typeof<uint32>, null); // TODO: why uint?
+        let meth = new Reflection.Emit.DynamicMethod("GetManagedSizeImpl", typeof<int>, null); // TODO: why uint?
 
         let gen = meth.GetILGenerator()
         gen.Emit(Reflection.Emit.OpCodes.Sizeof, typ)
         gen.Emit(Reflection.Emit.OpCodes.Ret)
 
-        meth.CreateDelegate(typeof<Func<uint32>>).DynamicInvoke()
-        |> unbox
+        meth.CreateDelegate(typeof<Func<int>>).DynamicInvoke() |> unbox
 
     let sizeOfTermType typ =
-        typ |> toDotNetType |> sizeOfSystemType |> int
-
-    let bitSizeOfTermType t = sizeOfTermType t * 8
+        typ |> toDotNetType |> sizeOfSystemType
 
 
     module internal Constructor =

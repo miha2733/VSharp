@@ -15,7 +15,7 @@ module internal Strings =
         let lengthFQL = addToOptionFQL fql <| StructField(strLength, lengthType, None)
         let fields = Heap.ofSeq (seq [ makeKey strLength lengthFQL, { value = length; created = time; modified = time };
                                        makeKey strArray arrayFQL, { value = array; created = time; modified = time } ])
-        Struct metadata fields String 0
+        Struct metadata fields String
 
     let makeConcreteStringStruct metadata time (str : string) fql =
         let length = Concrete metadata str.Length lengthType

@@ -55,7 +55,7 @@ module API =
         let Concrete obj typ = Concrete m.Value obj typ
         let Constant name source typ = Constant m.Value name source typ
         let Expression op args typ = Expression m.Value op args typ
-        let Struct fields typ size = Struct m.Value fields typ size
+        let Struct fields typ = Struct m.Value fields typ
         let Union gvs = Union m.Value gvs
 
         let True = True
@@ -201,7 +201,7 @@ module API =
             Strings.length strStruct, state
 
         let StringCtorOfCharArray state this arrayRef =
-            let fql = Some <| getFQLOfRef this
+            let fql = Some <| getReversedFQLOfRef this
             BranchExpressionsOnNull state arrayRef
                 (fun state k -> k (Strings.makeConcreteStringStruct m.Value (Memory.tick()) "" fql, state))
                 (fun state k -> Dereference state arrayRef |> mapfst (Strings.ctorOfCharArray m.Value (Memory.tick()) fql) |> k)

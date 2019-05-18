@@ -783,6 +783,7 @@ module internal Interpreter =
         | :? IMethodCallExpression
         | :? IAbstractTypeCastExpression -> reduceExpression state ast k
         | :? IPropertyAccessExpression as expression -> reducePropertyAccessExpression state expression k
+        | :? IArrayElementAccessExpression as expression -> reduceArrayElementAccessExpressionToRef state expression k
         | _ -> __notImplemented__()
 
     and referenceToField caller state followHeapRefs target (field : JetBrains.Metadata.Reader.API.IMetadataField) k =
@@ -801,6 +802,12 @@ module internal Interpreter =
         let k = Enter ast state k
         let reference, state = Memory.ReferenceArrayIndex state arrayRef indices
         k (Memory.Dereference state reference)))
+
+    and reduceArrayElementAccessExpressionToRef state (ast : IArrayElementAccessExpression) k = // TODO: [fastDone]
+        reduceExpression state ast.Array (fun (arrayRef, state) ->
+        Cps.Seq.mapFoldk reduceExpression state ast.Indexes (fun (indices, state) ->
+        let k = Enter ast state k
+        k (Memory.ReferenceArrayIndex state arrayRef indices)))
 
     and reduceBaseReferenceExpression state (ast : IBaseReferenceExpression) k =
         let k = Enter ast state k
@@ -1374,7 +1381,7 @@ module internal Interpreter =
     and reduceUntypedStackAllocExpression state (ast : IUntypedStackAllocExpression) k =
         __notImplemented__()
 
-    and reduceFixedStatement state (ast : IFixedStatement) k =
+    and reduceFixedStatement state (ast : IFixedStatement) k = // TODO: check
         reduceLocalVariableDeclaration state ast ast.VariableReference ast.Initializer (fun (_, state) ->
         reduceStatement state ast.Body k)
 

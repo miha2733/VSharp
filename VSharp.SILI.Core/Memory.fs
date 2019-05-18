@@ -8,6 +8,7 @@ open VSharp.Core.Types.Constructor
 open System.Collections.Immutable
 
 module internal Memory =
+    open System.Runtime.CompilerServices
     open System.Diagnostics
     open System.Reflection
     open System.Runtime.InteropServices
@@ -70,7 +71,7 @@ module internal Memory =
     let rec private foldSubLocations folder acc loc typ path cell = // TODO: get rid of typ
         let foldHeap acc target = foldHeapLocationsRec (foldSubLocations folder) acc loc typ target
         match cell.value.term with
-        | Struct(contents, _, _) ->
+        | Struct(contents, _) ->
             foldHeap acc contents
         | Array(_, _, lower, _, contents, lengths, _) ->
             let acc = foldHeap acc lower
@@ -119,21 +120,24 @@ module internal Memory =
     let private mkStruct metadata time isStatic mkField (dotNetType : System.Type) typ fql =
         let layout = dotNetType.StructLayoutAttribute
         let pack = layout.Pack // TODO: use!
-        let structSize = layout.Size // TODO: use!
         let fields = Types.fieldsOf dotNetType isStatic
         let getOffsetFromAttribute (field : FieldInfo) =
             let attribte = System.Attribute.GetCustomAttribute(field, typeof<FieldOffsetAttribute>) :?> FieldOffsetAttribute
             attribte.Value
         let sequentialOffsetFolder currentOffset (field : FieldInfo) =
-            let fieldSize = sizeOfSystemType field.FieldType |> int // TODO: why uint?
-            let packedOffset = Prelude.roundUpToPow2 currentOffset pack
-            let offset = if currentOffset + fieldSize > packedOffset then packedOffset else currentOffset // TODO: do better
+            let fieldSize = sizeOfSystemType field.FieldType
+            let offset =
+                if Seq.exists (fun (x : CustomAttributeData) -> x.AttributeType.Equals(typeof<FixedBufferAttribute>)) field.CustomAttributes then currentOffset
+                else
+                    let realPack = min fieldSize pack
+                    let packedOffset = Prelude.roundUpToPow2 currentOffset realPack // TODO: take min(pack, max of sizes of fields)
+                    if currentOffset + fieldSize > packedOffset then packedOffset else currentOffset // TODO: do better
             ((field, Some offset), offset + fieldSize)
         let unify =
             match layout.Value with // TODO: mb use isDefined?
             | LayoutKind.Auto -> FSharp.Collections.Array.map (withSnd None)
             | LayoutKind.Sequential -> (FSharp.Collections.Array.mapFold sequentialOffsetFolder 0) >> fst
-            | LayoutKind.Explicit -> FSharp.Collections.Array.map (fun field -> field, getOffsetFromAttribute field |> Some) // TODO: check Pack field!!!
+            | LayoutKind.Explicit -> FSharp.Collections.Array.map (fun field -> field, getOffsetFromAttribute field |> Some) // TODO: check Pack field?!
             | _ -> __unreachable__()
         let createContents acc ((field : FieldInfo) , offset) =
             let name = sprintf "%s.%s" ((safeGenericTypeDefinition field.DeclaringType).FullName) field.Name
@@ -145,7 +149,7 @@ module internal Memory =
         let contents =
             let unified = unify fields
             FSharp.Collections.Array.fold createContents Heap.empty unified
-        Struct metadata contents typ structSize // TODO: need sizeOf here if Layout.Size = 0?
+        Struct metadata contents typ
 
     let rec private defaultOf time metadata typ fql =
         match typ with
@@ -158,7 +162,7 @@ module internal Memory =
         | TypeVariable _ ->
             Common.statelessConditionalExecution
                 (fun k -> k <| Common.isValueType metadata typ)
-                (fun k -> k <| Struct metadata Heap.empty typ 0)
+                (fun k -> k <| Struct metadata Heap.empty typ)
                 (fun k -> k <| makeNullRef metadata)
                 Merging.merge Merging.merge2Terms id
         | StructType(dotNetType, _) ->
@@ -262,7 +266,7 @@ module internal Memory =
                 match fql with
                 | Some(TopLevelStatics t, []) -> t
                 | _ -> Types.Variable.fromTermType name typeSource t
-            Struct metadata Heap.empty t 0
+            Struct metadata Heap.empty t
         | ArrayType(_, d) as t ->
             let t = Types.Variable.fromTermType name typeSource t
             let e = ArrayTypeExtractor().TypeExtract t
@@ -316,7 +320,7 @@ module internal Memory =
 
     let private staticMemoryLazyInstantiator metadata typ () =
         // TODO: init constant fields using Reflection
-        Struct metadata Heap.empty typ 0
+        Struct metadata Heap.empty typ
 
     let private selectLazyInstantiator<'a when 'a : equality> metadata (heap : 'a generalizedHeap option) time fql typ =
         match fql with
@@ -435,7 +439,7 @@ module internal Memory =
                 { cell with value = newTerm; modified = newModified }, newTerm
             | location :: path' ->
                 match term.term with
-                | Struct(fields, t, size) ->
+                | Struct(fields, t) ->
                     let fql' = addToFQL location ptrFql
                     match location with
                     | StructField(name, typ, _) ->
@@ -443,7 +447,7 @@ module internal Memory =
                         let ptr' = { location = name; fullyQualifiedLocation = fql'; typ = typ; time = ptrTime; path = path' }
                         let mapper (k, term) (ctx, s) = k, fillHoles ctx s term
                         let resultCell, newFields = accessHeap<'a, string> read false metadata groundHeap guard update fields c compareStringKey contextList mapper instantiator ptr'
-                        resultCell, Struct term.metadata newFields t size
+                        resultCell, Struct term.metadata newFields t
                     | _ -> __unreachable__()
                 | Array(dimension, length, lower, constant, contents, lengths, arrTyp) ->
                     let fql' = addToFQL location ptrFql
@@ -469,6 +473,11 @@ module internal Memory =
                     | _ -> __unreachable__()
                 | t -> internalfailf "expected complex type, but got %O" t
         commonGuardedErroredApply doAccess (withFst cell) cell.value internalMerge
+
+    and private makeArrayInstor read mtd groundHeap constant key valueInstantiator arrayPartInstantiator path time fql = // TODO: mb use this in arrayWindowAccess
+        let realInstantiator, targetType = if read then valueInstantiator, Some(typeOfPath path) else None, None
+        let doJob = lazy(guardedMap (fun c -> arrayPartInstantiator mtd realInstantiator targetType groundHeap time fql key c ()) constant)
+        doJob.Force
 
     and private compareStringKey mtd loc key = makeBool (loc = key) mtd
 
@@ -507,27 +516,29 @@ module internal Memory =
 //        let heap = if Heap.contains key.key heap |> not then Heap.add key term else heap // TODO: After adding symbolic fields uncomment it
         writeHeap time guard heap key resTerm // TODO: if value is not in heap add it here, before write
 
-    and private complementStructFields mtd sortedSeqFields size = // TODO: no need to do this! there can be trash between fields!
-        let defualtByte = System.Activator.CreateInstance(typedefof<byte>) |> makeNumber mtd // TODO: do better! (use defaultOf or get rid of unbox)
-        let foldFunc ((name, typ, offset, v) as field) (postOffset, acc) =
+    and private complementStructFields mtd sortedSeqFields size fql =
+        let emptyKey offset = makePathKey fql (fun field -> StructField(field, Byte, Some offset)) "empty"
+        let defualtByte = System.Activator.CreateInstance(typedefof<byte>) |> makeNumber mtd
+        let foldFunc ((_, typ, offset, _) as field) (postOffset, acc) =
             let endOffset = offset + Types.sizeOfTermType typ
-            let complement = List.map (fun x -> "empty", Byte, x, defualtByte) [endOffset .. postOffset] // TODO: mb create empty fields in mkStruct?
+            let complement = List.map (fun x -> emptyKey x, Byte, x, defualtByte) [endOffset .. postOffset]
             offset, field :: complement @ acc
         let firstOffset, complementedFields = Seq.foldBack foldFunc sortedSeqFields (size, [])
-        __notImplemented__()
+        let complement = List.map (fun x -> emptyKey x, Byte, x, defualtByte) [0 .. firstOffset]
+        complement @ complementedFields
 
-    and offsetToBit mtd typ offset = Types.bitSizeOfTermType typ |> makeNumber mtd |> mul mtd offset
+    and offsetToByte mtd typ offset = Types.sizeOfTermType typ |> makeNumber mtd |> mul mtd offset
 
-    and private getBitOfStruct mtd viewType fieldType shift = function // TODO:
-        | Some offset ->
-            let fieldBit = makeNumber mtd offset |> offsetToBit mtd fieldType
-            Option.fold (fun fieldBit shift -> offsetToBit mtd viewType shift |> Arithmetics.add mtd fieldBit) fieldBit shift
-        | None when Option.isSome shift -> __notImplemented__() // TODO: undefined behavior! without shift -- it's not! do better!
-        | _ -> __unreachable__() // TODO: arrayIndex
+    and private getByteOfStruct mtd viewType shift fieldOffset = //= function // TODO: redo!!!!!
+//        | Some offset -> // TODO: разыменование без сдвига в нерасределённосй области (например, чтение поля класса по указателю) -> reinterpretateTerm (простой тип (это поле))
+        let fieldOffsetTerm = makeNumber mtd fieldOffset
+        Option.fold (add mtd) fieldOffsetTerm shift
+//        | None when Option.isSome shift -> __notImplemented__() // TODO: undefined behavior! without shift -- it's not! do better!
+//        | _ -> __unreachable__() // TODO: arrayIndex
 
     and private delinearizeArrayIndex mtd (lens : term list) (lbs : term list) ind = // TODO: mb just undo linearizeArrayIndex
         let mapper (acc, lens) lb =
-            let lensProd = List.fold (mul mtd) (makeNumber mtd 1) lens
+            let lensProd = List.fold (mul mtd) (makeNumber mtd 1) (List.tail lens)
             let curOffset = div mtd acc lensProd
             let curIndex = add mtd curOffset lb
             let rest = rem mtd acc lensProd // TODO: (mul and sub) or rem
@@ -537,31 +548,34 @@ module internal Memory =
         makeIndexArray mtd valMaker (List.length lens)
 
     and private linearizeArrayIndex mtd (lens : term list) (lbs : term list) = function
-        | VectorT(ConcreteT(length, _), _, contents, _) ->
+        | VectorT(ConcreteT(length, _), _, contents, _) -> // TODO: why concrete length? Take rank from length of lbs or lens. BECAUSE it goes from code (chPtr* = ar[1, 2, 3])
             let length = length :?> int
             let folder acc i =
-                let a = accessArrayIndex contents i
+                let a = accessArrayIndex contents i // TODO: why not deref? BECAUSE it goes from code (chPtr* = ar[1, 2, 3])
                 let lb = lbs.[i]
                 let offset = sub mtd a lb
                 let prod acc j =
                     mul mtd acc lens.[j]
-                let lensProd = List.fold prod (makeNumber mtd 1) [i .. length]
+                let lensProd = List.fold prod (makeNumber mtd 1) [i .. length - 1]
                 let kek = mul mtd offset lensProd
                 add mtd acc kek
-            List.fold folder (makeNumber mtd 0) [0 .. length]
+            List.fold folder (makeNumber mtd 0) [0 .. length - 1]
         | _ -> __unreachable__()
 
-    and private getBitOfArray mtd shift viewType lens lbs = function // TODO: get right index here!
-        | ArrayIndex(ind, typ) ->
-            let offset = linearizeArrayIndex mtd lens lbs ind
-            let bitOffset = offsetToBit mtd typ offset
-            Option.fold (fun bitOffset shift -> offsetToBit mtd viewType shift |> add mtd bitOffset) bitOffset shift
-        | _ -> __unreachable__()
+    and private getByteOfArray mtd shift viewType lens lbs segment = // TODO: get right index here!
+        let elemByte =
+            match segment with
+            | Some(ArrayIndex(ind, typ)) ->
+                let offset = linearizeArrayIndex mtd lens lbs ind
+                offsetToByte mtd typ offset
+            | None -> makeNumber mtd 0
+            | _ -> __unreachable__()
+        Option.fold (add mtd) elemByte shift // TODO: [shift] always in bytes?
 
     and private getNameAndOffsetOfKey (k, v) =
         let segment = getFQLOfKey k |> snd |> List.last
         match segment with
-        | StructField(_, typ, offset) -> k, typ, offset, v.value
+        | StructField(_, typ, Some offset) -> k, typ, offset, v.value // TODO: do smthn with offset
         | _ -> __notImplemented__() // TODO: arrayIndex
 
     and private getName = function
@@ -572,13 +586,13 @@ module internal Memory =
         | StructField(name, _, _) -> name
         | _ -> __unreachable__()
 
-    and private findSuitableBits mtd size bit = // TODO: care about case when bit is out of term -- undef behavior
-        let weedOutBit pbit =
-            let guard = fastNumericCompare mtd (makeNumber mtd pbit) bit
+    and private findSuitableBytes mtd size byte = // TODO: care about case when byte is out of term -- undef behavior
+        let weedOutByte possibleByte =
+            let guard = fastNumericCompare mtd (makeNumber mtd possibleByte) byte
             match guard with // TODO: mb don't need this
             | False -> None
-            | _ -> Some(guard, pbit)
-        let gvs = List.choose weedOutBit [0 .. size]
+            | _ -> Some(guard, possibleByte)
+        let gvs = List.choose weedOutByte [0 .. size]
         let baseGvs, restGvs = gvs |> List.partition (fst >> isTrue)
         let baseGvs = List.map snd baseGvs
         assert(List.length baseGvs <= 1)
@@ -588,121 +602,126 @@ module internal Memory =
         if read then None, Timestamp.zero
         else update Nop Timestamp.zero |> mapfst Some
 
-    and private createWindowPart mtd tSize term wStart wEnd w =
-        let newTerm = List.singleton w
-        let newTerm = if wStart > 0 then Slice mtd term 0 wStart :: newTerm else newTerm
-        let newTerm = if wEnd < tSize then Slice mtd term wEnd tSize :: newTerm else newTerm
+    and private createWindowPart mtd termSize term windowStart windowEnd window =
+        let newTerm = List.singleton window
+        let newTerm = if windowStart > 0 then Slice mtd term 0 windowStart :: newTerm else newTerm
+        let newTerm = if windowEnd < termSize then Slice mtd term windowEnd termSize :: newTerm else newTerm
         combineIfNeed mtd newTerm // TODO: littleEndian -> reverse before combine, Experiments!
 
     and private sliceIfNeed mtd term left right size =
         if right < size || left > 0 then Slice mtd term left right else term
 
-    and private structWindowAccess mtd writeValue guard wSize endBit time ((startBit, acc, heap) as wholeAcc) (key, typ, offset, v) k =
+    and private structWindowAccess mtd writeValue guard windowSize endByte time ((startByte, acc, heap) as wholeAcc) (key, typ, offset, term) k =
         match offset with
-        | Some offset when startBit < offset -> __unreachable__() // TODO: undefined befavior
-        | Some offset ->
-            let vSize = Types.sizeOfTermType typ
-            let wStart = startBit - offset
-            let endOffset = offset + vSize
+        | offset when startByte < offset -> // TODO: [option offset]
+            __unreachable__() // TODO: undefined befavior
+        | offset ->
+            let termSize = Types.sizeOfTermType typ
+            let windowStart = startByte - offset
+            let endOffset = offset + termSize
             match endOffset with
-            | _ when startBit >= endOffset -> k wholeAcc
-            | _ when endBit <= endOffset ->
-                let wEnd = endBit - offset
+            | _ when startByte >= endOffset -> k wholeAcc
+            | _ when endByte <= endOffset ->
+                let windowEnd = endByte - offset
                 match writeValue with
                 | None ->
-                    let part = sliceIfNeed mtd v wStart wEnd vSize // TODO: sliceIfNeed!
+                    let part = sliceIfNeed mtd term windowStart windowEnd termSize
                     combineIfNeed mtd (part::acc), heap
-                | Some w -> w, writeWindowPart mtd time guard heap key vSize v wStart wEnd w
+                | Some window ->
+                    let part = sliceIfNeed mtd window (startByte - (endByte - windowSize)) windowSize windowSize
+                    window, writeWindowPart mtd time guard heap key termSize term windowStart windowEnd part
             | _ ->
                 let acc, heap =
                     match writeValue with
                     | None ->
-                        let part = sliceIfNeed mtd v wStart vSize vSize
+                        let part = sliceIfNeed mtd term windowStart termSize termSize
                         part::acc, heap
-                    | Some w ->
-                        let part = sliceIfNeed mtd w wStart vSize wSize
-                        acc, writeWindowPart mtd time guard heap key vSize v wStart vSize part
-                k (endOffset, acc, heap) // TODO: endOffset - 1 or from * how much (startBit, vSize) (now from * to (v+1) (without last bit))
-        | None -> __notImplemented__() // TODO: possibly undefined behavior
+                    | Some window ->
+                        let wCurPos = startByte - (endByte - windowSize)
+                        let part = sliceIfNeed mtd window wCurPos (wCurPos + termSize) windowSize
+                        acc, writeWindowPart mtd time guard heap key termSize term windowStart termSize part
+                k (endOffset, acc, heap) // TODO: endOffset - 1 or from * how much (startByte, termSize) (now from * to (term+1) (without last bit))
+        | _ -> __notImplemented__() // TODO: possibly undefined behavior
 
-    and private arrayWindowAccess mtd writeValue guard heap left right wSize elemType elemSize time arrayCell indexBit lens lbs fql = // TODO: time
+    and private arrayWindowAccess mtd writeValue guard left right wSize elemType elemSize time array liniarIndex lens lbs fql = // TODO: time
         let lazyInstantiator = None // TODO: works?
-        let accessArray left right wStart wEnd (array:term) indexBit =
+        let accessArray left right wStart windowEnd (array:term) indexByte = // TODO: check left >= right
             let update term time = // TODO: do better!
                 match writeValue with
                 | None -> sliceIfNeed mtd term left right elemSize, time
                 | Some w ->
-                    let part = sliceIfNeed mtd w wStart wEnd wSize
-                    createWindowPart mtd elemSize term wStart wEnd w, time
-            let index = delinearizeArrayIndex mtd lens lbs indexBit
+                    let part = sliceIfNeed mtd w wStart windowEnd wSize
+                    createWindowPart mtd elemSize term wStart windowEnd part, time
+            let index = delinearizeArrayIndex mtd lens lbs indexByte
             let cell = { value = array; created = time; modified = time } // TODO: time
             accessTerm (Option.isNone writeValue) mtd None guard update [] lazyInstantiator time fql [ArrayIndex(index, elemType)] cell
-        let mid = (right - elemSize + left - (right % elemSize)) / elemSize
-        match mid with
-        | _ when mid = -1 ->
-            let partCell, array = accessArray left right 0 wSize arrayCell indexBit
-            partCell.value, contentsOf array // TODO: think about merging arrays! (from different pbits)
-        | _ when mid = 0 ->
-            let leftPart, array = accessArray left elemSize 0 (elemSize - left) arrayCell indexBit
-            let rightPart, array = accessArray 0 (right % elemSize) (elemSize - left) wSize array (inc mtd indexBit)
-            Combine mtd [leftPart.value; rightPart.value], contentsOf array // TODO: think about merging arrays! (from different pbits)
-        | _ when mid > 0 ->
-            let leftPart, array = accessArray left elemSize 0 (elemSize - left) arrayCell indexBit
-            let parts, array =
-                let folder (parts, array) x =
-                    let start = x * elemSize - left
-                    let part, array = accessArray 0 elemSize start (start + elemSize) array (add mtd indexBit (makeNumber mtd x))
-                    part.value::parts, array
-                List.fold folder ([leftPart.value], array) [1 .. mid] // TODO: mb foldBack? do reverse (littleEndian)
-            let rightPart, array = accessArray 0 (right % elemSize) (elemSize - left) wSize array (add mtd indexBit (makeNumber mtd (mid + 1)))
-            Combine mtd (rightPart.value::parts), contentsOf array // TODO: think about merging arrays! (from different pbits)
-        | _ -> __unreachable__()
+        let newA = min elemSize right
+        let leftPart, array = accessArray left newA 0 (newA - left) array liniarIndex
+        let mid = right / elemSize - 1
+        let parts, array =
+            let folder (parts, array) x = // TODO: smthn foes wrong here, mb [2, mid]!
+                let start = x * elemSize - left
+                let part, array = accessArray 0 elemSize start (start + elemSize) array (add mtd liniarIndex (makeNumber mtd x))
+                part.value::parts, array
+            List.fold folder ([leftPart.value], array) [1 .. mid] // TODO: mb foldBack? do reverse (littleEndian)
+        let rightDelta = right % elemSize
+        let right' = right - rightDelta
+        let parts, array =
+            if rightDelta = 0 then parts, array
+            else
+                let rightPart, array = accessArray 0 rightDelta right' wSize array (add mtd liniarIndex (makeNumber mtd (mid + 1)))
+                rightPart.value::parts, array
+        Combine mtd parts, contentsOf array // TODO: think about merging arrays! (from different pbits)
 
-    and private takeRankOfRef = typeOf >> function
+    and private takeRankOfRef = getFQLOfRef >> typeOfFQL >> function // TODO: do 2 functions?
         | ArrayType(_, Vector) -> 1
         | ArrayType(_, ConcreteDimension x) -> x
         | _ -> __unreachable__()
 
-    and private accessBits mtd accessWindow heap lv size bit = // by Dr. Dre
+    and private accessBytes mtd accessWindow heap lv size byte =
 //        let accessBit gbs lv h =
 //            __notImplemented__() // TODO: mb mapFold here?
-        let baseBit, restBits = findSuitableBits mtd size bit
-        match baseBit with
+        let baseByte, restBytes = findSuitableBytes mtd size byte
+        match baseByte with
         | None ->
-            let folder heap (g, pbit) = // TODO: little Endian -> reverse before combine
-                let value, heap = accessWindow g heap pbit
+            let folder heap (g, possibleByte) = // TODO: little Endian -> reverse before combine
+                let value, heap = accessWindow g heap possibleByte
                 (g, value), heap
-            let gvs, heap = List.mapFold folder heap restBits
+            let gvs, heap = List.mapFold folder heap restBytes
             let baseGuard = gvs |> List.map (fst >> (!!)) |> conjunction mtd
             (baseGuard, lv)::gvs |> merge, heap
-        | Some bit ->
-            accessWindow (makeTrue mtd) heap bit
+        | Some byte ->
+            accessWindow (makeTrue mtd) heap byte
 
     and private reinterpretateTerm writeValue mtd state refToBlock logicalBlock segment viewType shift time = // TODO: array of structs -> away of one struct -> to another struct
         let windowSize = sizeOfTermType viewType
         match logicalBlock.term with
         | Array(dim, len, lower, inst, contents, lengths, (ArrayType(elemType, _) as typ)) -> // TODO: care about unions inside
-            let dims = [1 .. takeRankOfRef refToBlock] // TODO: mb from 0?
+            let dims = [0 .. takeRankOfRef refToBlock - 1] // TODO: mb from 0?
             let lens = List.map (makeIndex mtd >> referenceArrayLength refToBlock >> derefWithoutValidation mtd state) dims
             let lbs = List.map (makeIndex mtd >> referenceArrayLowerBound refToBlock >> derefWithoutValidation mtd state) dims
-            let bit = getBitOfArray mtd shift viewType lens lbs segment
-            // TODO: statedConditionalExec on (bit > length || bit < 0) then (baseGuard, UndefinedBehavior mtd viewType) else ...
+            let byte = getByteOfArray mtd shift viewType lens lbs segment
+            // TODO: statedConditionalExec on (byte > length || byte < 0) then (baseGuard, UndefinedBehavior mtd viewType) else ...
             let condition state k =
-                let left = sub mtd len (makeNumber mtd windowSize) // TODO: length - windowSize?
-                simplifyLess mtd bit (makeNumber mtd 0) (fun res ->
-                simplifyGreater mtd bit left (fun res1 ->
-                simplifyEqual mtd res res1 (withSnd state >> k)))
+                let right = add mtd byte (makeNumber mtd windowSize)
+                let byteLen = offsetToByte mtd elemType len
+                simplifyLess mtd byte (makeNumber mtd 0) (fun res ->
+                simplifyGreater mtd right byteLen (fun res1 ->
+                simplifyOr mtd res res1 (withSnd state >> k)))
             let intoArray state k =
-                let elemSize = Types.bitSizeOfTermType elemType
+                let elemSize = Types.sizeOfTermType elemType
                 let elemSizeTerm = elemSize |> makeNumber mtd
-                let indexBit = div mtd bit elemSizeTerm
-                let delta = rem mtd bit elemSizeTerm
-                let fql = getFQLOfRef refToBlock
-                let accesser g heap pbit =
-                    arrayWindowAccess mtd writeValue g heap pbit (pbit + windowSize) windowSize elemType elemSize time logicalBlock indexBit lens lbs fql // TODO: need guard here?
+                let liniarIndex = div mtd byte elemSizeTerm
+                let delta = rem mtd byte elemSizeTerm
+                let fql = getReversedFQLOfRef refToBlock
+                let arrayWithContents newContents =
+                    Array logicalBlock.metadata dim len lower inst newContents lengths typ
+                let accesser g heap possibleByte = // TODO: не накапливаем кучу...
+                    let array = arrayWithContents heap // TODO: do better! (unify with accessTerm)
+                    arrayWindowAccess mtd writeValue g possibleByte (possibleByte + windowSize) windowSize elemType elemSize time array liniarIndex lens lbs fql // TODO: need guard here?
                 let lv = Union mtd []
-                let accessedValue, newContents = accessBits mtd accesser contents lv elemSize delta // TODO: mb (elemSize - 1) ?
-                let newArray = Array logicalBlock.metadata dim len lower inst newContents lengths typ
+                let accessedValue, newContents = accessBytes mtd accesser contents lv elemSize delta // TODO: mb (elemSize - 1) ?
+                let newArray = arrayWithContents newContents
                 let state = if Option.isNone writeValue || logicalBlock = newArray then state else mutate mtd state refToBlock newArray |> snd
                 k (accessedValue, state) // TODO: mb change typ and dim?
             Common.statedConditionalExecution state
@@ -710,26 +729,49 @@ module internal Memory =
                 (fun state k -> k (UndefinedBehavior mtd viewType, state))
                 intoArray
                 merge merge2Terms id id
-        | Struct(fields, typ, size) -> // TODO: all fields of struct already exist? goto (Memory.fs, 256)! First of all do lazy value
-            let inline getOffset (_, _, offset, _) = offset
+        | Struct(fields, _) -> // TODO: all fields of struct already exist? goto (Memory.fs, 256)! First of all do lazy value
+            let fql = getFQLOfRef refToBlock
+            let typ = typeOfFQL fql
+            let size = Types.sizeOfTermType typ
+            let inline getOffset (_, _, offset, _) = offset // TODO:
             let addSymbolicFields = id // TODO: use Reflection here!
-            let fieldName, fieldType =
-                match segment with
-                | StructField(fieldName, fieldType, _) -> fieldName, fieldType
-                | _ -> __unreachable__()
             let sortedFields = fields |> Heap.toSeq |> Seq.map getNameAndOffsetOfKey |> Seq.map addSymbolicFields |> Seq.sortBy getOffset // TODO: do better!
-            let offset = sortedFields |> Seq.find (fun (k, _ , _, _) -> k.key = fieldName) |> getOffset // TODO: what if it is symbolic value and it is not in heap yet? possible? Yes. Sasha -- poly
-            let bit = getBitOfStruct mtd viewType fieldType shift offset
-            // complement ?
+            let fieldOffset = // TODO: what if it is symbolic value and it is not in heap yet? possible? Yes. Sasha -- poly
+                match segment with
+                | Some(StructField(fieldName, _, _)) -> sortedFields |> Seq.find (fun (k, _ , _, _) -> k.key = fieldName) |> (fun (_, _, offset, _) -> offset)
+                | None -> 0
+                | _ -> __unreachable__()
+            let byte = getByteOfStruct mtd viewType shift fieldOffset // TODO: what if we have byte from the beggining? (start of struct)
+            let sortedFields = complementStructFields mtd sortedFields size (reverseFQL (Some fql))
             // TODO: from this moment goes new func
-            let accesser g heap pbit = // TODO: little Endian -> reverse before combine
-                Cps.Seq.foldlk (structWindowAccess mtd writeValue g windowSize (pbit + windowSize) time) (pbit, [], heap) sortedFields (fun (_, acc, heap) -> Combine mtd acc, heap) // TODO: k -- undef behavior
+            let accesser g heap possibleByte = // TODO: little Endian -> reverse before combine
+                Cps.Seq.foldlk (structWindowAccess mtd writeValue g windowSize (possibleByte + windowSize) time) (possibleByte, [], heap) sortedFields (fun (_, acc, heap) -> Combine mtd acc, heap) // TODO: k -- undef behavior
             let lv = UndefinedBehavior mtd viewType
-            let accessedValue, newFields = accessBits mtd accesser fields lv (size - windowSize) bit
-            let newStruct = Struct logicalBlock.metadata newFields typ size
+            let accessedValue, newFields = accessBytes mtd accesser fields lv (size - windowSize) byte
+            let newStruct = Struct logicalBlock.metadata newFields typ
             let state = if Option.isNone writeValue || logicalBlock = newStruct then state else mutate mtd state refToBlock newStruct |> snd
             accessedValue, state
-        | t -> internalfailf "expected complex type, but got %O" t
+        | _ -> // TODO: reinterpretation of simple type on stack!!!
+            let typ = typeOf logicalBlock
+            let termSize = sizeOfTermType typ // TODO: Option.fold (search) -> Option.defaultValue
+            let byte = Option.defaultValue (makeNumber mtd 0) shift
+            let accessor byte =
+                match writeValue with
+                | None -> sliceIfNeed mtd logicalBlock byte (byte + windowSize) termSize
+                | Some window -> createWindowPart mtd termSize logicalBlock byte (byte + windowSize) window
+            // TODO: do better!!! (unify accessBytes for this case)
+            let baseByte, restBytes = findSuitableBytes mtd (termSize - windowSize) byte
+            let newTerm =
+                match baseByte with
+                | None ->
+                    let mapper (g, possibleByte) = // TODO: little Endian -> reverse before combine
+                        (g, accessor possibleByte)
+                    let gvs = List.map mapper restBytes
+                    let baseGuard = gvs |> List.map (fst >> (!!)) |> conjunction mtd
+                    (baseGuard, UndefinedBehavior mtd viewType)::gvs |> merge
+                | Some byte -> accessor byte
+            let state = if Option.isNone writeValue || logicalBlock = newTerm then state else mutate mtd state refToBlock newTerm |> snd
+            newTerm, state
 
     and private getLogicalBlock topLevel path = // TODO: mb offset not in StructField?
         match topLevel, path with
@@ -855,13 +897,14 @@ module internal Memory =
     and private accessGeneralizedHeap read = accessGeneralizedHeapWithIDs ImmutableHashSet.Empty read
 
     and private Reinterpretate read update metadata state topLevel path viewType shift = // TODO: time!
-        assert(List.isEmpty path |> not) // TODO: care about string (pointer to String)
-        let topLevel, path' = getLogicalBlock topLevel path
-        let refToBlock = Ref metadata topLevel path'
+//        assert(List.isEmpty path |> not) // TODO: care about string (pointer to String)
+        let topLevel, path' = getLogicalBlock topLevel path // TODO: get byte here!!!
+        let refToBlock = Ref metadata topLevel path' // TODO: what to do with stack?
         let logicalBlock, state = deref metadata state refToBlock // TODO: use update function for deref
         let writeValue, time = accessWriteValue read update
-        let cell = { value = logicalBlock; created = time; modified = time }
-        reinterpretateTerm writeValue metadata state refToBlock logicalBlock (List.last path) viewType shift time
+        let segment = if List.isEmpty path then None else path |> List.last |> Some
+//        let cell = { value = logicalBlock; created = time; modified = time }
+        reinterpretateTerm writeValue metadata state refToBlock logicalBlock segment viewType shift time
 //        let state = if read || cell.value = newBaseValue then state else mutate metadata state refToBlock newBaseValue |> snd // TODO: instead use update function for deref
 //        k (accessedValue, state) // TODO: this goes to reinterp
 
@@ -894,10 +937,10 @@ module internal Memory =
                 result, withStatics state m'
             | Ptr(topLevel, path, viewType, shift) ->
                 match shift with
-                | None when typeOfPath path = viewType ->
+                | None when typeOfFQL (topLevel, path) = viewType -> // TODO: hack an array on stack here! (or support typing for stack)
                     let ref = getReferenceFromPointer metadata term
                     hierarchicalAccess validate read actionNull updateDefined metadata state ref
-                | Some _ ->
+                | _ ->
                     let doRead state k =
                         Reinterpretate read updateDefined metadata state topLevel path viewType shift |> k
                     Common.statedConditionalExecution state
@@ -905,7 +948,6 @@ module internal Memory =
                         (fun state k -> k (UndefinedBehavior metadata viewType, state))
                         doRead
                         merge merge2Terms id id
-                | _ -> __notImplemented__() // TODO:
             | t -> internalfailf "expected reference or pointer, but got %O" t
         guardedErroredStatedApply doAccess
 

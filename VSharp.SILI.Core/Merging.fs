@@ -66,17 +66,15 @@ module internal Merging =
             | _ -> [propagateGuard g v]
         | (x :: _) as gvs ->
             let t = x |> snd |> typeOf
-            let size = (snd x).term |> function Struct(_, _, size) -> size | _ -> 0 // TODO: do better!
             assert(gvs |> Seq.map (snd >> typeOf) |> Seq.forall ((=) t))
-            assert(gvs |> Seq.map (snd >> term >> function Struct(_, _, size) -> size | _ -> 0) |> Seq.forall ((=) size))
             let gs, vs = List.unzip gvs
             let extractFields = term >> function
-                | Struct(fs, _, _) -> fs
+                | Struct(fs, _) -> fs
                 | t -> internalfailf "Expected struct, got %O" t
             let fss = vs |> List.map extractFields
             let getter i = {value = List.item i vs; created = Timestamp.zero; modified = Timestamp.zero}
             let merged = keysResolver<term memoryCell, fql, string> false readTerm getFQLOfKey getter |> Heap.merge gs fss
-            [(Propositional.disjunction Metadata.empty gs, Struct (fst x).metadata merged t size)]
+            [(Propositional.disjunction Metadata.empty gs, Struct (fst x).metadata merged t)]
 
     and private arrayMerge = function
         | [] -> []
