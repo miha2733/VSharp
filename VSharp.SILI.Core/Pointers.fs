@@ -81,7 +81,7 @@ module internal Pointers =
         match term p with
         | Ptr _ ->
             let spd = spd +. SymbolicPointerDifference([p, 1], [])
-            let nil = makeNullPtr mtd <| typeOf p
+            let nil = makeNullPtr mtd <| typeOf p // TODO: here can be anything
             match spd.Pos, spd.Neg with
             | [], [] -> k nil
             | [lastp, 1], [] -> k lastp
@@ -287,6 +287,7 @@ module internal Pointers =
     let topLevelLocation = Merging.guardedErroredApply (term >> function
         | Ref(TopLevelHeap (a, _, _), [])
         | Ptr(TopLevelHeap (a, _, _), [], _, _) -> a
+        | Ptr(TopLevelHeap (a, _, _), _, _, _) -> a // TODO: is it okay?
         | Ref(NullAddress, _)
         | Ptr(NullAddress, _, _, _) -> makeZeroAddress Metadata.empty
         | _ -> __notImplemented__())

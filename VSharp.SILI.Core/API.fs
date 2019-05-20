@@ -97,7 +97,7 @@ module API =
         let Cast state term targetType isChecked fail k = TypeCasting.cast m.Value state term targetType isChecked (TypeCasting.primitiveCast m.Value isChecked) fail k
         let HierarchyCast state term targetType fail k = TypeCasting.cast m.Value state term targetType false id fail k
         let CastConcrete value typ = CastConcrete value typ m.Value
-        let CastReferenceToPointer state reference k = TypeCasting.castReferenceToPointer m.Value state reference k
+        let MakePointerFromRef reference = TypeCasting.makePointerFromRef m.Value reference
 
     module public ControlFlowConstructors =
         let NoComputation = NoResult Metadata.empty

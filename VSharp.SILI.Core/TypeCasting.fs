@@ -29,10 +29,16 @@ module internal TypeCasting =
         | Struct _ -> hierarchyCast targetType state term k
         | _ -> __notImplemented__()
 
+    let castReferenceToPointerHelper mtd targetType = term >> function
+        | Ref(topLevel, path)
+        | Ptr(topLevel, path, _, None) -> Ptr mtd topLevel path targetType
+        | Ptr(topLevel, path, _, Some indent) -> IndentedPtr mtd topLevel path targetType indent
+        | t -> internalfailf "Expected reference or pointer, got %O" t
+
     let private doCast mtd term targetType isChecked = // TODO: do boxing and unboxing using cast from value type to object (valueType.Equals -> ((object) valueType).Equals)
         let castPointer term typ = // For Pointers
             match targetType with
-            | Pointer typ' -> castReferenceToPointer mtd typ' term
+            | Pointer typ' -> castReferenceToPointerHelper mtd typ' term
             | _ -> makeCast (termType.Pointer typ) targetType term isChecked mtd
 
         match term.term with
@@ -45,7 +51,7 @@ module internal TypeCasting =
         let castCheck state term =
             match term.term with
             | Ptr(_, _, typ, _) -> Common.is mtd (termType.Pointer typ) targetType, state
-            | Ref _ ->
+            | Ref _ -> // TODO: just take base type from reference
                 let contents, state = derefForCast mtd state term
                 canCast mtd state targetType contents
             | _ -> Common.is mtd (typeOf term) targetType, state
@@ -61,10 +67,9 @@ module internal TypeCasting =
                 (fun (statementResult, state) -> k (ControlFlow.resultToTerm statementResult, state))
         Merging.guardedErroredStatedApplyk (primitiveCast hierarchyCast targetType) state argument k
 
-    let castReferenceToPointer mtd state reference k =
-        let derefForCast = Memory.derefWith (fun m s _ -> makeNullRef m, s)
-        let term, state = derefForCast mtd state reference
-        k (castReferenceToPointer mtd (typeOf term) reference, state)
+    let makePointerFromRef mtd = Merging.guardedErroredApply (fun reference ->
+        let targetType = reference |> getFQLOfRef |> baseTypeOfFQL
+        castReferenceToPointerHelper mtd targetType reference)
 
     let persistentLocalAndConstraintTypes mtd state term defaultLocalType =
         let derefForCast = Memory.derefWith (fun m s _ -> Concrete m null Null, s)

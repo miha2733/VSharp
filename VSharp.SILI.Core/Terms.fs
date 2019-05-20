@@ -56,7 +56,7 @@ type termNode =
     | Ptr of topLevelAddress * pathSegment list * termType * term option // contents * type sight * indent
     | Union of (term * term) list
     | Slice of term * int * int // from * to * term to slice // TODO: mb to operation?
-    | Combine of term list // * termType // TODO: need termType?
+    | Combine of term list * termType // * termType // TODO: need termType?
 
     member x.IndicesToString() =
         let sortKeyFromTerm = (fun t -> t.term) >> function
@@ -164,7 +164,7 @@ type termNode =
                 match shift with
                 | Some shift -> sprintf "(IndentedPtr %O[%O])" basePtr shift
                 | None -> basePtr
-            | Combine args ->
+            | Combine(args, _) ->
                 let printedArguments = List.map toString args |> String.concat ", "
                 sprintf "Combine{%s}" printedArguments
             | Slice(term, fromByte, toByte) ->
@@ -172,7 +172,7 @@ type termNode =
             | _ -> __unreachable__()
 
         and pathToString indent path =
-            path 
+            path
             |> List.map (function
                 | StructField(field, _, _) -> field
                 | ArrayIndex(idx, _) -> sprintf "[%s]" (toStringWithIndent indent idx)
@@ -307,8 +307,8 @@ module internal Terms =
     let Ptr metadata topLevel path typ = { term = Ptr(topLevel, path, typ, None); metadata = metadata }
     let Union metadata gvs = { term = Union gvs; metadata = metadata }
     let Slice metadata term fromBit toBit = { term = Slice(term, fromBit, toBit); metadata = metadata }
-    let Combine metadata list = { term = Combine list; metadata = metadata }
-    let UndefinedBehavior metadata typ = Constant metadata "Undefined Behavior" (UndefinedBehavior()) typ
+    let Combine metadata list typ = { term = Combine(list, typ); metadata = metadata }
+    let UndefinedBehavior metadata = Concrete metadata "Undefined Behavior" termType.Void |> Error metadata
 
     let reverseFQL fql = Option.map (mapsnd List.rev) fql
     let addToFQL key fql = mapsnd (cons key) fql
@@ -329,12 +329,6 @@ module internal Terms =
         | t -> internalfailf "Expected reference, got %O" t
 
     let makeFQLRef metadata (tl, path) = Ref metadata tl path
-
-    let castReferenceToPointer mtd targetType = term >> function
-        | Ref(topLevel, path)
-        | Ptr(topLevel, path, _, None) -> Ptr mtd topLevel path targetType
-        | Ptr(topLevel, path, _, Some indent) -> IndentedPtr mtd topLevel path targetType indent
-        | t -> internalfailf "Expected reference or pointer, got %O" t
 
     let getReferenceFromPointer mtd = term >> function
         | Ptr(topLevel, path, _, _) -> Ref mtd topLevel path
@@ -403,6 +397,13 @@ module internal Terms =
         | Expression(_, args, _) -> args
         | term -> internalfailf "expression expected, %O recieved" term
 
+    let baseTypeOfTopLevel = function
+        | NullAddress -> Null
+        | TopLevelHeap(_, baseType, _) -> baseType
+        | TopLevelStatics typ -> typ
+        | TopLevelPool _ -> Reference Types.String
+        | TopLevelStack _ -> Core.Void // TODO: this is temporary hack, support normal typing
+
     let typeOfTopLevel = function
         | NullAddress -> Null
         | TopLevelHeap(_, _, sightTyp) -> sightTyp
@@ -416,6 +417,10 @@ module internal Terms =
         | ArrayLowerBound _
         | ArrayLength _ -> Types.lengthType
 
+    let baseTypeOfFQL = function
+        | tl, [] -> baseTypeOfTopLevel tl
+        | _, path -> typeOfPath path
+
     let typeOfFQL = function
         | tl, [] -> typeOfTopLevel tl
         | _, path -> typeOfPath path
@@ -423,10 +428,12 @@ module internal Terms =
     let rec typeOf term =
         match term.term with
         | Error _ -> termType.Bottom
+        | Slice _
         | Nop -> termType.Void
         | Concrete(_, t)
         | Constant(_, _, t)
         | Expression(_, _, t)
+        | Combine(_, t)
         | Struct(_, t)
         | Array(_, _, _, _, _, _, t) -> t
         | Ref(tl, []) -> typeOfTopLevel tl |> Reference

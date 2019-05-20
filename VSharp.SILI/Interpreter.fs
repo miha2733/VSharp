@@ -959,6 +959,10 @@ module internal Interpreter =
             let obtainTarget state k = k (targetRef, state)
             reduceMethodCall ast state obtainTarget property.PropertySpecification.Property.Getter [] (fun (result, state) ->
             k ((targetRef, result), state)))
+        | :? ITypeCastExpression as x ->
+            reduceTypeCastExpression state x (fun (casted, state) ->
+            reduceExpressionToRef state true x (fun (targetRef, state) ->
+            k ((targetRef, casted), state))) // TODO: obtain ref?
         | :? IIndexerCallExpression
         | _ -> __notImplemented__()
 
@@ -997,6 +1001,11 @@ module internal Interpreter =
             Memory.Mutate state reference rightTerm |> k)))
         | :? IPointerIndirectionExpression as pointerIndirection ->
             reduceExpression state pointerIndirection.Argument (fun (targetRef, state) ->
+            right state (fun (rightTerm, state) ->
+            let k = Enter caller state k
+            Memory.Mutate state targetRef rightTerm |> k))
+        | :? ITypeCastExpression as x ->
+            reduceExpressionToRef state true x (fun (targetRef, state) ->
             right state (fun (rightTerm, state) ->
             let k = Enter caller state k
             Memory.Mutate state targetRef rightTerm |> k))
@@ -1346,7 +1355,7 @@ module internal Interpreter =
     and reduceAddressOfExpression state (ast : IAddressOfExpression) k =
         reduceExpressionToRef state true ast.Argument (fun (reference, state) ->
         let k = Enter ast state k
-        Types.CastReferenceToPointer state reference k)
+        k (Types.MakePointerFromRef reference, state))
 
     and reduceRefExpression state (ast : IRefExpression) k =
         reduceExpressionToRef state false ast.Argument k

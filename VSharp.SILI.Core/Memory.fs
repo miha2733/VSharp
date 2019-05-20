@@ -502,19 +502,6 @@ module internal Memory =
 // ------------------------------- Reinterpretation -------------------------------
 
 //    and private arrayReinterp segment viewType shift acc (k, v) =
-//  [(1, (0), |3), (20|, 50, 41)]
-
-
-//  [(1, (0), |(3), (20)|, 50, 41)]
-
-    and private combineIfNeed mtd parts =
-        if List.length parts = 1 then List.head parts
-        else Combine mtd parts
-
-    and private writeWindowPart mtd time guard heap key tSize term wStart wEnd w = // TODO: do better
-        let resTerm = createWindowPart mtd tSize term wStart wEnd w
-//        let heap = if Heap.contains key.key heap |> not then Heap.add key term else heap // TODO: After adding symbolic fields uncomment it
-        writeHeap time guard heap key resTerm // TODO: if value is not in heap add it here, before write
 
     and private complementStructFields mtd sortedSeqFields size fql =
         let emptyKey offset = makePathKey fql (fun field -> StructField(field, Byte, Some offset)) "empty"
@@ -529,7 +516,7 @@ module internal Memory =
 
     and offsetToByte mtd typ offset = Types.sizeOfTermType typ |> makeNumber mtd |> mul mtd offset
 
-    and private getByteOfStruct mtd viewType shift fieldOffset = //= function // TODO: redo!!!!!
+    and private getByteOfStruct mtd shift fieldOffset = //= function // TODO: redo!!!!!
 //        | Some offset -> // TODO: разыменование без сдвига в нерасределённосй области (например, чтение поля класса по указателю) -> reinterpretateTerm (простой тип (это поле))
         let fieldOffsetTerm = makeNumber mtd fieldOffset
         Option.fold (add mtd) fieldOffsetTerm shift
@@ -562,7 +549,7 @@ module internal Memory =
             List.fold folder (makeNumber mtd 0) [0 .. length - 1]
         | _ -> __unreachable__()
 
-    and private getByteOfArray mtd shift viewType lens lbs segment = // TODO: get right index here!
+    and private getByteOfArray mtd shift lens lbs segment = // TODO: get right index here!
         let elemByte =
             match segment with
             | Some(ArrayIndex(ind, typ)) ->
@@ -602,21 +589,28 @@ module internal Memory =
         if read then None, Timestamp.zero
         else update Nop Timestamp.zero |> mapfst Some
 
-    and private createWindowPart mtd termSize term windowStart windowEnd window =
+    and private createWindowPart mtd term termType windowStart windowEnd window =
+        let termSize = sizeOfTermType termType
         let newTerm = List.singleton window
         let newTerm = if windowStart > 0 then Slice mtd term 0 windowStart :: newTerm else newTerm
         let newTerm = if windowEnd < termSize then Slice mtd term windowEnd termSize :: newTerm else newTerm
-        combineIfNeed mtd newTerm // TODO: littleEndian -> reverse before combine, Experiments!
+        Combine mtd newTerm termType // TODO: littleEndian -> reverse before combine, Experiments!
+
+    and private writeWindowPart mtd time guard heap key term termType wStart wEnd w = // TODO: do better
+        let resTerm = createWindowPart mtd term termType wStart wEnd w
+//        let heap = if Heap.contains key.key heap |> not then Heap.add key term else heap // TODO: After adding symbolic fields uncomment it
+        writeHeap time guard heap key resTerm // TODO: if value is not in heap add it here, before write
 
     and private sliceIfNeed mtd term left right size =
         if right < size || left > 0 then Slice mtd term left right else term
 
-    and private structWindowAccess mtd writeValue guard windowSize endByte time ((startByte, acc, heap) as wholeAcc) (key, typ, offset, term) k =
+    and private structWindowAccess mtd writeValue guard windowType endByte time ((startByte, acc, heap) as wholeAcc) (key, typ, offset, term) k =
         match offset with
         | offset when startByte < offset -> // TODO: [option offset]
             __unreachable__() // TODO: undefined befavior
         | offset ->
             let termSize = Types.sizeOfTermType typ
+            let windowSize = sizeOfTermType windowType
             let windowStart = startByte - offset
             let endOffset = offset + termSize
             match endOffset with
@@ -626,10 +620,10 @@ module internal Memory =
                 match writeValue with
                 | None ->
                     let part = sliceIfNeed mtd term windowStart windowEnd termSize
-                    combineIfNeed mtd (part::acc), heap
+                    Combine mtd (part::acc) windowType, heap
                 | Some window ->
                     let part = sliceIfNeed mtd window (startByte - (endByte - windowSize)) windowSize windowSize
-                    window, writeWindowPart mtd time guard heap key termSize term windowStart windowEnd part
+                    window, writeWindowPart mtd time guard heap key term typ windowStart windowEnd part
             | _ ->
                 let acc, heap =
                     match writeValue with
@@ -639,11 +633,13 @@ module internal Memory =
                     | Some window ->
                         let wCurPos = startByte - (endByte - windowSize)
                         let part = sliceIfNeed mtd window wCurPos (wCurPos + termSize) windowSize
-                        acc, writeWindowPart mtd time guard heap key termSize term windowStart termSize part
+                        acc, writeWindowPart mtd time guard heap key term typ windowStart termSize part
                 k (endOffset, acc, heap) // TODO: endOffset - 1 or from * how much (startByte, termSize) (now from * to (term+1) (without last bit))
         | _ -> __notImplemented__() // TODO: possibly undefined behavior
 
-    and private arrayWindowAccess mtd writeValue guard left right wSize elemType elemSize time array liniarIndex lens lbs fql = // TODO: time
+    and private arrayWindowAccess mtd writeValue guard left windowType elemType elemSize time array liniarIndex lens lbs fql = // TODO: time
+        let wSize = sizeOfTermType windowType
+        let right = left + wSize
         let lazyInstantiator = None // TODO: works?
         let accessArray left right wStart windowEnd (array:term) indexByte = // TODO: check left >= right
             let update term time = // TODO: do better!
@@ -651,7 +647,7 @@ module internal Memory =
                 | None -> sliceIfNeed mtd term left right elemSize, time
                 | Some w ->
                     let part = sliceIfNeed mtd w wStart windowEnd wSize
-                    createWindowPart mtd elemSize term wStart windowEnd part, time
+                    createWindowPart mtd term elemType wStart windowEnd part, time
             let index = delinearizeArrayIndex mtd lens lbs indexByte
             let cell = { value = array; created = time; modified = time } // TODO: time
             accessTerm (Option.isNone writeValue) mtd None guard update [] lazyInstantiator time fql [ArrayIndex(index, elemType)] cell
@@ -671,7 +667,7 @@ module internal Memory =
             else
                 let rightPart, array = accessArray 0 rightDelta right' wSize array (add mtd liniarIndex (makeNumber mtd (mid + 1)))
                 rightPart.value::parts, array
-        Combine mtd parts, contentsOf array // TODO: think about merging arrays! (from different pbits)
+        Combine mtd parts windowType, contentsOf array // TODO: think about merging arrays! (from different pbits)
 
     and private takeRankOfRef = getFQLOfRef >> typeOfFQL >> function // TODO: do 2 functions?
         | ArrayType(_, Vector) -> 1
@@ -700,7 +696,7 @@ module internal Memory =
             let dims = [0 .. takeRankOfRef refToBlock - 1] // TODO: mb from 0?
             let lens = List.map (makeIndex mtd >> referenceArrayLength refToBlock >> derefWithoutValidation mtd state) dims
             let lbs = List.map (makeIndex mtd >> referenceArrayLowerBound refToBlock >> derefWithoutValidation mtd state) dims
-            let byte = getByteOfArray mtd shift viewType lens lbs segment
+            let byte = getByteOfArray mtd shift lens lbs segment
             // TODO: statedConditionalExec on (byte > length || byte < 0) then (baseGuard, UndefinedBehavior mtd viewType) else ...
             let condition state k =
                 let right = add mtd byte (makeNumber mtd windowSize)
@@ -718,7 +714,7 @@ module internal Memory =
                     Array logicalBlock.metadata dim len lower inst newContents lengths typ
                 let accesser g heap possibleByte = // TODO: не накапливаем кучу...
                     let array = arrayWithContents heap // TODO: do better! (unify with accessTerm)
-                    arrayWindowAccess mtd writeValue g possibleByte (possibleByte + windowSize) windowSize elemType elemSize time array liniarIndex lens lbs fql // TODO: need guard here?
+                    arrayWindowAccess mtd writeValue g possibleByte viewType elemType elemSize time array liniarIndex lens lbs fql // TODO: need guard here?
                 let lv = Union mtd []
                 let accessedValue, newContents = accessBytes mtd accesser contents lv elemSize delta // TODO: mb (elemSize - 1) ?
                 let newArray = arrayWithContents newContents
@@ -726,7 +722,7 @@ module internal Memory =
                 k (accessedValue, state) // TODO: mb change typ and dim?
             Common.statedConditionalExecution state
                 condition
-                (fun state k -> k (UndefinedBehavior mtd viewType, state))
+                (fun state k -> k (UndefinedBehavior mtd, state))
                 intoArray
                 merge merge2Terms id id
         | Struct(fields, _) -> // TODO: all fields of struct already exist? goto (Memory.fs, 256)! First of all do lazy value
@@ -741,12 +737,12 @@ module internal Memory =
                 | Some(StructField(fieldName, _, _)) -> sortedFields |> Seq.find (fun (k, _ , _, _) -> k.key = fieldName) |> (fun (_, _, offset, _) -> offset)
                 | None -> 0
                 | _ -> __unreachable__()
-            let byte = getByteOfStruct mtd viewType shift fieldOffset // TODO: what if we have byte from the beggining? (start of struct)
+            let byte = getByteOfStruct mtd shift fieldOffset // TODO: what if we have byte from the beggining? (start of struct)
             let sortedFields = complementStructFields mtd sortedFields size (reverseFQL (Some fql))
             // TODO: from this moment goes new func
             let accesser g heap possibleByte = // TODO: little Endian -> reverse before combine
-                Cps.Seq.foldlk (structWindowAccess mtd writeValue g windowSize (possibleByte + windowSize) time) (possibleByte, [], heap) sortedFields (fun (_, acc, heap) -> Combine mtd acc, heap) // TODO: k -- undef behavior
-            let lv = UndefinedBehavior mtd viewType
+                Cps.Seq.foldlk (structWindowAccess mtd writeValue g viewType (possibleByte + windowSize) time) (possibleByte, [], heap) sortedFields (fun (_, acc, heap) -> Combine mtd acc viewType, heap) // TODO: k -- undef behavior
+            let lv = UndefinedBehavior mtd
             let accessedValue, newFields = accessBytes mtd accesser fields lv (size - windowSize) byte
             let newStruct = Struct logicalBlock.metadata newFields typ
             let state = if Option.isNone writeValue || logicalBlock = newStruct then state else mutate mtd state refToBlock newStruct |> snd
@@ -758,7 +754,7 @@ module internal Memory =
             let accessor byte =
                 match writeValue with
                 | None -> sliceIfNeed mtd logicalBlock byte (byte + windowSize) termSize
-                | Some window -> createWindowPart mtd termSize logicalBlock byte (byte + windowSize) window
+                | Some window -> createWindowPart mtd logicalBlock typ byte (byte + windowSize) window
             // TODO: do better!!! (unify accessBytes for this case)
             let baseByte, restBytes = findSuitableBytes mtd (termSize - windowSize) byte
             let newTerm =
@@ -768,7 +764,7 @@ module internal Memory =
                         (g, accessor possibleByte)
                     let gvs = List.map mapper restBytes
                     let baseGuard = gvs |> List.map (fst >> (!!)) |> conjunction mtd
-                    (baseGuard, UndefinedBehavior mtd viewType)::gvs |> merge
+                    (baseGuard, UndefinedBehavior mtd)::gvs |> merge
                 | Some byte -> accessor byte
             let state = if Option.isNone writeValue || logicalBlock = newTerm then state else mutate mtd state refToBlock newTerm |> snd
             newTerm, state
@@ -935,7 +931,7 @@ module internal Memory =
                     cell.value, statics
                 let result, m' = accessGeneralizedHeap read (readStatics metadata) staticsOf term accessDefined (staticsOf state)
                 result, withStatics state m'
-            | Ptr(topLevel, path, viewType, shift) ->
+            | Ptr(topLevel, path, viewType, shift) -> // TODO: here should be just pointer! (pointer triangle)
                 match shift with
                 | None when typeOfFQL (topLevel, path) = viewType -> // TODO: hack an array on stack here! (or support typing for stack)
                     let ref = getReferenceFromPointer metadata term
@@ -945,7 +941,7 @@ module internal Memory =
                         Reinterpretate read updateDefined metadata state topLevel path viewType shift |> k
                     Common.statedConditionalExecution state
                         (fun state k -> k (Pointers.isNull metadata term, state))
-                        (fun state k -> k (UndefinedBehavior metadata viewType, state))
+                        (fun state k -> k (UndefinedBehavior metadata, state))
                         doRead
                         merge merge2Terms id id
             | t -> internalfailf "expected reference or pointer, but got %O" t

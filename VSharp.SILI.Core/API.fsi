@@ -85,7 +85,7 @@ module API =
         val Cast : state -> term -> termType -> bool -> (state -> term -> termType -> statementResult * state) -> (term * state -> 'b) -> 'b
         val HierarchyCast : state -> term -> termType -> (state -> term -> termType -> statementResult * state) -> (term * state -> 'b) -> 'b
         val CastConcrete : 'a -> System.Type -> term
-        val CastReferenceToPointer : state -> term -> (term * state -> 'a) -> 'a
+        val MakePointerFromRef : term -> term
 
     [<AutoOpen>]
     module public ControlFlowConstructors =
