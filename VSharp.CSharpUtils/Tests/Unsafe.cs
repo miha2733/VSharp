@@ -211,29 +211,45 @@ namespace VSharp.CSharpUtils.Tests
             }
         }
 
-        public static long GetHashCode(string str)
+        public static long Reinterpret3(int n)
         {
-            fixed (char* chPtr1 = str)
+            byte[] test = new byte[n];
+            long sum = 0;
+            fixed (byte* p = &test[0])
             {
-                int num1 = 5381;
-                int num2 = num1;
-                char* chPtr2 = chPtr1;
-                int num3 = *chPtr2;
-                while (num3 != 0)
+                long* ptr = (long*)p;
+                for (int i = 0; i < n / 8; i++)
                 {
-                    num1 = (num1 << 5) + num1 ^ num3;
-                    int num4 = *(ushort*) ((IntPtr) chPtr2 + 2);
-                    if (num4 != 0)
-                    {
-                        num2 = (num2 << 5) + num2 ^ num4;
-                        chPtr2 += 2;
-                    }
-                    else
-                        break;
-                    num3 = *chPtr2;
+                    sum = sum + *ptr;
+                    ptr++;
                 }
-                return num1 + num2 * 1566083941;
             }
+            return sum;
         }
+
+//        public static long GetHashCode(string str)
+//        {
+//            fixed (char* chPtr1 = str)
+//            {
+//                int num1 = 5381;
+//                int num2 = num1;
+//                char* chPtr2 = chPtr1;
+//                int num3 = *chPtr2;
+//                while (num3 != 0)
+//                {
+//                    num1 = (num1 << 5) + num1 ^ num3;
+//                    int num4 = *(ushort*) ((IntPtr) chPtr2 + 2);
+//                    if (num4 != 0)
+//                    {
+//                        num2 = (num2 << 5) + num2 ^ num4;
+//                        chPtr2 += 2;
+//                    }
+//                    else
+//                        break;
+//                    num3 = *chPtr2;
+//                }
+//                return num1 + num2 * 1566083941;
+//            }
+//        }
     }
 }

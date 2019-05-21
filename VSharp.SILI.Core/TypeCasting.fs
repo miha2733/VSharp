@@ -67,9 +67,11 @@ module internal TypeCasting =
                 (fun (statementResult, state) -> k (ControlFlow.resultToTerm statementResult, state))
         Merging.guardedErroredStatedApplyk (primitiveCast hierarchyCast targetType) state argument k
 
-    let makePointerFromRef mtd = Merging.guardedErroredApply (fun reference ->
-        let targetType = reference |> getFQLOfRef |> baseTypeOfFQL
-        castReferenceToPointerHelper mtd targetType reference)
+    let makePointerFromRef mtd state =
+        let derefForCast = Memory.derefWith (fun m s _ -> Concrete m null Null, s)
+        Merging.guardedErroredApply (fun reference ->
+            let term, _ = derefForCast mtd state reference
+            castReferenceToPointerHelper mtd (typeOf term) reference)
 
     let persistentLocalAndConstraintTypes mtd state term defaultLocalType =
         let derefForCast = Memory.derefWith (fun m s _ -> Concrete m null Null, s)

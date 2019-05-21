@@ -1355,7 +1355,7 @@ module internal Interpreter =
     and reduceAddressOfExpression state (ast : IAddressOfExpression) k =
         reduceExpressionToRef state true ast.Argument (fun (reference, state) ->
         let k = Enter ast state k
-        k (Types.MakePointerFromRef reference, state))
+        k (Types.MakePointerFromRef state reference, state))
 
     and reduceRefExpression state (ast : IRefExpression) k =
         reduceExpressionToRef state false ast.Argument k
