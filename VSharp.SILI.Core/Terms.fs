@@ -224,7 +224,7 @@ and topLevelAddress =
     | TopLevelPool of term
 
 and pathSegment =
-    | StructField of string * termType * int Option
+    | StructField of string * termType * int option
     | ArrayIndex of term * termType
     | ArrayLowerBound of term
     | ArrayLength of term

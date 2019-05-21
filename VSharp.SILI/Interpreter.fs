@@ -308,10 +308,11 @@ module internal Interpreter =
         __notImplemented__())
 
     and reduceIndexerCallExpression state (ast : IIndexerCallExpression) k =
+        let reduceTarget state k = reduceExpressionToRef state true ast.Target k
+        let reduceArg arg = fun state k -> reduceExpression state arg k
+        let reduceArgs = ast.Arguments |> List.ofSeq |> List.map reduceArg
         let state, k = reduceTypeVariablesSubsitution state ast.PropertySpecification.OwnerType k
-        let qualifiedTypeName = ast.PropertySpecification.Property.DeclaringType.AssemblyQualifiedName
-        initializeStaticMembersIfNeed ast state qualifiedTypeName (fun (result, state) ->
-        __notImplemented__())
+        reduceMethodCall ast state reduceTarget ast.PropertySpecification.Property.Getter reduceArgs k
 
     and reduceMethodCall (caller : locationBinding) state target (metadataMethod : JetBrains.Metadata.Reader.API.IMetadataMethod) arguments k =
         let qualifiedTypeName = metadataMethod.DeclaringType.AssemblyQualifiedName
@@ -779,11 +780,13 @@ module internal Interpreter =
         | :? ILiteralExpression as expression -> reduceLiteralExpressionToRef state expression k
         | :? IAddressOfExpression as expression -> reduceAddressOfExpressionToRef state expression k
         | :? IAbstractBinaryOperationExpression
+        | :? IBaseReferenceExpression
         | :? ITryCastExpression
         | :? IMethodCallExpression
         | :? IAbstractTypeCastExpression -> reduceExpression state ast k
         | :? IPropertyAccessExpression as expression -> reducePropertyAccessExpression state expression k
         | :? IArrayElementAccessExpression as expression -> reduceArrayElementAccessExpressionToRef state expression k
+//        | :? IBaseReferenceExpression as s -> s.
         | _ -> __notImplemented__()
 
     and referenceToField caller state followHeapRefs target (field : JetBrains.Metadata.Reader.API.IMetadataField) k =
@@ -1388,6 +1391,8 @@ module internal Interpreter =
         __notImplemented__()
 
     and reduceUntypedStackAllocExpression state (ast : IUntypedStackAllocExpression) k =
+        reduceExpression state ast.Length (fun length ->
+        ast.)
         __notImplemented__()
 
     and reduceFixedStatement state (ast : IFixedStatement) k = // TODO: check

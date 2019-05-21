@@ -58,6 +58,8 @@ module public Heap =
     let public contains (key : 'a) (h : heap<'a, 'b, 'fql>) = h.ContainsKey key
     let private containsHeapKey (heapKey : heapKey<'a, 'fql>) (h : heap<'a, 'b, 'fql>) = h.ContainsKey heapKey
     let public find (key : 'a) (h : heap<'a, 'b, 'fql>) = h.[key]
+    let public findWithFQL (key : 'a) (h : heap<'a, 'b, 'fql>) =
+        h |> toSeq |> Seq.find (fun (k : heapKey<'a, 'fql>, _) -> k.key = key)
     let public add key value (h : heap<'a, 'b, 'fql>) = h.Add(key, value)
 
     let public size (h : heap<'a, 'b, 'fql>) = h.Length

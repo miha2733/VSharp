@@ -119,12 +119,12 @@ module internal Memory =
 
     let private mkStruct metadata time isStatic mkField (dotNetType : System.Type) typ fql =
         let layout = dotNetType.StructLayoutAttribute
-        let pack = layout.Pack // TODO: use!
         let fields = Types.fieldsOf dotNetType isStatic
         let getOffsetFromAttribute (field : FieldInfo) =
             let attribte = System.Attribute.GetCustomAttribute(field, typeof<FieldOffsetAttribute>) :?> FieldOffsetAttribute
             attribte.Value
         let sequentialOffsetFolder currentOffset (field : FieldInfo) =
+            let pack = layout.Pack // TODO: use!
             let fieldSize = sizeOfSystemType field.FieldType
             let offset =
                 if Seq.exists (fun (x : CustomAttributeData) -> x.AttributeType.Equals(typeof<FixedBufferAttribute>)) field.CustomAttributes then currentOffset
@@ -134,12 +134,14 @@ module internal Memory =
                     if currentOffset + fieldSize > packedOffset then packedOffset else currentOffset // TODO: do better
             ((field, Some offset), offset + fieldSize)
         let unify =
-            match layout.Value with // TODO: mb use isDefined?
-            | LayoutKind.Auto -> FSharp.Collections.Array.map (withSnd None)
-            | LayoutKind.Sequential -> (FSharp.Collections.Array.mapFold sequentialOffsetFolder 0) >> fst
-            | LayoutKind.Explicit -> FSharp.Collections.Array.map (fun field -> field, getOffsetFromAttribute field |> Some) // TODO: check Pack field?!
-            | _ -> __unreachable__()
-        let createContents acc ((field : FieldInfo) , offset) =
+            if layout = null then FSharp.Collections.Array.map (withSnd None)
+            else
+                match layout.Value with // TODO: mb use isDefined?
+                | LayoutKind.Auto -> FSharp.Collections.Array.map (withSnd None)
+                | LayoutKind.Sequential -> (FSharp.Collections.Array.mapFold sequentialOffsetFolder 0) >> fst
+                | LayoutKind.Explicit -> FSharp.Collections.Array.map (fun field -> field, getOffsetFromAttribute field |> Some) // TODO: check Pack field?!
+                | _ -> __unreachable__()
+        let createContents acc ((field : FieldInfo), offset) =
             let name = sprintf "%s.%s" ((safeGenericTypeDefinition field.DeclaringType).FullName) field.Name
             let typ = field.FieldType |> fromDotNetType |> wrapReferenceType
             let fql' = StructField(name, typ, offset) |> addToOptionFQL fql
@@ -364,12 +366,12 @@ module internal Memory =
 
     let private findSuitableLocations<'key when 'key : equality> mtd h keyCompare contextList mapper (location : 'key) typ = // TODO: mb emulate window here?
         let filterMapKey (k : heapKey<'key, fql>, cell) =
-            let k, v = List.fold mapper (k.key, cell.value) contextList
+            let key, v = List.fold mapper (k.key, cell.value) contextList
             let cell = {cell with value = v}
-            let guard = canPoint mtd keyCompare location typ k v
+            let guard = canPoint mtd keyCompare location typ key v
             match guard with
             | False -> None
-            | _ -> Some(guard, k, cell)
+            | _ -> Some(guard, makeKey key k.FQL, cell)
         let gvs = h |> Heap.toSeq |> List.ofSeq |> List.choose filterMapKey
         let baseGvs, restGvs = gvs |> List.partition (fst3 >> isTrue)
         let baseGvs = List.map (fun (_, a, v) -> a, v) baseGvs
@@ -401,15 +403,16 @@ module internal Memory =
         let accessRec gvas lazyValue h =
             let accessLocation (h, minCreatedTime, maxModifeiedTime) (guard', addr, cell) =
                 let guard'' = guard &&& guard'
-                let accessedCell, newBaseValue = accessTerm read metadata groundHeap guard'' update contextList lazyInstantiator ptr.time ptr.fullyQualifiedLocation ptr.path cell
-                let h' = if read || cell.value = newBaseValue then h else writeHeap accessedCell.modified guard'' h (makeKey addr <| Some ptr.fullyQualifiedLocation) newBaseValue
+                let accessedCell, newBaseValue = accessTerm read metadata groundHeap guard'' update contextList lazyInstantiator ptr.time (getFQLOfKey addr) ptr.path cell
+                let h' = if read || cell.value = newBaseValue then h else writeHeap accessedCell.modified guard'' h addr newBaseValue
                 (guard'', accessedCell.value), (h', min minCreatedTime accessedCell.created, max maxModifeiedTime accessedCell.modified)
             let gvs, (h', minCreated, maxModified) = List.mapFold accessLocation (h, Timestamp.infinity, Timestamp.zero) gvas
             let minCreated, maxModified = Option.fold (fun (c, m) _ -> min time c, max time m) (minCreated, maxModified) lazyValue
             { value = merge (optCons gvs lazyValue); created = minCreated; modified = maxModified }, h'
         if Heap.contains ptr.location h then
             // TODO: if guard of location (MemoryCell.fs : 5) not True, then add lazy value
-            accessRec [(makeTrue metadata, ptr.location, Heap.find ptr.location h)] None h
+            let key, value = Heap.findWithFQL ptr.location h
+            accessRec [(makeTrue metadata, key, value)] None h
         else
             let baseGav, restGavs = findSuitableLocations metadata h keyCompare contextList mapper ptr.location ptr.typ
             match baseGav with
@@ -422,13 +425,13 @@ module internal Memory =
                     if read && isTopLevelHeapConcreteAddr ptr.fullyQualifiedLocation && List.isEmpty contextList then Union metadata []
                     else lazyInstantiator |?? genericLazyInstantiator metadata groundHeap time ptr.fullyQualifiedLocation ptr.typ |> eval
                 let baseCell = { value = lazyValue; created = time; modified = time }
-                let gavs = if read then restGavs else (baseGuard, ptr.location, baseCell)::restGavs
+                let gavs = if read then restGavs else (baseGuard, Some ptr.fullyQualifiedLocation |> makeKey ptr.location, baseCell)::restGavs
                 let lv = if read then Some(baseGuard, lazyValue) else None
                 let h = if read then h else h.Add(makeKey ptr.location <| Some ptr.fullyQualifiedLocation, baseCell)
                 accessRec gavs lv h
             | Some(a, v) -> accessRec ((makeTrue metadata, a, v)::restGavs) None h
 
-    and private accessTerm read metadata (groundHeap: 'a generalizedHeap option) guard (update : term -> timestamp -> term * timestamp) contextList lazyInstantiator ptrTime ptrFql path ({created = c; modified = m} as cell) =
+    and private accessTerm read metadata (groundHeap: 'a generalizedHeap option) guard (update : term -> timestamp -> term * timestamp) contextList lazyInstantiator ptrTime (ptrFql : fql) path ({created = c; modified = m} as cell) =
         let internalMerge gvs =
             let cells, newVs = List.fold (fun (cells, newVs) (g, (c, v)) -> (g, c)::cells, (g, v)::newVs) ([], []) gvs
             mergeCells cells, merge newVs
@@ -499,6 +502,10 @@ module internal Memory =
         let lazyInstor = genericLazyInstantiator mtd None Timestamp.zero fql typ
         accessTerm true mtd None (makeTrue mtd) makePair [] (Some lazyInstor) Timestamp.infinity fql path cell |> fst
 
+    and public accessStructField read mtd update term segment =
+        let cell = {value = term; created = Timestamp.zero; modified = Timestamp.zero}
+        let lazyInstor = __unreachable__
+        accessTerm read mtd None (makeTrue mtd) update [] (Some lazyInstor) Timestamp.infinity (NullAddress, []) [segment] cell |> fst
 // ------------------------------- Reinterpretation -------------------------------
 
 //    and private arrayReinterp segment viewType shift acc (k, v) =

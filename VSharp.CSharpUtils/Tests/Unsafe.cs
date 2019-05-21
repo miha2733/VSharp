@@ -227,6 +227,14 @@ namespace VSharp.CSharpUtils.Tests
             return sum;
         }
 
+        public static long StackAlloc(int length1, int length2)
+        {
+            int* pLengths = stackalloc int[2];
+            pLengths[0] = length1;
+            *(int*) ((IntPtr) pLengths + 4) = length2;
+            return *(long*)pLengths;
+        }
+
 //        public static long GetHashCode(string str)
 //        {
 //            fixed (char* chPtr1 = str)

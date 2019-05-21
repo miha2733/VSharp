@@ -87,6 +87,10 @@ module internal Z3 =
                 match addr with
                 | [addr] -> (ctx()).MkNumeral(addr.ToString(), type2Sort typ)
                 | _ -> __notImplemented__()
+            | :? concreteStringAddress as addr ->
+                match addr with
+                | string -> (ctx()).MkNumeral(addr.ToString(), type2Sort typ)
+                | _ -> __notImplemented__()
             | _ -> (ctx()).MkNumeral(obj.ToString(), type2Sort typ)
         | _ -> __notImplemented__()
 

@@ -27,6 +27,40 @@ module public SVM =
         assert(m.IsStatic)
         prepareAndInvoke dictionary assemblyPath m InterpretEntryPoint
 
+    // get_IsInvalid -> cast to IntPtr (should be user defined)
+    // get_Name, ToString, GetAccessControl, SetAccessControl, LastIndexOf -> reduceParameterModifierExpression not implemented
+    // CreateSubKey, DeleteSubKey, OpenSubKey -> extern IsAscii not implemented
+    // DeleteValue, OpenBaseKey, OpenRemoteBaseKey, get_SubKeyCount, get_View, get_Handle, FromHandle, GetSubKeyNames, get_ValueCount, GetValueNames, GetValueKind -> logical operations not implemented
+    // GetObjectData, GetBaseException, Flatten -> looping (symbolic list)
+    // get_TargetFrameworkName, GetData, CompareTo -> too long, no unsafe
+    // TryGetSwitch, SetSwitch -> reduceLockStatement not implemented
+    // Equals -> extern System.Boolean System.Runtime.CompilerServices.RuntimeHelpers.Equals(System.Object, System.Object) not implemented
+    // GetHashCode -> extern System.Int32 System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(System.Object) not implemented
+    // GetType -> extern System.Type System.Object.GetType(this) not implemented
+    // Handle -> forik
+    // Invoke, BeginInvoke, EndInvoke -> no body in decompiled method
+    // Create -> sizeOf : could not create such program
+    // Deconstruct -> couldNotLoadType
+    // get_BaseDirectory -> extern System.Char System.String.get_Chars(this, System.Int32) not implemented
+    // Reverse -> extern System.Boolean System.Array.TrySZReverse(System.Array, System.Int32, System.Int32) not implemented
+    // Sort -> too long, no unsafe
+    // TrueForAll -> not implemented in delegate
+    // Initialize -> extern System.Void System.Array.Initialize(this) not implemented
+    // Resize -> typeLoadException
+    // CreateInstance -> delegate
+    // Copy, ConstrainedCopy -> extern System.Void System.Array.Copy(System.Array, System.Int32, System.Array, System.Int32, System.Int32, System.Boolean) not implemented
+    // GetValue, SetValue -> extern System.Void System.Array.InternalGetReference(this, System.Void*, System.Int32, System.Int32*) not implemented
+    // get_LongLength -> extern System.Int64 System.Array.get_LongLength(this) not implemented
+
+//    let private explore (dictionary : System.Collections.IDictionary) assemblyPath (m : MethodInfo) =
+//        let ingnoredMethods =
+//            set["IndexOf"; "LastIndexOf"; "Reverse"; "Sort"; "TrueForAll"; "Initialize"; "Resize"; "CreateInstance"; "Copy"; "ConstrainedCopy"; "Clear"; "GetValue"; "SetValue"; "get_LongLength"; "GetLength"; "GetUpperBound"; "GetLowerBound"; "Clone"]
+////            set["GetValue"; "SetValue"; "Close"; "Flush"; "Dispose"; "CreateSubKey"; "DeleteSubKey"; "DeleteSubKeyTree"; "DeleteValue"; "GetValueNames"; "GetValueKind"; "GetAccessControl"; "SetAccessControl"; "GetBaseException";
+////                "OpenBaseKey"; "OpenRemoteBaseKey"; "OpenSubKey"; "get_SubKeyCount"; "get_View"; "get_Handle"; "FromHandle"; "GetSubKeyNames"; "get_ValueCount"; "get_Name"; "ToString"; "get_IsInvalid"; "GetObjectData"; "Flatten";
+////                "get_TargetFrameworkName"; "GetData"; "TryGetSwitch"; "SetSwitch"; "Equals"; "GetHashCode"; "GetType"; "Invoke"; "BeginInvoke"; "EndInvoke"; "Create"; "CompareTo"; "Deconstruct"; "Handle"; "get_BaseDirectory"]
+//        if ingnoredMethods.Contains m.Name then ()
+//        else prepareAndInvoke dictionary assemblyPath m Explore
+
     let private explore (dictionary : System.Collections.IDictionary) assemblyPath (m : MethodInfo) =
         prepareAndInvoke dictionary assemblyPath m Explore
 

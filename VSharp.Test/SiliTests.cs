@@ -84,7 +84,7 @@ namespace VSharp.Test
         private void PrepareSvm()
         {
             // Something like Propositional.ConfigureSimplifier(new Z3Simplifier()); can be used to enable Z3-based simplification (not recommended)
-            SVM.ConfigureSolver(new SmtSolverWrapper<Microsoft.Z3.AST>(new Z3Solver()));
+//            SVM.ConfigureSolver(new SmtSolverWrapper<Microsoft.Z3.AST>(new Z3Solver()));
         }
 
         private IDictionary<string, string> ParseIdealValues(string resultPath, StringBuilder failReason)
@@ -209,7 +209,9 @@ namespace VSharp.Test
                     AppDomain currentDomain = AppDomain.CurrentDomain;
                     currentDomain.AssemblyResolve += LoadFromTestFolder;
 
+//                    var arrayType = typeof(Array);
                     IDictionary<MethodInfo, string> got = SVM.Run(Assembly.LoadFile(lib), ignoredTypes);
+//                    IDictionary<MethodInfo, string> got = SVM.Run(arrayType.Assembly, ignoredTypes);
 
 //                    string os = Environment.OSVersion.Platform.ToString();
 //                    string goldFile = testDir + Path.DirectorySeparatorChar + os + IdealTestFileExtension;
