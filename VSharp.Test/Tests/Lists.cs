@@ -152,6 +152,12 @@ namespace VSharp.Test.Tests
         [TestSvm]
         public static Array RetSystemArray1(Array arr)
         {
+            int x = 1;
+            if (arr is object[])
+            {
+                var arrOne = arr as object[];
+                arrOne[1] = x;
+            }
             if (arr is int[])
             {
                 var arrOne = arr as int[];
@@ -292,6 +298,28 @@ namespace VSharp.Test.Tests
                 return b.Get();
             }
             return 0;
+        }
+
+        public static LinkedListNode<int> G(LinkedListNode<int> l, LinkedListNode<int> n)
+        {
+            LinkedListNode<int> tmp;
+            while (l.Value > 7) // кручу-верчу, запутать хочу
+            {
+                tmp = l;
+                l = n;
+                n = tmp;
+                l = l.Next;
+            }
+            return l;
+        }
+
+        // Test on tracking current heap address during access to heap for filtering possible locations
+        public static int MemoryTest(LinkedList<int> l)
+        {
+            LinkedListNode<int> n = new LinkedListNode<int>(10);
+            LinkedListNode<int> x = G(l.First, n);
+            LinkedListNode<int> m = new LinkedListNode<int>(42);
+            return x.Value;
         }
     }
 }

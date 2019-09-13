@@ -74,7 +74,7 @@ namespace VSharp.Test.Tests
 
         // It's not a problem, that we got <VOID> < 5 or smth like that, because some path conditions are not achievable from program.
         // In case of TestSwitch method, we got <VOID> from dereferencing of not assigned variable.
-        [TestSvm]
+//        [TestSvm]
         public static bool TestSwitch(char c)
         {
             int result;

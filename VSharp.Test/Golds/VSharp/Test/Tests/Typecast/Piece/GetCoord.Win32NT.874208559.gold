@@ -5,4 +5,4 @@ RESULT: STRUCT VSharp.Test.Tests.Typecast.Coord[
 HEAP:
 { heap = <empty>, statics = s0 } where
 ---------- s0 = ----------
-VSharp.Test.Tests.Typecast.Piece ==> STRUCT VSharp.Test.Tests.Typecast.Piece[]
+VSharp.Test.Tests.Typecast.Piece ==> CLASS []

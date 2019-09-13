@@ -110,7 +110,7 @@ namespace VSharp.Test.Tests.Generic
         [TestSvm]
         public T GetFields()
         {
-            return  _filed;
+            return _filed;
         }
 
         [TestSvm]

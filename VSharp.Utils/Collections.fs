@@ -114,11 +114,11 @@ module public Stack =
 
     let peek = function
         | [] -> failwith "Attempt to peak head of an empty stack"
-        | hd::tl -> hd
+        | hd::_ -> hd
 
     let pop = function
         | [] -> failwith "Attempt to pop an empty stack"
-        | hd::tl -> tl
+        | _::tl -> tl
 
     let push stack element = element::stack
 

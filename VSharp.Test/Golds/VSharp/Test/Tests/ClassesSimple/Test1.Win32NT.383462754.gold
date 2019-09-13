@@ -3,7 +3,7 @@ RESULT: True
 HEAP:
 { heap = h0, statics = s1 } where
 ---------- h0 = ----------
-1 ==> STRUCT VSharp.Test.Tests.ClassesSimpleA[
+1 ==> CLASS [
 	| VSharp.Test.Tests.ClassesSimpleA._b ~> STRUCT VSharp.Test.Tests.ClassesSimpleB[
 		| VSharp.Test.Tests.ClassesSimpleB._c ~> STRUCT VSharp.Test.Tests.ClassesSimpleC[
 			| VSharp.Test.Tests.ClassesSimpleC.<M1>k__BackingField ~> 42
@@ -11,8 +11,8 @@ HEAP:
 			| VSharp.Test.Tests.ClassesSimpleC._n ~> n]]
 	| VSharp.Test.Tests.ClassesSimpleA._intField ~> 100500]
 ---------- s1 = ----------
-System.Object ==> STRUCT System.Object[]
-VSharp.Test.Tests.ClassesSimple ==> STRUCT VSharp.Test.Tests.ClassesSimple[]
-VSharp.Test.Tests.ClassesSimpleA ==> STRUCT VSharp.Test.Tests.ClassesSimpleA[]
+System.Object ==> CLASS []
+VSharp.Test.Tests.ClassesSimple ==> CLASS []
+VSharp.Test.Tests.ClassesSimpleA ==> CLASS []
 VSharp.Test.Tests.ClassesSimpleB ==> STRUCT VSharp.Test.Tests.ClassesSimpleB[]
 VSharp.Test.Tests.ClassesSimpleC ==> STRUCT VSharp.Test.Tests.ClassesSimpleC[]

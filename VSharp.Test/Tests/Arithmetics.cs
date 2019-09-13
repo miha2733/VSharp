@@ -2,7 +2,7 @@ using System;
 
 namespace VSharp.Test.Tests
 {
-    [TestSvmFixture]
+//    [TestSvmFixture]
     public sealed class Arithmetics
     {
         // 7 + n

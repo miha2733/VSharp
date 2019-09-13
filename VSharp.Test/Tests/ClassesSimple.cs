@@ -305,6 +305,13 @@ namespace VSharp.Test.Tests
             var st = new ClassesSimplePropertyAccess();
             st.StructProperty.Set(42);
         }
+
+        [TestSvm]
+        public void TestProperty2()
+        {
+            var st = new SimpleStruct();
+            st.Set(42);
+        }
     }
 
     [TestSvmFixture]

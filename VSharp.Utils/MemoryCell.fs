@@ -1,10 +1,10 @@
 namespace VSharp
 
 [<CustomEquality;NoComparison>]
-type public 'a memoryCell when 'a : equality =
-    { value : 'a; created : timestamp; modified : timestamp }  // Value * Creation timestamp * Modification timestamp
-    override x.GetHashCode() = x.value.GetHashCode()
-    override x.Equals(y) =
-        match y with
-        | :? memoryCell<'a> as other -> x.value = other.value
+type public commonMemoryCell<'a, 'fql, 'typ> when 'a : equality =
+    { key : 'a; FQL : 'fql option; typ : 'typ }  // Key * Fully qualified location * termType
+    override x.GetHashCode() = x.key.GetHashCode()
+    override x.Equals(o) =
+        match o with
+        | :? commonMemoryCell<'a, 'fql, 'typ> as other -> x.key.Equals(other.key)
         | _ -> false
