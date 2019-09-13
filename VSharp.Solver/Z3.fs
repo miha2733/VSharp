@@ -221,9 +221,6 @@ module internal Z3 =
                 elif expr.IsLT then decodeBoolExpr OperationType.Less expr
                 elif expr.IsLE then decodeBoolExpr OperationType.LessOrEqual expr
                 else __notImplemented__()
-            | _ ->
-                __notImplemented__()
-
 
 // ------------------------------- Solving, etc. -------------------------------
 
