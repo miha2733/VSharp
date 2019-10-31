@@ -16,6 +16,7 @@
         <Compile Include="Heap.fs" />
         <Compile Include="Persistent.fs" />
         <Compile Include="IdGenerator.fs" />
+        <Compile Include="FQL.fs" />
     </ItemGroup>
 
     <ItemGroup>
