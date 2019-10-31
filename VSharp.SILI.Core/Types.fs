@@ -25,7 +25,6 @@ type termType =
     | InterfaceType of System.Type * termType list     // Interface type with generic argument
     | TypeVariable of typeId
     | ArrayType of termType * arrayDimensionType
-    | Reference of termType
     | Pointer of termType // C-style pointers like int*
 
     override x.ToString() =
@@ -48,7 +47,6 @@ type termType =
         | ArrayType(t, ConcreteDimension 1) -> t.ToString() + "[*]"
         | ArrayType(t, ConcreteDimension rank) -> t.ToString() + "[" + new string(',', rank - 1) + "]"
         | ArrayType(_, SymbolicDimension) -> "System.Array"
-        | Reference t -> sprintf "<Reference to %O>" t
         | Pointer t -> sprintf "<Pointer to %O>" t
 
 and [<CustomEquality;CustomComparison>]
@@ -120,8 +118,12 @@ module internal Types =
         | Null -> true
         | _ -> false
 
-    let isReference = function
-        | Reference _ -> true
+    let concreteIsReferenceType = function // TODO: #do
+        | ClassType _
+        | InterfaceType _
+        | ArrayType _
+        | Null -> true // TODO: need? #do
+        | TypeVariable _ -> __unreachable__()
         | _ -> false
 
     let isPointer = function
@@ -131,18 +133,6 @@ module internal Types =
     let elementType = function
         | ArrayType(t, _) -> t
         | t -> internalfailf "expected array type, but got %O" t
-
-    let concreteIsReferenceType = function
-        | ClassType _
-        | InterfaceType _
-        | ArrayType _ -> true
-        | TypeVariable _ -> __unreachable__()
-        | _ -> false
-
-    let wrapReferenceType = function
-        | TypeVariable _ as t -> t
-        | t when concreteIsReferenceType t -> Reference t
-        | t -> t
 
     let rec toDotNetType t =
         match t with
@@ -158,7 +148,6 @@ module internal Types =
         | ArrayType(_, SymbolicDimension) -> typedefof<System.Array>
         | ArrayType(t, Vector) -> (toDotNetType t).MakeArrayType()
         | ArrayType(t, ConcreteDimension rank) -> (toDotNetType t).MakeArrayType(rank)
-        | Reference t -> toDotNetType t
         | Pointer t -> (toDotNetType t).MakePointerType()
         | Null -> __unreachable__()
         | _ -> typedefof<obj>
@@ -200,13 +189,13 @@ module internal Types =
             | null -> Null
             | p when p.IsPointer -> p.GetElementType() |> fromDotNetType |> Pointer
             | v when v.FullName = "System.Void" -> Void
-            | a when a.FullName = "System.Array" -> ArrayType(fromDotNetType typedefof<obj> |> wrapReferenceType, SymbolicDimension)
+            | a when a.FullName = "System.Array" -> ArrayType(fromDotNetType typedefof<obj>, SymbolicDimension)
             | b when b.Equals(typedefof<bool>) -> Bool
             | n when TypeUtils.isNumeric n -> Numeric n
             | e when e.IsEnum -> Numeric e
             | a when a.IsArray ->
                 ArrayType(
-                    fromDotNetType (a.GetElementType()) |> wrapReferenceType,
+                    fromDotNetType (a.GetElementType()),
                     if a = a.GetElementType().MakeArrayType() then Vector else ConcreteDimension <| a.GetArrayRank())
             | s when s.IsValueType && not s.IsGenericParameter -> StructType s (getGenericArguments s)
             | p when p.IsGenericParameter -> TypeVariable(Id p)
@@ -221,7 +210,7 @@ module internal Types =
             | TypeVariable(Id t) when TypeUtils.isValueTypeParameter t -> Some(StructureType(t, []))
             | _ -> None
 
-        let (|ReferenceType|_|) = function
+        let (|ReferenceType|_|) = function // TODO: use it #do
             | termType.ClassType(t, genArg) -> Some(ReferenceType(t, genArg))
             | termType.InterfaceType(t, genArg) -> Some(ReferenceType(t, genArg))
             | termType.ArrayType _ as arr ->
@@ -251,7 +240,3 @@ module internal Types =
     let isInteger = toDotNetType >> TypeUtils.isIntegral
 
     let isReal = toDotNetType >> TypeUtils.isReal
-
-    let unwrapReferenceType = function
-        | Reference t -> t
-        | t -> t

@@ -312,11 +312,11 @@ module internal InstructionsSet =
             castUnchecked resultTyp t state
                 (fun (t, state) -> {cilState with functionResult = Some t; state = state} :: [])
          | _ -> __unreachable__()
-    let ConcreteTerm2BooleanTerm (term : term) =
-        match TypeOf term with
-        | Bool -> term
-        | t when t = TypeUtils.int32Type -> term !== TypeUtils.Int32.Zero
-        | Reference _ -> term !== MakeNullRef()
+    let ConcreteTerm2BooleanTerm (term : term) = // TODO: do better? #do
+        match term with
+        | _ when TypeOf term = Bool -> term
+        | _ when TypeOf term = TypeUtils.int32Type -> term !== TypeUtils.Int32.Zero
+        | _ when isReference term -> term !== MakeNullRef()
         | _ -> __notImplemented__()
     let ceq (cilState : cilState) =
         match cilState.opStack with
