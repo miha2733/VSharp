@@ -17,3 +17,10 @@ module Type =
             | _ -> __notImplemented__()
         let termTypeOfSystemType = Types.FromDotNetType state (t.GetType())
         Concrete t termTypeOfSystemType, state
+
+    let internal GetType (state : state) (args : term list) =
+        assert(List.length args = 1)
+        let obj = List.head args
+        let dotNetTyp = obj |> Terms.TypeOf |> Types.ToDotNetType
+        let termTypOfTyp = Types.FromDotNetType state (dotNetTyp.GetType())
+        Concrete dotNetTyp termTypOfTyp, state
