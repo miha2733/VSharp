@@ -128,7 +128,7 @@ type public ExplorerBase() =
                     | _ -> __notImplemented__()
                 let thisIsNotNull = if Option.isSome this then !!( Pointers.isNull metadata (Option.get this)) else Nop
                 let state = if Option.isSome this && thisIsNotNull <> True then State.withPathCondition state thisIsNotNull else state
-                let state = x.FormInitialState funcId state
+                let state = x.FormInitialState funcId state this
                 x.Invoke funcId state this (fun (res, state) ->
                     let state = if Option.isSome this && thisIsNotNull <> True then State.popPathCondition state else state
                     let state = if isMethodOfStruct then State.popStack state else state
@@ -262,7 +262,7 @@ type public ExplorerBase() =
         HigherOrderApply funcId state k
 
     abstract member Invoke : ICodeLocation -> state -> term option -> (term * state -> 'a) -> 'a
-    abstract member FormInitialState : IFunctionIdentifier -> state -> state
+    abstract member FormInitialState : IFunctionIdentifier -> state -> term option -> state
     abstract member MakeMethodIdentifier : MethodBase -> IMethodIdentifier
 
 

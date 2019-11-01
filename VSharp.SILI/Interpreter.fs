@@ -450,12 +450,12 @@ and public ILInterpreter() as this =
             let interpreter = new CodePortionInterpreter(x, ilcode, findCfg ilmm, ilcode.RecursiveVertices)
             interpreter.Invoke state this k
         | _ -> internalfail "unhandled ICodeLocation instance"
-    override x.FormInitialState funcId state =
+    override x.FormInitialState funcId state this =
         match funcId with
         | :? ILMethodMetadata as ilmm ->
             let methodId = x.MakeMethodIdentifier ilmm.methodBase
             x.InitEntryPoint state ilmm.methodBase.DeclaringType (fun state ->
-            x.ReduceFunctionSignature methodId state ilmm.methodBase None Unspecified id)
+            x.ReduceFunctionSignature methodId state ilmm.methodBase this Unspecified id)
         | _ -> __notImplemented__()
     override x.MakeMethodIdentifier m = { methodBase = m } :> IMethodIdentifier
     member x.ExecuteInstruction (cfg : cfgData) (offset : int) (cilState : cilState) =
