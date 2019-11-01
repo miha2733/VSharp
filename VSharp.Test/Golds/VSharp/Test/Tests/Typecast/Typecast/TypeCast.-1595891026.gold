@@ -27,22 +27,64 @@ HEAP:
 	| System::Exception::_xcode ~> -532462766
 	| System::Exception::_xptrs ~> System.IntPtr STRUCT [
 		| System::IntPtr::_value ~> null]]
-3 ==> System.String CLASS [
-	| System::String::m_FirstChar ~> [| 0 ~> ' '; 1 ~> '-'; 2 ~> '-'; 3 ~> '-'; 4 ~> '>'; 5 ~> ' '; 6 ~> '\000' ... 7 ... |]
+3.1.1 ==> System.String CLASS [
+	| System::String::m_FirstChar ~> System.Char: [|
+		0 ~> UNION[
+			| UNION[] ~> ' '
+			| UNION[] ~> '-'
+			| UNION[] ~> '>'
+			| UNION[] ~> '\000'
+			| UNION[] ~> 3.1.1.[0].System::String::m_FirstChar[0]];
+		1 ~> UNION[
+			| UNION[] ~> ' '
+			| UNION[] ~> '-'
+			| UNION[] ~> '>'
+			| UNION[] ~> '\000'
+			| UNION[] ~> 3.1.1.[1].System::String::m_FirstChar[1]];
+		2 ~> UNION[
+			| UNION[] ~> '-'
+			| UNION[] ~> 3.1.1.[2].System::String::m_FirstChar[2]];
+		3 ~> UNION[
+			| UNION[] ~> '-'
+			| UNION[] ~> 3.1.1.[3].System::String::m_FirstChar[3]];
+		4 ~> UNION[
+			| UNION[] ~> '>'
+			| UNION[] ~> 3.1.1.[4].System::String::m_FirstChar[4]];
+		5 ~> UNION[
+			| UNION[] ~> ' '
+			| UNION[] ~> 3.1.1.[5].System::String::m_FirstChar[5]];
+		6 ~> UNION[
+			| UNION[] ~> ' '
+			| UNION[] ~> '-'
+			| UNION[] ~> '>'
+			| UNION[] ~> '\000'
+			| UNION[] ~> 3.1.1.[6].System::String::m_FirstChar[6]];
+		3.1.1.m_StringLength ~> UNION[
+			| UNION[] ~> ' '
+			| UNION[] ~> '-'
+			| UNION[] ~> '>'
+			| UNION[] ~> '\000'];
+		UNION[] ~> UNION[
+			| UNION[] ~> ' '
+			| UNION[] ~> '-'
+			| UNION[] ~> '>'
+			| UNION[] ~> '\000'
+			| UNION[] ~> 3.1.1.[UNION[]].System::String::m_FirstChar[UNION[]]]
+		... 1 + 3.1.1.m_StringLength ... |]
 	| System::String::m_StringLength ~> 6]
-4 ==> System.Object CLASS []
 ---------- s1 = ----------
 System.Exception ==> CLASS [
 	| InnerExceptionPrefix ~> UNION[
-		| !((HeapRef obj) <: VSharp.Test.Tests.Typecast.Pawn) & !(0 == obj) & !hasKey#3 ~> (HeapRef 3)
-		| ((HeapRef obj) <: VSharp.Test.Tests.Typecast.Pawn) | 0 == obj | hasKey#3 ~> (HeapRef System.Exception.InnerExceptionPrefix)]
+		| !((HeapRef obj) <: VSharp.Test.Tests.Typecast.Pawn) & !(0 == obj) & !hasKey#10 ~> (HeapRef 3.1.1)
+		| !((HeapRef obj) <: VSharp.Test.Tests.Typecast.Pawn) & !(0 == obj) & hasKey#11 ~> (HeapRef System.Exception.InnerExceptionPrefix)
+		| ((HeapRef obj) <: VSharp.Test.Tests.Typecast.Pawn) | 0 == obj ~> (HeapRef System.Exception.InnerExceptionPrefix)]
 	| _COMPlusExceptionCode ~> UNION[
-		| !((HeapRef obj) <: VSharp.Test.Tests.Typecast.Pawn) & !(0 == obj) & !hasKey#3 ~> -532462766
-		| ((HeapRef obj) <: VSharp.Test.Tests.Typecast.Pawn) | 0 == obj | hasKey#3 ~> System.Exception._COMPlusExceptionCode]
+		| !((HeapRef obj) <: VSharp.Test.Tests.Typecast.Pawn) & !(0 == obj) & !hasKey#16 ~> -532462766
+		| !((HeapRef obj) <: VSharp.Test.Tests.Typecast.Pawn) & !(0 == obj) & hasKey#17 ~> System.Exception._COMPlusExceptionCode
+		| ((HeapRef obj) <: VSharp.Test.Tests.Typecast.Pawn) | 0 == obj ~> System.Exception._COMPlusExceptionCode]
 	| s_DispatchStateLock ~> UNION[
-		| !((HeapRef obj) <: VSharp.Test.Tests.Typecast.Pawn) & !(0 == obj) & !hasKey#3 ~> (HeapRef 4)
-		| ((HeapRef obj) <: VSharp.Test.Tests.Typecast.Pawn) | 0 == obj | hasKey#3 ~> (HeapRef System.Exception.s_DispatchStateLock)]]
+		| !((HeapRef obj) <: VSharp.Test.Tests.Typecast.Pawn) & !(0 == obj) & !hasKey#4 ~> (HeapRef 3.1.2.1)
+		| !((HeapRef obj) <: VSharp.Test.Tests.Typecast.Pawn) & !(0 == obj) & hasKey#5 ~> (HeapRef System.Exception.s_DispatchStateLock)
+		| ((HeapRef obj) <: VSharp.Test.Tests.Typecast.Pawn) | 0 == obj ~> (HeapRef System.Exception.s_DispatchStateLock)]]
 System.InvalidCastException ==> CLASS []
-System.Object ==> CLASS []
-System.SystemException ==> CLASS []
 VSharp.Test.Tests.Typecast.Typecast ==> CLASS []

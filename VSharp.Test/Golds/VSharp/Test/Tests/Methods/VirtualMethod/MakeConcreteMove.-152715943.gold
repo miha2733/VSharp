@@ -5,9 +5,8 @@ HEAP:
 ---------- h0 = ----------
 1 ==> VSharp.Test.Tests.Typecast.Piece CLASS [
 	| VSharp::Test::Tests::Typecast::Piece::Rate ~> 0
-	| VSharp::Test::Tests::Typecast::Piece::_xCoord ~> c.VSharp::Test::Tests::Typecast::Coord::X
-	| VSharp::Test::Tests::Typecast::Piece::_yCoord ~> c.VSharp::Test::Tests::Typecast::Coord::Y]
+	| VSharp::Test::Tests::Typecast::Piece::_xCoord ~> c.c.VSharp::Test::Tests::Typecast::Coord::X
+	| VSharp::Test::Tests::Typecast::Piece::_yCoord ~> c.c.VSharp::Test::Tests::Typecast::Coord::Y]
 ---------- s1 = ----------
-System.Object ==> CLASS []
 VSharp.Test.Tests.Methods.VirtualMethod ==> CLASS []
 VSharp.Test.Tests.Typecast.Piece ==> CLASS []

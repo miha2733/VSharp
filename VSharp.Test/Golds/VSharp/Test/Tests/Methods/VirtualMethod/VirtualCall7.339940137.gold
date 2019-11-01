@@ -14,6 +14,5 @@ HEAP:
 	((!(0 == a) & (VSharp.Test.Tests.Methods.VirtualJ`1[System.Single] <: (HeapRef a)) & n <= 10 | (!(n <= 10) & (VSharp.Test.Tests.Methods.VirtualJ`1[System.Single] <: (HeapRef a)) | 0 == a) & (!(n <= 10) | 0 == a)) & (!(n <= 10) | (VSharp.Test.Tests.Methods.VirtualJ`1[System.Single] <: (HeapRef a)) | 0 == a), s0)] } where
 ---------- s0 = ----------
 VSharp.Test.Tests.Methods.VirtualC ==> CLASS []
-VSharp.Test.Tests.Methods.VirtualI`1[System.Single] ==> CLASS []
 VSharp.Test.Tests.Methods.VirtualJ`1[System.Single] ==> CLASS []
 VSharp.Test.Tests.Methods.VirtualMethod ==> CLASS []

@@ -16,5 +16,4 @@ HEAP:
 ---------- s0 = ----------
 VSharp.Test.Tests.Methods.IVirtual ==> CLASS []
 VSharp.Test.Tests.Methods.VirtualC ==> CLASS []
-VSharp.Test.Tests.Methods.VirtualH ==> CLASS []
 VSharp.Test.Tests.Methods.VirtualMethod ==> CLASS []

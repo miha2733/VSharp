@@ -15,5 +15,4 @@ HEAP:
 	((!((HeapRef a) <: VSharp.Test.Tests.Methods.VirtualE) & !(0 == a) & (VSharp.Test.Tests.Methods.VirtualB <: (HeapRef a)) | (((HeapRef a) <: VSharp.Test.Tests.Methods.VirtualE) & (VSharp.Test.Tests.Methods.VirtualE <: (HeapRef a)) | 0 == a) & (((HeapRef a) <: VSharp.Test.Tests.Methods.VirtualE) | 0 == a)) & (((HeapRef a) <: VSharp.Test.Tests.Methods.VirtualE) | (VSharp.Test.Tests.Methods.VirtualB <: (HeapRef a)) | 0 == a), s0)] } where
 ---------- s0 = ----------
 VSharp.Test.Tests.Methods.VirtualB ==> CLASS []
-VSharp.Test.Tests.Methods.VirtualE ==> CLASS []
 VSharp.Test.Tests.Methods.VirtualMethod ==> CLASS []

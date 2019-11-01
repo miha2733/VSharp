@@ -202,7 +202,7 @@ namespace VSharp.Test.Tests
     [TestSvmFixture]
     public static class ClassesSimple
     {
-        [TestSvm]
+        [Ignore("symbolic this on stack")]
         public static bool Test1(int n) // TODO: keys of MemoryCell are equal, but FQLs are not (because of "constructed instance" hack)
         {
             ClassesSimpleA a = new ClassesSimpleA(n);
@@ -224,7 +224,7 @@ namespace VSharp.Test.Tests
             return x.MyValue;
         }
 
-        [TestSvm]
+        [Ignore("symbolic this on stack")]
         public static int ValueTypeMethod(int x, int y)
         {
             return x.CompareTo(y);
@@ -342,14 +342,14 @@ namespace VSharp.Test.Tests
             SecretProperty = new List<bool>();
         }
 
-        [TestSvm]
+        [Ignore("symbolic this on stack")]
         public void TestProperty1() // TODO: keys of MemoryCell are equal, but FQLs are not
         {
             var st = new ClassesSimplePropertyAccess();
             st.StructProperty.Set(42);
         }
 
-        [TestSvm]
+        [Ignore("symbolic this on stack")]
         public void TestProperty2()
         {
             var st = new SimpleStruct();

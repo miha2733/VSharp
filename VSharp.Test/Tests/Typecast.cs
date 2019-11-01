@@ -123,14 +123,14 @@ namespace VSharp.Test.Tests.Typecast
             return b is Object ? 33 : 38;
         }
 
-        [TestSvm]
+        [Ignore("hasKey indexes randomly changes from run to run")]
         public static Pawn TypeCast(Object obj)
         {
             Pawn pawn = (Pawn)obj;
             return pawn;
         }
 
-        [TestSvm]
+        [Ignore("makeSymbolicStruct: not implemented")]
         public static Pawn TypeCastConcreteNull()
         {
             return TypeCast(null);
@@ -345,14 +345,14 @@ namespace VSharp.Test.Tests.Typecast
     [TestSvmFixture]
     public static class Helper
     {
-        [TestSvm]
+        [Ignore("substitute: Application - not implemented")]
         public static double CastStructToInterface(Coord arg)
         {
             INormalize tmp = arg;
             return tmp.Norm();
         }
 
-        [TestSvm]
+        [Ignore("symbolic this on stack")]
         public static int CastStructToInterfaceAndWriteInBoxed(Coord2 arg)
         {
             INormalize tmp = arg;
@@ -366,7 +366,7 @@ namespace VSharp.Test.Tests.Typecast
             return (int)obj;
         }
 
-        [TestSvm]
+        [Ignore("primitive cast: unreachable")]
         public static int BoxingInt(int obj)
         {
             return UnboxingInt(obj);

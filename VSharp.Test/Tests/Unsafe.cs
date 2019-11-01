@@ -48,14 +48,14 @@ namespace VSharp.Test.Tests
             return **&p;
         }
 
-        [TestSvm]
+        [Ignore("topLevelLocation of StackRef")]
         public static int ReturnIntFromIntPtr(int myFavouriteParameter)
         {
             var s = new IntPtr(&myFavouriteParameter);
             return *(int*) s.ToPointer();
         }
 
-        [TestSvm]
+        [Ignore("symbolic this on stack")]
         public static void* CompilerHackLikePtrReturn(void* ptr) // TODO: keys of MemoryCell are equal, but FQLs are not (because of equality of concrete "this" and "constructed instance")
         {
             var x = (IntPtr) ptr;

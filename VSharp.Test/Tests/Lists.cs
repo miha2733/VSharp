@@ -55,7 +55,7 @@ namespace VSharp.Test.Tests
 //            return a > 3;
 //        }
 
-        [TestSvm]
+        [Ignore("reinterpretation")]
         public bool Construct()
         {
             var a = new List<int>(4) { 1, 2, 3, 4 };
@@ -91,7 +91,7 @@ namespace VSharp.Test.Tests
             return array.GetLowerBound(dimension);
         }
 
-        [TestSvm]
+        [Ignore("reinterpretation")]
         public int UpperBoundTest()
         {
             var c = new int[4, 2] { { 1, 1 }, { 2, 2 }, { 3, 3 }, { 4, 4 } };

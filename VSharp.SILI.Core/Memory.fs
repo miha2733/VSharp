@@ -273,13 +273,15 @@ module internal Memory =
         | Bottom -> __unreachable__()
 
     and private makeSymbolicStruct metadata (source : IExtractingSymbolicConstantSource) structName fql typ =
-        match source with
-        | :? lazyInstantiation<obj> as liSource ->
+        let makeSymbolicStruct' liSource =
             let makeField mtd name typ fql =
                 let fieldName = sprintf "%s.%s" structName name
                 let fieldSource = {liSource with location = referenceBlockField liSource.location fieldName typ}
                 makeSymbolicInstance mtd fieldSource fieldName fql typ
             mkStruct metadata false makeField typ fql
+        match source with
+        | :? lazyInstantiation<obj> as liSource -> makeSymbolicStruct' liSource
+        | :? lazyInstantiation<term> as liSource -> makeSymbolicStruct' liSource
         | _ -> __notImplemented__()
 
     let private genericLazyInstantiator metadata heap fql typ () =
