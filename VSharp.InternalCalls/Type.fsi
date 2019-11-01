@@ -10,3 +10,6 @@ module internal Type =
 
      [<Implements("System.Type System.Object.GetType(this)")>]
     val internal GetType : state -> term list -> term * state
+
+     [<Implements("System.Boolean System.Type.op_Inequality(System.Type, System.Type)")>]
+    val internal op_Inequality : state -> term list -> term * state

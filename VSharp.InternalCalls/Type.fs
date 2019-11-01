@@ -24,3 +24,10 @@ module Type =
         let dotNetTyp = obj |> Terms.TypeOf |> Types.ToDotNetType
         let termTypOfTyp = Types.FromDotNetType state (dotNetTyp.GetType())
         Concrete dotNetTyp termTypOfTyp, state
+
+    let internal op_Inequality (state : state) (args : term list) =
+        assert(List.length args = 2)
+        let typ1 = List.head args
+        let typ2 = args |> List.tail |> List.head
+        typ1 === typ2, state
+
