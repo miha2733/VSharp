@@ -57,6 +57,7 @@ module internal Z3 =
         Dict.getValueOrUpdate (ctx()).Cache.sorts typ (fun () ->
             match typ with
             | Bool -> (ctx()).MkBoolSort() :> Sort
+            | Numeric t when t.IsEnum -> (ctx()).MkIntSort() :> Sort
             | Numeric _ as t when Types.IsInteger t -> (ctx()).MkIntSort() :> Sort
             | Numeric _ as t when Types.IsReal t -> (ctx()).MkRealSort() :> Sort
             | Numeric t -> (ctx()).MkEnumSort(t.FullName, t.GetEnumNames()) :> Sort
@@ -75,9 +76,9 @@ module internal Z3 =
         | Bool -> (ctx()).MkBool(obj :?> bool) :> Expr
         | Numeric t when t = typeof<char> -> (ctx()).MkNumeral(System.Convert.ToInt32(obj :?> char) |> toString, type2Sort typ)
         | Numeric t when t.IsEnum ->
-            let sort = type2Sort typ :?> EnumSort in
-            let name = obj.ToString() in
-            FSharp.Collections.Array.find (toString >> ((=) name)) sort.Consts
+            let sort = type2Sort typ in
+            let number = obj :?> int in
+            (ctx()).MkNumeral(number |> toString, sort)
         | Numeric _ ->
             match obj with
             | :? concreteHeapAddress as addr ->

@@ -1,0 +1,9 @@
+METHOD: System.Type VSharp.Test.Tests.Enums.GetEnumType(VSharp.Test.Tests.Enums+Color)
+RESULT: VSharp.Test.Tests.Enums+Color
+HEAP:
+{ heap = h0, statics = s1 } where
+---------- h0 = ----------
+1 ==> c
+---------- s1 = ----------
+System.Object ==> CLASS []
+VSharp.Test.Tests.Enums ==> CLASS []
