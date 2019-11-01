@@ -42,6 +42,35 @@ namespace VSharp.Test
             return summary;
         }
 
+        private codeLocationSummary PrepareAndInvokeWithLogging(IDictionary<MethodInfo, codeLocationSummary> dict, MethodInfo m, Func<IMethodIdentifier, FSharpFunc<codeLocationSummary, codeLocationSummary>, codeLocationSummary> invoke)
+        {
+            IMethodIdentifier methodIdentifier = _explorer.MakeMethodIdentifier(m);
+            if (methodIdentifier == null)
+            {
+                var format = new PrintfFormat<string, Unit, string, Unit>($"WARNING: metadata method for {m.Name} not found!");
+                Logger.printLog(Logger.Warning, format);
+                return null;
+            }
+            dict?.Add(m, null);
+            var id = FSharpFunc<codeLocationSummary,codeLocationSummary>.FromConverter(x => x);
+            try
+            {
+                var summary = invoke(methodIdentifier, id);
+                if (dict != null)
+                {
+                    dict[m] = summary;
+                }
+                return summary;
+            }
+            catch (Exception e)
+            {
+                var str = string.Format(@"For method {0} got exception {1}", m, e);
+                PrintfFormat<Unit, Unit, string, Unit> printfFormat = new PrintfFormat<Unit, Unit, string, Unit>(str);
+                Logger.printLog(Logger.Error, printfFormat);
+                return null;
+            }
+        }
+
         private void InterpretEntryPoint(IDictionary<MethodInfo, codeLocationSummary> dictionary, MethodInfo m)
         {
             Assert.IsTrue(m.IsStatic);
@@ -50,7 +79,7 @@ namespace VSharp.Test
 
         private void Explore(IDictionary<MethodInfo, codeLocationSummary> dictionary, MethodInfo m)
         {
-            PrepareAndInvoke(dictionary, m, _explorer.Explore);
+            PrepareAndInvokeWithLogging(dictionary, m, _explorer.Explore);
         }
 
         private void ExploreType(List<string> ignoreList, MethodInfo ep, IDictionary<MethodInfo, codeLocationSummary> dictionary, Type t)
@@ -77,6 +106,7 @@ namespace VSharp.Test
 
         private static string ResultToString(codeLocationSummary summary)
         {
+            if (summary == null) return null;
             return $"{summary.result}\nHEAP:\n{ReplaceLambdaLines(API.Memory.Dump(summary.state))}";
         }
 
@@ -104,6 +134,13 @@ namespace VSharp.Test
             if (ep != null)
             {
                 InterpretEntryPoint(dictionary, ep);
+            }
+
+            foreach (var p in dictionary)
+            {
+                var str = string.Format(@"For method {0} got summary {1}", p.Key, ResultToString(p.Value));
+                PrintfFormat<Unit, Unit, string, Unit> printfFormat = new PrintfFormat<Unit, Unit, string, Unit>(str);
+                Logger.printLog(Logger.Info, printfFormat);
             }
 
             return dictionary.ToDictionary(kvp => kvp.Key, kvp => ResultToString(kvp.Value));
