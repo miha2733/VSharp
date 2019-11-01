@@ -6,6 +6,28 @@ namespace VSharp.Test.Tests
     [TestSvmFixture]
     public sealed class Arithmetics
     {
+
+        public enum Color
+        {
+            Red
+            , Blue
+            , Yellow
+        }
+
+        [TestSvm]
+        public static int Color2Int(Color c)
+        {
+            switch (c)
+            {
+                case Color.Blue:
+                    return 500;
+                case Color.Red:
+                    return 10;
+                default:
+                    return 42;
+            }
+        }
+
         // 7 + n
         [Ignore("Reinterpretation is not implemented")]
         public static int ArithmeticsMethod1(int n, int m)

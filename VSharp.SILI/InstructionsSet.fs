@@ -8,6 +8,7 @@ open VSharp
 open VSharp.Core
 open VSharp.Reflection
 open CFG
+open VSharp.Core
 
 type public ILMethodMetadata =
     { methodBase : MethodBase }
@@ -313,10 +314,15 @@ module internal InstructionsSet =
                 (fun (t, state) -> {cilState with functionResult = Some t; state = state} :: [])
          | _ -> __unreachable__()
     let ConcreteTerm2BooleanTerm (term : term) =
-        match TypeOf term with
+        let termTyp = TypeOf term
+        let dotNetTyp = Types.ToDotNetType termTyp
+        match termTyp with
         | Bool -> term
         | t when t = TypeUtils.int32Type -> term !== TypeUtils.Int32.Zero
         | _ when isReference term -> term !== MakeNullRef()
+        | _ when dotNetTyp.IsEnum ->
+            let zeroEnumValue = MakeNumber (System.Enum.Parse(dotNetTyp, "0"))
+            term !== zeroEnumValue
         | _ -> __notImplemented__()
     let ceq (cilState : cilState) =
         match cilState.opStack with
