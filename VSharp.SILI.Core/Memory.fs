@@ -607,6 +607,8 @@ module internal Memory =
                 let term, state = hierarchicalAccess validate read actionNull updateDefined metadata state ref
                 match shift with
                 | None when typeOf term = viewType -> term, state
+                | None ->
+                    TypeCasting.cast term.metadata false state term viewType (fun _ _ _ -> __notImplemented__()) id
                 | _ -> __notImplemented__() // TODO: [columpio] [Reinterpretation]
             | t -> internalfailf "expected reference or pointer, but got %O" t
         guardedErroredStatedApply doAccess

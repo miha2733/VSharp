@@ -78,6 +78,8 @@ module internal TypeUtils =
     let (|Float64|_|) t = if Terms.TypeOf t = float64TermType then Some(t) else None
     let (|Float|_|) t   = if Terms.TypeOf t |> isFloatTermType then Some(t) else None
 
+    module UInt8 =
+        let Zero = MakeNumber 0uy
     module Int32 =
         let Zero = MakeNumber 0
         let One = MakeNumber 1
@@ -317,6 +319,7 @@ module internal InstructionsSet =
         let termTyp = TypeOf term
         match termTyp with
         | Bool -> term
+        | t when t = TypeUtils.uint8Type -> term !== TypeUtils.UInt8.Zero
         | t when t = TypeUtils.int32Type -> term !== TypeUtils.Int32.Zero
         | _ when isReference term -> term !== MakeNullRef()
         | Numeric dotNetTyp when dotNetTyp.IsEnum ->
