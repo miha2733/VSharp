@@ -315,12 +315,11 @@ module internal InstructionsSet =
          | _ -> __unreachable__()
     let ConcreteTerm2BooleanTerm (term : term) =
         let termTyp = TypeOf term
-        let dotNetTyp = Types.ToDotNetType termTyp
         match termTyp with
         | Bool -> term
         | t when t = TypeUtils.int32Type -> term !== TypeUtils.Int32.Zero
         | _ when isReference term -> term !== MakeNullRef()
-        | _ when dotNetTyp.IsEnum ->
+        | Numeric dotNetTyp when dotNetTyp.IsEnum ->
             let zeroEnumValue = MakeNumber (System.Enum.Parse(dotNetTyp, "0"))
             term !== zeroEnumValue
         | _ -> __notImplemented__()
