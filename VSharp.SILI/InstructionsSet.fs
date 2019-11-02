@@ -109,12 +109,9 @@ module internal InstructionsSet =
     let idTransformation term state k = k (term, state)
 
     let pushResultOnStack (cilState : cilState) (res, state) =
-        let rec splitUnions state (term : term) =
-            match term.term with
-            | Union gvs -> gvs |> List.map (fun (g, v) -> splitUnions {state with pc = g :: state.pc} v) |> List.concat
-            | Nop -> {cilState with state = state} :: []
-            | _ -> {cilState with opStack = term :: cilState.opStack; state = state} :: []
-        splitUnions state res
+        if res <> Nop then
+            {cilState with opStack = res :: cilState.opStack; state = state}
+        else {cilState with state = state}
     let mapFunctionResultsk mapResult =
         let mapResults (result, cilState : cilState) =
             let _, state = mapResult (result, cilState.state)
@@ -125,10 +122,10 @@ module internal InstructionsSet =
         let mapAndPushResult (term, cilState : cilState) =
             mapResult (term, cilState.state) |> pushResultOnStack cilState
         let exceptionCheck ((_, cilState : cilState) as result) =
-            if cilState.HasException then cilState :: []
+            if cilState.HasException then cilState
             else mapAndPushResult result
         Cps.List.map exceptionCheck
-    let pushFunctionResults results = mapAndPushFunctionResultsk id results List.concat
+    let pushFunctionResults results = mapAndPushFunctionResultsk id results id
 
     // --------------------------------------- Primitives ----------------------------------------
 
@@ -215,6 +212,7 @@ module internal InstructionsSet =
         let reference, state, _ = getVarTerm cilState.state index cfg.methodBase
         Memory.Dereference state reference
         |> pushResultOnStack cilState
+        |> List.singleton
 
     let ldarg numberCreator (cfg : cfgData) shiftedOffset (cilState : cilState) =
         let argumentIndex = numberCreator cfg.ilBytes shiftedOffset
@@ -229,7 +227,7 @@ module internal InstructionsSet =
             | Some _, false ->
                 let term, state = getArgTerm state (argumentIndex - 1) cfg.methodBase
                 Memory.Dereference state term
-        pushResultOnStack cilState (arg, state)
+        pushResultOnStack cilState (arg, state) :: []
     let ldarga numberCreator (cfg : cfgData) shiftedOffset (cilState : cilState) =
         let argumentIndex = numberCreator cfg.ilBytes shiftedOffset
         let state = cilState.state
@@ -238,7 +236,7 @@ module internal InstructionsSet =
             | None -> getArgTerm state argumentIndex cfg.methodBase
             | Some _ when argumentIndex = 0 -> internalfail "can't load address of ``this''"
             | Some _ -> getArgTerm state (argumentIndex - 1) cfg.methodBase
-        pushResultOnStack cilState (address, state)
+        pushResultOnStack cilState (address, state) :: []
     let stloc numberCreator (cfg : cfgData) shiftedOffset (cilState : cilState) =
         let variableIndex = numberCreator cfg.ilBytes shiftedOffset
         let state = cilState.state
@@ -316,21 +314,15 @@ module internal InstructionsSet =
                 (fun (t, state) -> {cilState with functionResult = Some t; state = state} :: [])
          | _ -> __unreachable__()
     let ConcreteTerm2BooleanTerm (term : term) =
-        let doStuff (term : term) =
-            let termTyp = TypeOf term
-            match termTyp with
-            | Bool -> term
-            | t when t = TypeUtils.int32Type -> term !== TypeUtils.Int32.Zero
-            | _ when isReference term -> !! (IsNullReference term)
-            | Numeric dotNetTyp when dotNetTyp.IsEnum ->
-                let zeroEnumValue = MakeNumber (System.Enum.Parse(dotNetTyp, "0"))
-                term !== zeroEnumValue
-            | _ -> __notImplemented__()
-        let rec removeUnionCase (term : term) = // TODO: remove this dirty hack
-            match term.term with
-            | Union gvs -> gvs |> List.map (fun (g, v) -> (g, removeUnionCase v)) |> Union
-            | _ -> doStuff term
-        removeUnionCase term
+        let termTyp = TypeOf term
+        match termTyp with
+        | Bool -> term
+        | t when t = TypeUtils.int32Type -> term !== TypeUtils.Int32.Zero
+        | _ when isReference term -> term !== MakeNullRef()
+        | Numeric dotNetTyp when dotNetTyp.IsEnum ->
+            let zeroEnumValue = MakeNumber (System.Enum.Parse(dotNetTyp, "0"))
+            term !== zeroEnumValue
+        | _ -> __notImplemented__()
     let ceq (cilState : cilState) =
         match cilState.opStack with
         | y :: x :: _ ->
@@ -353,19 +345,12 @@ module internal InstructionsSet =
             { cilState with opStack = stack; state = state} :: []
         | _ -> __notImplemented__()
     let brcommon condTransform offsets (cilState : cilState) =
-        let offsetThen, offsetElse =
-            match offsets with
-            | [offsetThen; offsetElse] -> offsetThen, offsetElse
-            | _ -> __unreachable__()
         match cilState.opStack with
-//        | reference :: stack when isReference reference ->
-//           let cilState = {cilState with opStack = stack}
-//           StatedConditionalExecutionCIL cilState
-//               (fun state k -> k (condTransform <| IsNullReference reference, state))
-//               (fun cilState k -> k [offsetThen, cilState])
-//               (fun cilState k -> k [offsetElse, cilState])
-//               id
         | cond :: stack ->
+           let offsetThen, offsetElse =
+               match offsets with
+               | [offsetThen; offsetElse] -> offsetThen, offsetElse
+               | _ -> __unreachable__()
            let cilState = {cilState with opStack = stack}
            StatedConditionalExecutionCIL cilState
                (fun state k -> k (condTransform <| ConcreteTerm2BooleanTerm cond, state))
@@ -437,12 +422,12 @@ module internal InstructionsSet =
         let string = cfg.methodBase.Module.ResolveString stringToken
         let state = cilState.state
         let referenceAndState = Memory.AllocateString string state
-        pushResultOnStack cilState referenceAndState
+        pushResultOnStack cilState referenceAndState :: []
     let allocateValueTypeInHeap v (cilState : cilState) =
         let address, state = Memory.AllocateInHeap cilState.state (TypeOf v) v
         {cilState with opStack = address :: cilState.opStack; state = state} :: []
     let ldnull (cilState : cilState) =
-        pushResultOnStack cilState (MakeNullRef (), cilState.state)
+        pushResultOnStack cilState (MakeNullRef (), cilState.state) :: []
 
     let castTopOfOperationalStack isChecked targetType typeForStack (cilState : cilState) k =
         match cilState.opStack with
@@ -455,21 +440,21 @@ module internal InstructionsSet =
     let ldloca numberCreator (cfg : cfgData) shiftedOffset (cilState : cilState) =
         let index = numberCreator cfg.ilBytes shiftedOffset
         let term, state, _ = getVarTerm cilState.state index cfg.methodBase
-        pushResultOnStack cilState (term, state)
+        pushResultOnStack cilState (term, state) :: []
     let newarr (cfg : cfgData) offset (cilState : cilState) =
         let state = cilState.state
         let elemType = resolveTermTypeFromMetadata state cfg (offset + OpCodes.Newarr.Size)
         match cilState.opStack with
         | numElements :: stack ->
             let refAndState = Memory.AllocateDefaultArray state [numElements] (ArrayType(elemType, Vector))
-            pushResultOnStack {cilState with opStack = stack} refAndState
+            pushResultOnStack {cilState with opStack = stack} refAndState :: []
         | _ -> __notImplemented__()
     let ldlen (cilState : cilState) =
         match cilState.opStack with
         | arrayRef :: stack ->
             let array, state = Memory.Dereference cilState.state arrayRef
             let length = Memory.ArrayLength array
-            pushResultOnStack {cilState with opStack = stack} (length, state)
+            pushResultOnStack {cilState with opStack = stack} (length, state) :: []
         | _ -> __notImplemented__()
     let switch newOffsets (cilState : cilState) =
         match cilState.opStack with
@@ -507,7 +492,7 @@ module internal InstructionsSet =
         | index :: arrayRef :: stack ->
             let reference, state = Memory.ReferenceArrayIndex cilState.state arrayRef [index]
             let value, state = Memory.Dereference state reference
-            cast value state (pushResultOnStack {cilState with opStack = stack})
+            cast value state (pushResultOnStack {cilState with opStack = stack} >> List.singleton)
         | _ -> __notImplemented__()
     let ldelemTyp typ (cilState : cilState) = ldelemWithCast (castUnchecked typ) cilState
     let ldelem (cfg : cfgData) offset (cilState : cilState) =
@@ -523,7 +508,7 @@ module internal InstructionsSet =
             | :? Type as t -> Terms.Concrete t.TypeHandle (Types.FromDotNetType state typeof<RuntimeTypeHandle>)
             | :? MethodInfo as mi -> Terms.Concrete mi.MethodHandle (Types.FromDotNetType state typeof<RuntimeMethodHandle>)
             | _ -> internalfailf "Could not resolve token"
-        pushResultOnStack cilState (res, state)
+        pushResultOnStack cilState (res, state) :: []
     let ldvirtftn (cfg : cfgData) offset (cilState : cilState) =
         let ancestorMethodBase = resolveMethodFromMetadata cfg (offset + OpCodes.Ldvirtftn.Size)
         match cilState.opStack with
@@ -532,17 +517,17 @@ module internal InstructionsSet =
             let t = this |> SightTypeOfRef |> Types.ToDotNetType
             let methodInfo = t.GetMethod(ancestorMethodBase.Name, allBindingFlags)
             let methodPtr = Terms.Concrete methodInfo (Types.FromDotNetType cilState.state (methodInfo.GetType()))
-            pushResultOnStack {cilState with opStack = stack} (methodPtr, cilState.state)
+            pushResultOnStack {cilState with opStack = stack} (methodPtr, cilState.state) :: []
         | _ -> __notImplemented__()
     let ldftn (cfg : cfgData) offset (cilState : cilState) =
         let methodInfo = resolveMethodFromMetadata cfg (offset + OpCodes.Ldftn.Size)
         let methodPtr = Terms.Concrete methodInfo (Types.FromDotNetType cilState.state (methodInfo.GetType()))
-        pushResultOnStack cilState (methodPtr, cilState.state)
+        pushResultOnStack cilState (methodPtr, cilState.state) :: []
     let castclass (cfg : cfgData) offset (cilState : cilState) : cilState list =
         match cilState.opStack with
         | term :: stack ->
             let typ = resolveTermTypeFromMetadata cilState.state cfg (offset + OpCodes.Castclass.Size)
-            castUnchecked typ term cilState.state (pushResultOnStack {cilState with opStack = stack})
+            castUnchecked typ term cilState.state (pushResultOnStack {cilState with opStack = stack} >> List.singleton)
         | _ -> __notImplemented__()
     let initobj (cfg : cfgData) offset (cilState : cilState) =
         match cilState.opStack with
@@ -556,7 +541,8 @@ module internal InstructionsSet =
         | address :: stack ->
             addressCast address cilState.state (fun (address, state) ->
             Memory.Dereference state address
-            |> pushResultOnStack {cilState with opStack = stack})
+            |> pushResultOnStack {cilState with opStack = stack}
+            |> List.singleton)
         | _ -> __notImplemented__()
     let ldindref (cilState : cilState) = ldind (fun value state k -> k (value, state)) cilState
     let clt = compare OperationType.Less idTransformation idTransformation
@@ -590,7 +576,7 @@ module internal InstructionsSet =
         | address :: stack ->
             let typ = resolveTermTypeFromMetadata cilState.state cfg (offset + OpCodes.Ldobj.Size)
             let value, state = Memory.Dereference cilState.state address
-            castUnchecked typ value state (pushResultOnStack {cilState with opStack = stack})
+            castUnchecked typ value state (pushResultOnStack {cilState with opStack = stack} >> List.singleton)
         | _ -> __notImplemented__()
     let stobj (cfg : cfgData) offset (cilState : cilState) =
         match cilState.opStack with
@@ -717,51 +703,51 @@ module internal InstructionsSet =
     opcode2Function.[hashFunction OpCodes.Ldstr]              <- zipWithOneOffset <| ldstr
     opcode2Function.[hashFunction OpCodes.Ldnull]             <- zipWithOneOffset <| fun _ _ -> ldnull
     opcode2Function.[hashFunction OpCodes.Conv_I]             <- zipWithOneOffset <| fun _ _ -> convi //castTopOfOperationalStack false TypeUtils.nativeintType TypeUtils.nativeintType
-    opcode2Function.[hashFunction OpCodes.Conv_I1]            <- zipWithOneOffset <| fun _ _ st -> castTopOfOperationalStack false TypeUtils.int8Type TypeUtils.int32Type st id
-    opcode2Function.[hashFunction OpCodes.Conv_I2]            <- zipWithOneOffset <| fun _ _ st -> castTopOfOperationalStack false TypeUtils.int16Type TypeUtils.int32Type st id
-    opcode2Function.[hashFunction OpCodes.Conv_I4]            <- zipWithOneOffset <| fun _ _ st -> castTopOfOperationalStack false TypeUtils.int32Type TypeUtils.int32Type st id
-    opcode2Function.[hashFunction OpCodes.Conv_I8]            <- zipWithOneOffset <| fun _ _ st -> castTopOfOperationalStack false TypeUtils.int64Type TypeUtils.int64Type st id
-    opcode2Function.[hashFunction OpCodes.Conv_R4]            <- zipWithOneOffset <| fun _ _ st -> castTopOfOperationalStack false TypeUtils.float32TermType TypeUtils.float32TermType st id
-    opcode2Function.[hashFunction OpCodes.Conv_R8]            <- zipWithOneOffset <| fun _ _ st -> castTopOfOperationalStack false TypeUtils.float64TermType TypeUtils.float64TermType st id
-    opcode2Function.[hashFunction OpCodes.Conv_U1]            <- zipWithOneOffset <| fun _ _ st -> castTopOfOperationalStack false TypeUtils.uint8Type TypeUtils.int32Type st id
-    opcode2Function.[hashFunction OpCodes.Conv_U2]            <- zipWithOneOffset <| fun _ _ st -> castTopOfOperationalStack false TypeUtils.uint16Type TypeUtils.int32Type st id
-    opcode2Function.[hashFunction OpCodes.Conv_U4]            <- zipWithOneOffset <| fun _ _ st -> castTopOfOperationalStack false TypeUtils.uint32Type TypeUtils.int32Type st id
-    opcode2Function.[hashFunction OpCodes.Conv_U8]            <- zipWithOneOffset <| fun _ _ st -> castTopOfOperationalStack false TypeUtils.uint64Type TypeUtils.int64Type st id
-    opcode2Function.[hashFunction OpCodes.Conv_R_Un]          <- zipWithOneOffset <| fun _ _ st -> castTopOfOperationalStack false TypeUtils.float64TermType TypeUtils.float64TermType st id
+    opcode2Function.[hashFunction OpCodes.Conv_I1]            <- zipWithOneOffset <| fun _ _ st -> castTopOfOperationalStack false TypeUtils.int8Type TypeUtils.int32Type st List.singleton
+    opcode2Function.[hashFunction OpCodes.Conv_I2]            <- zipWithOneOffset <| fun _ _ st -> castTopOfOperationalStack false TypeUtils.int16Type TypeUtils.int32Type st List.singleton
+    opcode2Function.[hashFunction OpCodes.Conv_I4]            <- zipWithOneOffset <| fun _ _ st -> castTopOfOperationalStack false TypeUtils.int32Type TypeUtils.int32Type st List.singleton
+    opcode2Function.[hashFunction OpCodes.Conv_I8]            <- zipWithOneOffset <| fun _ _ st -> castTopOfOperationalStack false TypeUtils.int64Type TypeUtils.int64Type st List.singleton
+    opcode2Function.[hashFunction OpCodes.Conv_R4]            <- zipWithOneOffset <| fun _ _ st -> castTopOfOperationalStack false TypeUtils.float32TermType TypeUtils.float32TermType st List.singleton   //TODO: native float
+    opcode2Function.[hashFunction OpCodes.Conv_R8]            <- zipWithOneOffset <| fun _ _ st -> castTopOfOperationalStack false TypeUtils.float64TermType TypeUtils.float64TermType st List.singleton  //TODO: native float
+    opcode2Function.[hashFunction OpCodes.Conv_U1]            <- zipWithOneOffset <| fun _ _ st -> castTopOfOperationalStack false TypeUtils.uint8Type TypeUtils.int32Type st List.singleton
+    opcode2Function.[hashFunction OpCodes.Conv_U2]            <- zipWithOneOffset <| fun _ _ st -> castTopOfOperationalStack false TypeUtils.uint16Type TypeUtils.int32Type st List.singleton
+    opcode2Function.[hashFunction OpCodes.Conv_U4]            <- zipWithOneOffset <| fun _ _ st -> castTopOfOperationalStack false TypeUtils.uint32Type TypeUtils.int32Type st List.singleton
+    opcode2Function.[hashFunction OpCodes.Conv_U8]            <- zipWithOneOffset <| fun _ _ st -> castTopOfOperationalStack false TypeUtils.uint64Type TypeUtils.int64Type st List.singleton
+    opcode2Function.[hashFunction OpCodes.Conv_R_Un]          <- zipWithOneOffset <| fun _ _ st -> castTopOfOperationalStack false TypeUtils.float64TermType TypeUtils.float64TermType st List.singleton
     opcode2Function.[hashFunction OpCodes.Conv_U]             <- zipWithOneOffset <| fun _ _ -> convu //castTopOfOperationalStack false TypeUtils.unativeintType TypeUtils.nativeintType
     opcode2Function.[hashFunction OpCodes.Newarr]             <- zipWithOneOffset <| newarr
     opcode2Function.[hashFunction OpCodes.Ldlen]              <- zipWithOneOffset <| fun _ _ -> ldlen
     opcode2Function.[hashFunction OpCodes.Switch]             <- fun _ _ -> switch
     opcode2Function.[hashFunction OpCodes.Conv_Ovf_I]         <- zipWithOneOffset <| fun _ _ _ -> __notImplemented__()
-    opcode2Function.[hashFunction OpCodes.Conv_Ovf_I1]        <- zipWithOneOffset <| fun _ _ st -> castTopOfOperationalStack true TypeUtils.int8Type TypeUtils.int32Type st id
-    opcode2Function.[hashFunction OpCodes.Conv_Ovf_I2]        <- zipWithOneOffset <| fun _ _ st -> castTopOfOperationalStack true TypeUtils.int16Type TypeUtils.int32Type st id
-    opcode2Function.[hashFunction OpCodes.Conv_Ovf_I4]        <- zipWithOneOffset <| fun _ _ st -> castTopOfOperationalStack true TypeUtils.int32Type TypeUtils.int32Type st id
-    opcode2Function.[hashFunction OpCodes.Conv_Ovf_I8]        <- zipWithOneOffset <| fun _ _ st -> castTopOfOperationalStack true TypeUtils.int64Type TypeUtils.int64Type st id
+    opcode2Function.[hashFunction OpCodes.Conv_Ovf_I1]        <- zipWithOneOffset <| fun _ _ st -> castTopOfOperationalStack true TypeUtils.int8Type TypeUtils.int32Type st List.singleton
+    opcode2Function.[hashFunction OpCodes.Conv_Ovf_I2]        <- zipWithOneOffset <| fun _ _ st -> castTopOfOperationalStack true TypeUtils.int16Type TypeUtils.int32Type st List.singleton
+    opcode2Function.[hashFunction OpCodes.Conv_Ovf_I4]        <- zipWithOneOffset <| fun _ _ st -> castTopOfOperationalStack true TypeUtils.int32Type TypeUtils.int32Type st List.singleton
+    opcode2Function.[hashFunction OpCodes.Conv_Ovf_I8]        <- zipWithOneOffset <| fun _ _ st -> castTopOfOperationalStack true TypeUtils.int64Type TypeUtils.int64Type st List.singleton
     opcode2Function.[hashFunction OpCodes.Conv_Ovf_U]         <- zipWithOneOffset <| fun _ _ _ -> __notImplemented__()
-    opcode2Function.[hashFunction OpCodes.Conv_Ovf_U1]        <- zipWithOneOffset <| fun _ _ st -> castTopOfOperationalStack true TypeUtils.uint8Type TypeUtils.int32Type st id
-    opcode2Function.[hashFunction OpCodes.Conv_Ovf_U2]        <- zipWithOneOffset <| fun _ _ st -> castTopOfOperationalStack true TypeUtils.uint16Type TypeUtils.int32Type st id
-    opcode2Function.[hashFunction OpCodes.Conv_Ovf_U4]        <- zipWithOneOffset <| fun _ _ st -> castTopOfOperationalStack true TypeUtils.uint32Type TypeUtils.int32Type st id
-    opcode2Function.[hashFunction OpCodes.Conv_Ovf_U8]        <- zipWithOneOffset <| fun _ _ st -> castTopOfOperationalStack true TypeUtils.uint64Type TypeUtils.int64Type st id
-    opcode2Function.[hashFunction OpCodes.Conv_Ovf_I_Un]      <- zipWithOneOffset <| fun _ _ st -> castTopOfOperationalStack false TypeUtils.unativeintType TypeUtils.unativeintType st (fun sts ->
-        sts |> List.map (fun st -> castTopOfOperationalStack true TypeUtils.nativeintType TypeUtils.nativeintType st id) |> List.concat)
-    opcode2Function.[hashFunction OpCodes.Conv_Ovf_I1_Un]     <- zipWithOneOffset <| fun _ _ st -> castTopOfOperationalStack false TypeUtils.uint32Type TypeUtils.uint32Type st (fun sts ->
-        sts |> List.map (fun st -> castTopOfOperationalStack true TypeUtils.int8Type TypeUtils.int32Type st id) |> List.concat)
-    opcode2Function.[hashFunction OpCodes.Conv_Ovf_I2_Un]     <- zipWithOneOffset <| fun _ _ st -> castTopOfOperationalStack false TypeUtils.uint32Type TypeUtils.uint32Type st (fun sts ->
-        sts |> List.map (fun st -> castTopOfOperationalStack true TypeUtils.int16Type TypeUtils.int32Type st id) |> List.concat)
-    opcode2Function.[hashFunction OpCodes.Conv_Ovf_I4_Un]     <- zipWithOneOffset <| fun _ _ st -> castTopOfOperationalStack false TypeUtils.uint32Type TypeUtils.uint32Type st (fun sts ->
-        sts |> List.map (fun st -> castTopOfOperationalStack true TypeUtils.int32Type TypeUtils.int32Type st id) |> List.concat)
-    opcode2Function.[hashFunction OpCodes.Conv_Ovf_I8_Un]     <- zipWithOneOffset <| fun _ _ st -> castTopOfOperationalStack false TypeUtils.uint64Type TypeUtils.uint64Type st (fun sts ->
-        sts |> List.map (fun st -> castTopOfOperationalStack true TypeUtils.int64Type TypeUtils.int64Type st id) |> List.concat)
-    opcode2Function.[hashFunction OpCodes.Conv_Ovf_U_Un]      <- zipWithOneOffset <| fun _ _ st -> castTopOfOperationalStack false TypeUtils.unativeintType TypeUtils.unativeintType st (fun sts ->
-        sts |> List.map (fun st -> castTopOfOperationalStack true TypeUtils.unativeintType TypeUtils.nativeintType st id) |> List.concat)
-    opcode2Function.[hashFunction OpCodes.Conv_Ovf_U1_Un]     <- zipWithOneOffset <| fun _ _ st -> castTopOfOperationalStack false TypeUtils.uint32Type TypeUtils.uint32Type st (fun sts ->
-        sts |> List.map (fun st -> castTopOfOperationalStack true TypeUtils.uint8Type TypeUtils.int32Type st id) |> List.concat)
-    opcode2Function.[hashFunction OpCodes.Conv_Ovf_U2_Un]     <- zipWithOneOffset <| fun _ _ st -> castTopOfOperationalStack false TypeUtils.uint32Type TypeUtils.uint32Type st (fun sts ->
-        sts |> List.map (fun st -> castTopOfOperationalStack true TypeUtils.uint16Type TypeUtils.int32Type st id) |> List.concat)
-    opcode2Function.[hashFunction OpCodes.Conv_Ovf_U4_Un]     <- zipWithOneOffset <| fun _ _ st -> castTopOfOperationalStack false TypeUtils.uint32Type TypeUtils.uint32Type st (fun sts ->
-        sts |> List.map (fun st -> castTopOfOperationalStack true TypeUtils.uint32Type TypeUtils.int32Type st id) |> List.concat) // use case of OverflowException thrown ????
-    opcode2Function.[hashFunction OpCodes.Conv_Ovf_U8_Un]     <- zipWithOneOffset <| fun _ _ st -> castTopOfOperationalStack false TypeUtils.uint64Type TypeUtils.uint64Type st (fun sts ->
-        sts |> List.map (fun st -> castTopOfOperationalStack true TypeUtils.uint64Type TypeUtils.int64Type st id) |> List.concat) // use case of OverflowException thrown ????
+    opcode2Function.[hashFunction OpCodes.Conv_Ovf_U1]        <- zipWithOneOffset <| fun _ _ st -> castTopOfOperationalStack true TypeUtils.uint8Type TypeUtils.int32Type st List.singleton
+    opcode2Function.[hashFunction OpCodes.Conv_Ovf_U2]        <- zipWithOneOffset <| fun _ _ st -> castTopOfOperationalStack true TypeUtils.uint16Type TypeUtils.int32Type st List.singleton
+    opcode2Function.[hashFunction OpCodes.Conv_Ovf_U4]        <- zipWithOneOffset <| fun _ _ st -> castTopOfOperationalStack true TypeUtils.uint32Type TypeUtils.int32Type st List.singleton
+    opcode2Function.[hashFunction OpCodes.Conv_Ovf_U8]        <- zipWithOneOffset <| fun _ _ st -> castTopOfOperationalStack true TypeUtils.uint64Type TypeUtils.int64Type st List.singleton
+    opcode2Function.[hashFunction OpCodes.Conv_Ovf_I_Un]      <- zipWithOneOffset <| fun _ _ st -> castTopOfOperationalStack false TypeUtils.unativeintType TypeUtils.unativeintType st (fun st ->
+        castTopOfOperationalStack true TypeUtils.nativeintType TypeUtils.nativeintType st List.singleton)
+    opcode2Function.[hashFunction OpCodes.Conv_Ovf_I1_Un]     <- zipWithOneOffset <| fun _ _ st -> castTopOfOperationalStack false TypeUtils.uint32Type TypeUtils.uint32Type st (fun st ->
+        castTopOfOperationalStack true TypeUtils.int8Type TypeUtils.int32Type st List.singleton)
+    opcode2Function.[hashFunction OpCodes.Conv_Ovf_I2_Un]     <- zipWithOneOffset <| fun _ _ st -> castTopOfOperationalStack false TypeUtils.uint32Type TypeUtils.uint32Type st (fun st ->
+        castTopOfOperationalStack true TypeUtils.int16Type TypeUtils.int32Type st List.singleton)
+    opcode2Function.[hashFunction OpCodes.Conv_Ovf_I4_Un]     <- zipWithOneOffset <| fun _ _ st -> castTopOfOperationalStack false TypeUtils.uint32Type TypeUtils.uint32Type st (fun st ->
+        castTopOfOperationalStack true TypeUtils.int32Type TypeUtils.int32Type st List.singleton)
+    opcode2Function.[hashFunction OpCodes.Conv_Ovf_I8_Un]     <- zipWithOneOffset <| fun _ _ st -> castTopOfOperationalStack false TypeUtils.uint64Type TypeUtils.uint64Type st (fun st ->
+        castTopOfOperationalStack true TypeUtils.int64Type TypeUtils.int64Type st List.singleton)
+    opcode2Function.[hashFunction OpCodes.Conv_Ovf_U_Un]      <- zipWithOneOffset <| fun _ _ st -> castTopOfOperationalStack false TypeUtils.unativeintType TypeUtils.unativeintType st (fun st ->
+        castTopOfOperationalStack true TypeUtils.unativeintType TypeUtils.nativeintType st List.singleton)
+    opcode2Function.[hashFunction OpCodes.Conv_Ovf_U1_Un]     <- zipWithOneOffset <| fun _ _ st -> castTopOfOperationalStack false TypeUtils.uint32Type TypeUtils.uint32Type st (fun st ->
+        castTopOfOperationalStack true TypeUtils.uint8Type TypeUtils.int32Type st List.singleton)
+    opcode2Function.[hashFunction OpCodes.Conv_Ovf_U2_Un]     <- zipWithOneOffset <| fun _ _ st -> castTopOfOperationalStack false TypeUtils.uint32Type TypeUtils.uint32Type st (fun st ->
+        castTopOfOperationalStack true TypeUtils.uint16Type TypeUtils.int32Type st List.singleton)
+    opcode2Function.[hashFunction OpCodes.Conv_Ovf_U4_Un]     <- zipWithOneOffset <| fun _ _ st -> castTopOfOperationalStack false TypeUtils.uint32Type TypeUtils.uint32Type st (fun st ->
+        castTopOfOperationalStack true TypeUtils.uint32Type TypeUtils.int32Type st List.singleton) // use case of OverflowException thrown ????
+    opcode2Function.[hashFunction OpCodes.Conv_Ovf_U8_Un]     <- zipWithOneOffset <| fun _ _ st -> castTopOfOperationalStack false TypeUtils.uint64Type TypeUtils.uint64Type st (fun st ->
+        castTopOfOperationalStack true TypeUtils.uint64Type TypeUtils.int64Type st List.singleton) // use case of OverflowException thrown ????
     opcode2Function.[hashFunction OpCodes.Stelem]             <- zipWithOneOffset <| stelem
     opcode2Function.[hashFunction OpCodes.Stelem_I]           <- zipWithOneOffset <| (fun _ _ _ -> Prelude.__notImplemented__())
     opcode2Function.[hashFunction OpCodes.Stelem_I1]          <- zipWithOneOffset <| fun _ _ -> stelemTyp TypeUtils.int8Type
