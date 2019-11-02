@@ -29,8 +29,8 @@ module internal Operators =
         match op with
         | _ when Types.isBottom t1 -> k (left, state)
         | _ when Types.isBottom t2 -> k (right, state)
-        | _ when isDotNetType t1 && isDotNetType t2 ->
-            simplifyBinaryDotNetTypesOperation mtd op left right (withSnd state >> k) // TODO: check this hack
+//        | _ when isDotNetType t1 && isDotNetType t2 ->
+//            simplifyBinaryDotNetTypesOperation mtd op left right (withSnd state >> k) // TODO: check this hack
         | op when Propositional.isLogicalOperation op t1 t2 ->
             Propositional.simplifyBinaryConnective mtd op left right (withSnd state >> k)
         | op when Arithmetics.isArithmeticalOperation op t1 t2 ->
