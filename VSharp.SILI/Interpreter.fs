@@ -373,7 +373,7 @@ and public ILInterpreter() as this =
         let t = resolveTypeFromMetadata cfg (offset + OpCodes.Box.Size)
         let termType = Types.FromDotNetType cilState.state t
         match cilState.opStack with
-        | v :: stack ->
+        | v :: stack when not <| t.IsGenericParameter ->
             let boxValueType (cilState : cilState) =
                 let cilState' = {cilState with opStack = stack}
                 StatedConditionalExecutionCIL cilState'
@@ -383,6 +383,14 @@ and public ILInterpreter() as this =
             StatedConditionalExecutionCIL cilState
                 (fun state k -> k (Types.IsValueType termType, state))
                 boxValueType
+                (fun cilState k -> k [cilState])
+                id
+        | v :: stack -> // TODO: remove this when there would be way to introduce inner Type Variables X [for T === Nullable<X>]
+            StatedConditionalExecutionCIL cilState
+                (fun state k -> k (Types.IsValueType termType, state))
+                (fun cilState k ->
+                    let cilState' = {cilState with opStack = stack}
+                    allocateValueTypeInHeap v cilState' |> k)
                 (fun cilState k -> k [cilState])
                 id
         | _ -> __notImplemented__()
