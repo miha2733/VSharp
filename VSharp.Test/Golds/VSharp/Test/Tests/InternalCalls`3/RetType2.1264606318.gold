@@ -1,0 +1,11 @@
+METHOD: System.Type VSharp.Test.Tests.InternalCalls`3[T,U,W].RetType2(VSharp.Test.Tests.B)
+RESULT: VSharp.Test.Tests.B
+HEAP:
+{ heap = h0, statics = s1 } where
+---------- h0 = ----------
+1 ==> VSharp.Test.Tests.B STRUCT [
+	| VSharp::Test::Tests::B::x ~> b.VSharp::Test::Tests::B::x
+	| VSharp::Test::Tests::B::y ~> b.VSharp::Test::Tests::B::y]
+---------- s1 = ----------
+System.Object ==> CLASS []
+VSharp.Test.Tests.InternalCalls`3[T,U,W] ==> CLASS []

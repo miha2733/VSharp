@@ -112,8 +112,8 @@ module internal InstructionsSet =
         let rec splitUnions state (term : term) =
             match term.term with
             | Union gvs -> gvs |> List.map (fun (g, v) -> splitUnions {state with pc = g :: state.pc} v) |> List.concat
-            | Nop -> {cilState with opStack = res :: cilState.opStack; state = state} :: []
-            | _ -> {cilState with state = state} :: []
+            | Nop -> {cilState with state = state} :: []
+            | _ -> {cilState with opStack = term :: cilState.opStack; state = state} :: []
         splitUnions state res
     let mapFunctionResultsk mapResult =
         let mapResults (result, cilState : cilState) =

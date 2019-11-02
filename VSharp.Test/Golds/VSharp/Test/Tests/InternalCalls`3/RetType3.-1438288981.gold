@@ -1,0 +1,9 @@
+METHOD: System.Type VSharp.Test.Tests.InternalCalls`3[T,U,W].RetType3(T)
+RESULT: UNION[
+	| !(0 == t) ~> T
+	| 0 == t ~> null]
+HEAP:
+{ heap = <empty>, statics = s0 } where
+---------- s0 = ----------
+System.Object ==> CLASS []
+VSharp.Test.Tests.InternalCalls`3[T,U,W] ==> CLASS []
