@@ -20,12 +20,16 @@ module internal Operators =
         | OperationType.NotEqual -> simplify false |> k
         | _ -> __notImplemented__()
     let simplifyBinaryOperation mtd op isChecked state left right k =
+        let isDotNetType typ =
+            let t = Types.toDotNetType typ
+            let typeOfType = typedefof<System.Type>
+            typeOfType.IsAssignableFrom t
         let t1 = Terms.typeOf left
         let t2 = Terms.typeOf right
         match op with
         | _ when Types.isBottom t1 -> k (left, state)
         | _ when Types.isBottom t2 -> k (right, state)
-        | _ when Types.toDotNetType t1 = typedefof<System.Type> && Types.toDotNetType t2 = typedefof<System.Type> ->
+        | _ when isDotNetType t1 && isDotNetType t2 ->
             simplifyBinaryDotNetTypesOperation mtd op left right (withSnd state >> k) // TODO: check this hack
         | op when Propositional.isLogicalOperation op t1 t2 ->
             Propositional.simplifyBinaryConnective mtd op left right (withSnd state >> k)
