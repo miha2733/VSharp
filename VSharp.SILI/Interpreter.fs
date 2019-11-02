@@ -259,7 +259,7 @@ and public ILInterpreter() as this =
             let explicitLambda : cilState list symbolicLambda = invoke
             let lambda = Lambdas.make explicitLambda typ
             let lambdaRefAndState = Memory.AllocateInHeap cilState.state typ lambda
-            pushResultOnStack {cilState with opStack = stack} lambdaRefAndState :: []
+            pushResultOnStack {cilState with opStack = stack} lambdaRefAndState
         | _ -> __notImplemented__()
     member private x.NewObj (cfg : cfgData) offset (cilState : cilState) =
         let constructorInfo = resolveMethodFromMetadata cfg (offset + OpCodes.Newobj.Size) :?> ConstructorInfo
@@ -288,11 +288,11 @@ and public ILInterpreter() as this =
                 (fun state k -> k (Types.IsValueType constructedTermType, state))
                 valueTypeCase
                 referenceTypeCase
-                id
-        let nonDelegateCase (cilState : cilState) =
+                List.concat
+        let nonDelegateCase (cilState : cilState) : cilState list =
             x.InitEntryPoint cilState.state typ (fun state ->
             if typ.IsArray && constructorInfo.GetMethodBody() = null
-                then reduceArrayCreation typ constructorInfo {cilState with state = state} List.singleton
+                then reduceArrayCreation typ constructorInfo {cilState with state = state} id
                 else blockCase {cilState with state = state})
         if constructorInfo.DeclaringType.IsSubclassOf typedefof<System.Delegate>
             then x.CreateDelegate constructedTermType cilState
@@ -308,7 +308,7 @@ and public ILInterpreter() as this =
         let valueAndState =
             if addressNeeded then address, state
             else Memory.Dereference state address
-        pushResultOnStack cilState valueAndState :: [])
+        pushResultOnStack cilState valueAndState)
     member private x.StsFld (cfg : cfgData) offset (cilState : cilState) =
         let fieldInfo = resolveFieldFromMetadata cfg (offset + OpCodes.Stsfld.Size)
         let state = cilState.state
@@ -365,7 +365,7 @@ and public ILInterpreter() as this =
             StatedConditionalExecutionCIL cilState
                 (fun state k -> k (hasValue, state))
                 hasValueCase
-                (fun cilState k -> k [{cilState with opStack = MakeNullRef() :: cilState.opStack}])
+                (fun cilState k -> k [[{cilState with opStack = MakeNullRef() :: cilState.opStack}]])
         x.ReduceMethodBaseCall hasValueMethodInfo cilState (Some v) (Specified []) (fun hasValueResults ->
         Cps.List.mapk boxNullable hasValueResults List.concat)
 
@@ -379,12 +379,12 @@ and public ILInterpreter() as this =
                 StatedConditionalExecutionCIL cilState'
                     (fun state k -> k (Types.TypeIsNullable termType, state))
                     (fun cilState k -> x.BoxNullable t v cilState |> k)
-                    (fun cilState k -> allocateValueTypeInHeap v cilState |> k)
+                    (fun cilState k -> allocateValueTypeInHeap v cilState |> List.singleton |> k)
             StatedConditionalExecutionCIL cilState
                 (fun state k -> k (Types.IsValueType termType, state))
                 boxValueType
-                (fun cilState k -> k [cilState])
-                id
+                (fun cilState k -> k [[cilState]])
+                List.concat
         | v :: stack -> // TODO: remove this when there would be way to introduce inner Type Variables X [for T === Nullable<X>]
             StatedConditionalExecutionCIL cilState
                 (fun state k -> k (Types.IsValueType termType, state))
@@ -413,7 +413,7 @@ and public ILInterpreter() as this =
             BranchOnNull cilState obj
                 nullCase
                 nonNullCase
-                id
+                List.concat
         | _ :: _ -> cilState :: [] // according to specs ``address'' to value should be computed
         | _ -> __notImplemented__()
     member private x.UnboxAny (cfg : cfgData) offset (cilState : cilState) = // TODO: add InvalidCastException when obj is not a boxed form of type token
