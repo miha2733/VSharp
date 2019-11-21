@@ -318,7 +318,7 @@ module internal Merging =
                 genericGuardedCartesianProductRec mapper ctor (gacc &&& g) (List.append xsacc [v]) xs)
             |> genericSimplify
         | [] -> [(gacc, ctor xsacc)]
-    let genericGuardedCartesianProduct mapper ctor xs =
+    let genericGuardedCartesianProduct mapper xs ctor =
         genericGuardedCartesianProductRec mapper ctor True [] xs
 
     let rec private guardedCartesianProductRec mapper ctor gacc xsacc = function
@@ -332,10 +332,10 @@ module internal Merging =
             |> genericSimplify
         | [] -> [(gacc, ctor xsacc)]
 
-    let guardedCartesianProduct mapper ctor terms =
+    let guardedCartesianProduct mapper terms ctor =
         guardedCartesianProductRec mapper ctor True [] terms
 
-    let rec private guardedSequentialProductRec gacc terms k =
+    let rec private guardedSequentialProductRec gacc terms k = // TODO: dead code #do
         match terms with
         | x::xs ->
             let errorsOfX, x' = List.partition (snd >> isError) (unguard x)
@@ -354,7 +354,7 @@ module internal Merging =
                 k (errorsOfX @ errors) results)
         | [] -> k [(gacc, Nop)] (Some []) gacc
 
-    let guardedSequentialProduct terms =
+    let guardedSequentialProduct terms = // TODO: dead code #do
         let simplify = genericSimplify >> function
             | [] -> None
             | [(True, v)] -> Some v
