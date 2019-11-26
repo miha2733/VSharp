@@ -48,15 +48,7 @@ module public Heap =
 
     let public size (h : heap<'a, 'b, 'fql, 'typ>) = h.Length
 
-    let private mapKeyValue mapper (key, value) = // TODO: FQL! #do
-        let k, v = mapper key.key value
-        ({key with key = k}, v)
-
     let public map mapper (h : heap<'a, 'b, 'fql, 'typ>) : heap<'a, 'c, 'fql, 'typ> =
-        h |> toSeq |> Seq.map (mapKeyValue mapper) |> ofSeq
-    let public map' mapper (h : heap<'a, 'b, 'fql, 'typ>) : heap<'a, 'c, 'fql, 'typ> =
-        h |> toSeq |> Seq.map (fun (k, v) -> k, mapper k.key v) |> ofSeq
-    let public mapFQL mapper (h : heap<'a, 'b, 'fql, 'typ>) : heap<'a, 'c, 'fql, 'typ> =
         h |> toSeq |> Seq.map mapper |> ofSeq
     let public fold folder state (h : heap<'a, 'b, 'fql, 'typ>) =
         h |> toSeq |> Seq.fold (fun state (k, v) -> folder state k v) state

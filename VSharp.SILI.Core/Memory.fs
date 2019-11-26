@@ -339,10 +339,6 @@ module internal Memory =
 
 // ------------------------------- Core -------------------------------
 
-    let private isTopLevelHeapConcreteAddr = function
-        | TopLevelHeap(addr, _, _), [] when isConcrete addr -> true
-        | _ -> false
-
     let rec private accessHeap<'a, 'key when 'a : equality and 'key : equality> read restricted metadata (groundHeap : 'a generalizedHeap option) guard update (h : 'key heap) keyCompare contextList mapper lazyInstantiator ptr =
         let accessRec gvas lazyValue h =
             let accessLocation h (guard', key, value) =
@@ -355,7 +351,7 @@ module internal Memory =
             let gvs, h' = List.mapFold accessLocation h gvas
             merge (optCons gvs lazyValue), h'
         let heapKey = makeKey ptr.location (Some ptr.fullyQualifiedLocation) ptr.typ
-        if Heap.contains heapKey h then // TODO: only if heapKey is concreteHeapAddress! #do (1 result)
+        if Heap.contains heapKey h then // TODO: only if heapKey is concreteHeapAddress!
             accessRec [(makeTrue metadata, heapKey, Heap.find heapKey h)] None h
         else
             let baseGav, restGavs = findSuitableLocations metadata h keyCompare contextList mapper ptr
@@ -423,10 +419,10 @@ module internal Memory =
 
     and private compareStringKey mtd loc key = makeBool mtd (loc = key)
 
-    and private readTerm mtd (_ : bool) term fql typ = // TODO: delete last segment in fql #do
-        let path = snd fql |> List.last |> List.singleton
+    and private readTerm mtd (_ : bool) term ((tl, path) as fql) typ =
+        let currentPath, path' = List.splitAt (List.length path - 1) path
         let lazyInstor = genericLazyInstantiator mtd None fql typ
-        accessTerm true mtd None (makeTrue mtd) snd [] (Some lazyInstor) fql path term |> fst
+        accessTerm true mtd None (makeTrue mtd) snd [] (Some lazyInstor) (tl, currentPath) path' term |> fst
 
     and private accessBlockField read mtd update term fieldName fieldType =
         let lazyInstor = __unreachable__
@@ -508,25 +504,14 @@ module internal Memory =
             let result, h'' = accessDefined contextList lazyInstantiator (Some h) false h'
             if read then
                 let accessH = lazy(accessGeneralizedHeapRec exploredIds unlucky contextList lazyInstantiator read readHeap getter location accessDefined h |> fst)
-                let simplifyInstantiated term =
+                let simplifyInstantiated contextCase nonContextCase term =
                     match term.term with
                     | Constant(_, LazyInstantiation(loc, Some heap, _), _) when loc = location && heap = h ->
-                        accessH.Force()
-                    | _ -> term
+                        accessH.Force() |> contextCase
+                    | _ -> nonContextCase term
                 let simplifyInstantiatedAddress address baseType sightType =
-                    let destruct reference = // TODO: do much better (unify with fillHoleInHeapAddress) #do
-                        match reference.term with
-                        | Ref(TopLevelHeap (a, bt, _), [])
-                        | Ptr(TopLevelHeap (a, bt, _), [], _, _) -> TopLevelHeap(a, bt, sightType)
-                        | Ref(NullAddress, [])
-                        | Ptr(NullAddress, [], _, _) -> NullAddress
-                        | _ -> __notImplemented__()
-                    match address.term with
-                    | Constant(_, LazyInstantiation(loc, Some heap, _), _) when loc = location && heap = h ->
-                        let kek = accessH.Force() |> unguard |> guardedMapWithoutMerge destruct
-                        kek
-                    | _ -> [True, TopLevelHeap(address, baseType, sightType)]
-                Substitution.substitute simplifyInstantiated simplifyInstantiatedAddress id result, m
+                    simplifyInstantiated (topLevelOfFilledRef sightType) (fun a -> [True, TopLevelHeap(a, baseType, sightType)]) address
+                Substitution.substitute (simplifyInstantiated id id) simplifyInstantiatedAddress id result, m
             else
                 result, Mutation(h, h'')
         | Composition(_, _, Defined _) ->
@@ -602,20 +587,23 @@ module internal Memory =
             referenceSubLocations reference path
         | _ -> term
 
+    and private topLevelOfFilledRef sightType reference =
+        let destruct reference =
+            match reference.term with
+            | Ref(TopLevelHeap (a, bt, _), [])
+            | Ptr(TopLevelHeap (a, bt, _), [], _, _) -> TopLevelHeap(a, bt, sightType)
+            | Ref(NullAddress, [])
+            | Ptr(NullAddress, [], _, _) -> NullAddress
+            | _ -> __notImplemented__()
+        unguard reference |> guardedMapWithoutMerge destruct
+
     and private fillHoleInHeapAddress (ctx : compositionContext) state address baseType sightType = // TODO: find another solution someday..
         match address.term with
         | Constant(_, source, _) ->
             match source with
             | :? IExtractingSymbolicConstantSource as source ->
-                let destruct reference =
-                    match reference.term with
-                    | Ref(TopLevelHeap (a, bt, _), [])
-                    | Ptr(TopLevelHeap (a, bt, _), [], _, _) -> TopLevelHeap(a, bt, sightType)
-                    | Ref(NullAddress, [])
-                    | Ptr(NullAddress, [], _, _) -> NullAddress
-                    | _ -> __notImplemented__()
                 let reference = source.ComposeWithoutExtractor ctx state
-                Merging.unguard reference |> Merging.guardedMapWithoutMerge destruct
+                topLevelOfFilledRef sightType reference
             | _ -> __notImplemented__()
         | Concrete(:? concreteHeapAddress as addr, t) ->
             let addr' = Concrete ctx.mtd (composeAddresses ctx.addr addr) t
@@ -631,38 +619,37 @@ module internal Memory =
     and private fillHolesInMemoryCell ctx keySubst state key =
         Substitution.substituteHeapKey (keySubst ctx state) (fillHole ctx state) (fillHoleInHeapAddress ctx state) (substituteTypeVariables ctx state) key
 
-    and private updateLocation newValue (currentFQL, oldValue) = // TODO: update union with union? #do -- solution is adding guard to updateLocation and to apply function of guardedErroredApply, and filtering if conj is false
+    and private updateLocation newValue (currentFQL, oldValue) = // TODO: support updating union with union
         let mtd = newValue.metadata
         let mutateOneKey old k v =
             let path = getFQLOfKey k |> snd |> List.last |> List.singleton
-            accessTerm false mtd None True (updateLocation v) [] None currentFQL path old |> snd // TODO: need ground heap? #do
+            accessTerm false mtd None True (updateLocation v) [] None currentFQL path old |> snd
         let doMutate newValue =
             match newValue.term with
             | Block(fields', _) ->
-                let kek = Heap.fold mutateOneKey oldValue fields'
-                kek
+                Heap.fold mutateOneKey oldValue fields'
             | Array(_, _, lower, _, contents, lengths) ->
                 let oldValue = Heap.fold mutateOneKey oldValue lower
                 let oldValue = Heap.fold mutateOneKey oldValue contents
-                let kek = Heap.fold mutateOneKey oldValue lengths
-                kek
+                Heap.fold mutateOneKey oldValue lengths
             | _ -> newValue
         guardedErroredApply doMutate newValue
 
     and private fillAndMutateHeapLocation updateHeap keySubst ctx restricted state h k v =
         let k' = fillHolesInMemoryCell ctx keySubst state k
         let v' = fillHoles ctx state v
-        if isTopLevelHeapConcreteAddr (getFQLOfKey k') && not (Heap.contains k' h) then Heap.add k' v' h // TODO: think about statics #do
+        let fql' = getFQLOfKey k'
+        if (isTopLevelHeapConcreteAddr fql' || isTopLevelStatics fql') && not (Heap.contains k' h) then Heap.add k' v' h
         else updateHeap restricted (updateLocation v') ctx.mtd h k'.key k'.typ []
 
-    and private fillAndMutateStackLocation (ctx : compositionContext) state k v =
+    and private fillAndMutateStackLocation (ctx : compositionContext) state memory k v =
         let v' = fillHoles ctx state v
         match k with
         | SymbolicThisKey token ->
             let loc = ThisKey token
             let thisRef = stackDeref (stackLazyInstantiator state loc) state loc |> fst
-            update (updateLocation v') ctx.mtd state thisRef |> snd
-        | loc -> updateStack (updateLocation v') ctx.mtd state loc []
+            update (updateLocation v') ctx.mtd memory thisRef |> snd
+        | loc -> updateStack (updateLocation v') ctx.mtd memory loc []
 
     and private composeDefinedHeaps updateHeap keySubst (ctx : compositionContext) restricted state h h' =
         Heap.fold (fillAndMutateHeapLocation updateHeap keySubst ctx restricted state) h h'
@@ -679,8 +666,8 @@ module internal Memory =
             let gs, hs' = List.unzip ghs'
             let gs' = List.map (fillHoles ctx s) gs
             hs' |> List.map (composeGeneralizedHeaps readHeap updateHeap keySubst ctx getter setter s) |> mergeGeneralizedHeaps (readHeap ctx.mtd) gs'
-        | Mutation _, Composition(s', ctx', h') // TODO: mistake #do
-        | Composition _, Composition(s', ctx', h') -> __notImplemented__()
+        | Mutation _, Composition(s', ctx', h')
+        | Composition _, Composition(s', ctx', h')
         | Defined _, Composition(s', ctx', h') ->
             let s = composeStates ctx s s'
             composeGeneralizedHeaps readHeap updateHeap keySubst ctx' getter setter s h'
@@ -709,9 +696,8 @@ module internal Memory =
             assert(not r'')
             match h' with
             | Defined(r, h') ->
-                let ctx'' = decomposeContexts ctx ctx'
-                let h = composeDefinedHeaps updateHeap keySubst ctx'' r s h' h'' |> Defined r
-                composeGeneralizedHeaps readHeap updateHeap keySubst ctx' getter setter s' h
+                let h = composeDefinedHeaps updateHeap keySubst ctx' r s h' h'' |> Defined r
+                composeGeneralizedHeaps readHeap updateHeap keySubst ctx getter setter s' h
             | _ ->
                 let h'' = fillHolesInHeap keySubst ctx s h''
                 Mutation(h, h'')
@@ -725,11 +711,11 @@ module internal Memory =
             assert(not r)
             Mutation(h, composeDefinedHeaps updateHeap keySubst ctx false s h' h'')
 
-    and composeStacksOf ctx state state' = // TODO: care about update! #do
+    and composeStacksOf ctx state state' =
         let state'Bottom, state'RestStack, state'RestFrames = State.bottomAndRestFrames state'
-        let state2 = MappedStack.fold (fillAndMutateStackLocation ctx) state state'Bottom         // apply effect of bottom frame
-        let state3 = {state2 with frames = State.concatFrames state'RestFrames state2.frames}     // add rest frames
-        MappedStack.fold (fillAndMutateStackLocation ctx) state3 state'RestStack                  // fill and copy effect of rest frames
+        let state2 = MappedStack.fold (fillAndMutateStackLocation ctx state) state state'Bottom         // apply effect of bottom frame
+        let state3 = {state2 with frames = State.concatFrames state'RestFrames state2.frames}           // add rest frames
+        MappedStack.fold (fillAndMutateStackLocation ctx state) state3 state'RestStack                  // fill and copy effect of rest frames
 
     and composeHeapsOf ctx state heap =
         composeGeneralizedHeaps readHeap updateHeap fillHole ctx heapOf withHeap state heap
@@ -937,8 +923,7 @@ module internal Memory =
                         | _ -> __notImplemented__()
                     | None -> state
                 let loc = fillHoles ctx state x.location
-                let ref = derefWithoutValidation ctx.mtd state' loc
-                ref
+                derefWithoutValidation ctx.mtd state' loc
             override x.Compose ctx state =
                 (x :> IExtractingSymbolicConstantSource).ComposeWithoutExtractor ctx state |> x.extractor.Extract
 

@@ -96,12 +96,8 @@ module internal State =
         x = [0]
     let composeAddresses (a1 : concreteHeapAddress) (a2 : concreteHeapAddress) : concreteHeapAddress =
         if isZeroAddress a2 then a2 else List.append a1 a2
-    let decomposeAddresses (a1 : concreteHeapAddress) (a2 : concreteHeapAddress) : concreteHeapAddress =
-        List.minus a1 a2
     let composeContexts (c1 : compositionContext) (c2 : compositionContext) : compositionContext =
         { mtd = Metadata.combine c1.mtd c2.mtd; addr = composeAddresses c1.addr c2.addr }
-    let decomposeContexts (c1 : compositionContext) (c2 : compositionContext) : compositionContext =
-        { mtd = c1.mtd; addr = decomposeAddresses c1.addr c2.addr }
 
     let nameOfLocation (topLevel, path) = List.map toString path |> cons (toString topLevel) |> join "."
 
@@ -141,7 +137,7 @@ module internal State =
             | None -> sh
         { s with stack = List.fold popOne s.stack locations; frames = { f = f'; sh = sh'} }
 
-    let inline private entriesOfFrame f = f.entries
+    let inline entriesOfFrame f = f.entries
 
     let concatFrames frames frames' = { f = frames.f @ frames'.f; sh = frames.sh @ frames'.sh }
 

@@ -29,7 +29,10 @@ module Substitution =
                 match op with
                 | Operator(op, isChecked) -> Operators.simplifyOperation term.metadata op isChecked t args' id
                 // TODO: this is temporary hack, support normal substitution cast expression
-                | Cast _ -> Expression term.metadata op args' t
+                | Cast(_, targetType, isChecked) ->
+                    assert(List.length args' = 1)
+                    let arg = List.head args'
+                    TypeCasting.cast term.metadata isChecked State.empty arg targetType (fun _ _ _ -> __unreachable__()) fst
                 | Application _ -> __notImplemented__())
             |> Merging.merge
         | Union gvs ->
@@ -64,16 +67,16 @@ module Substitution =
     and private substituteAndMap subst addressSubst typeSubst mapper =
         substitute subst addressSubst typeSubst >> Merging.unguard >> Merging.guardedMapWithoutMerge mapper
 
-    and substituteHeap<'a when 'a : equality> (keySubst : 'a -> 'a) (subst : term -> term) (addressSubst : term -> termType -> termType -> (term * topLevelAddress) list) (typeSubst : termType -> termType) (heap : 'a heap) : ('a heap) = // TODO: collect errors?
-        Heap.mapFQL (fun (k, v) -> substituteHeapKey keySubst subst addressSubst typeSubst k, substitute subst addressSubst typeSubst v) heap
+    and substituteHeap<'a when 'a : equality> (keySubst : 'a -> 'a) (subst : term -> term) (addressSubst : term -> termType -> termType -> (term * topLevelAddress) list) (typeSubst : termType -> termType) (heap : 'a heap) : ('a heap) =
+        Heap.map (fun (k, v) -> substituteHeapKey keySubst subst addressSubst typeSubst k, substitute subst addressSubst typeSubst v) heap
 
-    and substituteHeapKey<'a when 'a : equality> (keySubst : 'a -> 'a) (subst : term -> term) (addressSubst : term -> termType -> termType -> (term * topLevelAddress) list) (typeSubst : termType -> termType) (key : 'a memoryCell) : 'a memoryCell = // TODO: do better (effective)! #do
-        let key' : 'a = keySubst key.key
-        let FQL' = Option.map (substituteFQL subst addressSubst typeSubst) key.FQL // TODO: be careful about this #do
+    and substituteHeapKey<'a when 'a : equality> (keySubst : 'a -> 'a) (subst : term -> term) (addressSubst : term -> termType -> termType -> (term * topLevelAddress) list) (typeSubst : termType -> termType) (key : 'a memoryCell) : 'a memoryCell =
+        let key' = keySubst key.key // TODO: key substitution works twice (in key.key and in key.FQL)
         let typ' = typeSubst key.typ
+        let FQL' = Option.map (substituteFQL subst addressSubst typeSubst) key.FQL
         match FQL' with
         | None -> {key = key'; FQL = None; typ = typ'}
-        | Some [True, fql] -> {key = key'; FQL = Some fql; typ = typ'}
+        | Some [True, fql] -> {key = key'; FQL = Some fql; typ = typ'} // we should never have union in heap key after substitution, so it shouldn't happen in fql
         | _ -> internalfail "substitution of heap key has failed"
 
     and private substituteTopLevel addressSubst typeSubst = function
@@ -95,7 +98,7 @@ module Substitution =
     and private substitutePath subst addressSubst typeSubst path ctor =
         Merging.genericGuardedCartesianProduct (substituteSegment subst addressSubst typeSubst) path ctor
 
-    and private substituteFQL subst addressSubst typeSubst (topLevel, path) = // TODO: mb use genericGuardedCartesianProduct? #do
+    and private substituteFQL subst addressSubst typeSubst (topLevel, path) =
         let tls = substituteTopLevel addressSubst typeSubst topLevel
         let paths = substitutePath subst addressSubst typeSubst path id
         let createFQL (g, tl) = List.map (fun (g', path) -> g &&& g', (tl, path)) paths

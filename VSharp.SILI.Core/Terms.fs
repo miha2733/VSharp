@@ -448,6 +448,14 @@ module internal Terms =
         | Concrete(b, t) when Types.isBool t && not (b :?> bool) -> true
         | _ -> false
 
+    let isTopLevelHeapConcreteAddr = function
+        | TopLevelHeap(addr, _, _), [] when isConcrete addr -> true
+        | _ -> false
+
+    let isTopLevelStatics = function
+        | TopLevelStatics _, [] -> true
+        | _ -> false
+
     let private isSymbolicTopLevel = function
         | TopLevelHeap(a, _, _) -> isConcrete a |> not
         | NullAddress -> false

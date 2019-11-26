@@ -565,7 +565,7 @@ namespace VSharp.Test.Tests
 
         // abs(x)
         [TestSvm]
-        public static double AbsMethod(double x) // TODO: static Object[] disappears #do
+        public static double AbsMethod(double x)
         {
             return Math.Abs(x);
         }

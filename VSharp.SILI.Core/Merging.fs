@@ -125,12 +125,12 @@ module internal Merging =
     and propagateGuard g v =
         match v.term with
         | Block(contents, typ) ->
-            let contents' = Heap.map' (fun _ v -> merge [(g, v)]) contents
+            let contents' = Heap.map (fun (k, v) -> (k, merge [(g, v)])) contents
             (Terms.True, Block v.metadata contents' typ)
         | Array(dimension, len, lower, init, contents, lengths) ->
-            let contents' = Heap.map' (fun _ v -> merge [(g, v)]) contents
-            let lower' = Heap.map' (fun _ v -> merge [(g, v)]) lower
-            let lengths' = Heap.map' (fun _ v -> merge [(g, v)]) lengths
+            let contents' = Heap.map (fun (k, v) -> (k, merge [(g, v)])) contents
+            let lower' = Heap.map (fun (k, v) -> (k, merge [(g, v)])) lower
+            let lengths' = Heap.map (fun (k, v) -> (k, merge [(g, v)])) lengths
             let init' = List.map (fun (gi, i) -> gi &&& g, i) init
             (Terms.True, Array v.metadata dimension len lower' init' contents' lengths')
         | _ -> (g, v)
@@ -240,7 +240,6 @@ module internal Merging =
 
     let conditionUnderState condition state =
         Propositional.conjunction condition.metadata (condition :: State.pathConditionOf state)
-        |> unguard |> merge // TODO: delete unguard and merge #do
 
 // ------------------------------------ Mapping non-term sequences ------------------------------------
 
@@ -297,19 +296,6 @@ module internal Merging =
         let ges, gvs = term |> unguard |> List.partition (snd >> isError)
         ges, merge gvs
 
-    let productUnion f t1 t2 = // TODO: dead code #do
-        match t1.term, t2.term with
-        | Union gvs1, Union gvs2 ->
-            gvs1 |> List.collect (fun (g1, v1) ->
-            gvs2 |> List.map (fun (g2, v2) ->
-            (g1 &&& g2, f v1 v2)))
-            |> merge
-        | Union gvs1, _ ->
-            gvs1 |> List.map (fun (g1, v1) -> (g1, f v1 t2)) |> merge
-        | _, Union gvs2 ->
-            gvs2 |> List.map (fun (g2, v2) -> (g2, f t1 v2)) |> merge
-        | _ -> f t1 t2
-
     let genericSimplify gvs : (term * 'a) list =
         let rec loop gvs out =
             match gvs with
@@ -342,36 +328,3 @@ module internal Merging =
 
     let guardedCartesianProduct mapper terms ctor =
         guardedCartesianProductRec mapper ctor True [] terms
-
-    let rec private guardedSequentialProductRec gacc terms k = // TODO: dead code #do
-        match terms with
-        | x::xs ->
-            let errorsOfX, x' = List.partition (snd >> isError) (unguard x)
-            let errorsOfX = List.map (mapfst ((&&&) gacc)) errorsOfX
-            match x' with
-            | [] -> k errorsOfX None False
-            | _ ->
-                let gacc' = gacc &&& disjunction Metadata.empty (List.map fst x')
-                guardedSequentialProductRec gacc' xs (fun errors results ->
-                let results =
-                    match results with
-                    | Some results ->
-                        let x' = List.map (mapfst ((&&&) gacc)) x'
-                        Some (x'::results)
-                    | None -> None
-                k (errorsOfX @ errors) results)
-        | [] -> k [(gacc, Nop)] (Some []) gacc
-
-    let guardedSequentialProduct terms = // TODO: dead code #do
-        let simplify = genericSimplify >> function
-            | [] -> None
-            | [(True, v)] -> Some v
-            | ts -> Some (Union Metadata.empty ts)
-        guardedSequentialProductRec True terms (fun errors results computationExistsGuard ->
-            let results =
-                match results with
-                | Some results ->
-                    Cps.List.mapk (fun r k -> Option.bind k (simplify r)) results Some
-                | None -> None
-            let errors = simplify errors |> Option.filter ((<>) Nop)
-            errors, Option.map (withFst computationExistsGuard) results)
