@@ -152,7 +152,7 @@ module internal Merging =
         | [(g, v)] when Terms.isBool v -> g &&& v
         | gvs' -> Union Metadata.empty gvs'
 
-    and merge2Terms g h u v =
+    let merge2Terms g h u v =
         let g = guardOf u &&& g
         let h = guardOf v &&& h
         match g, h with
@@ -165,11 +165,13 @@ module internal Merging =
         | _, ErrorT _ -> h
         | _ -> merge [(g, u); (h, v)]
 
-    and mergeDefinedHeaps restricted read guards heaps =
+// ---------------------------------------- Merging heaps ----------------------------------------
+
+    let mergeDefinedHeaps restricted read guards heaps =
         let getter i = List.item i heaps
         Heap.merge guards heaps (keysResolver restricted read Heap.getKey getter)
 
-    and mergeGeneralizedHeaps<'a when 'a : equality> read guards (heaps : list<'a generalizedHeap>) =
+    let mergeGeneralizedHeaps<'a when 'a : equality> read guards (heaps : list<'a generalizedHeap>) =
         let (|MergedHeap|_|) = function Merged gvs -> Some gvs | _ -> None
         let guardsAndHeaps = List.zip guards heaps |> simplify (|MergedHeap|_|)
         let Merged = function
@@ -190,16 +192,16 @@ module internal Merging =
                 let definedGuard = disjunction Metadata.empty definedGuards
                 (definedGuard, definedHeap)::undefined |> mergeSame |> Merged
 
-    and private merge2GeneralizedHeaps g1 g2 h1 h2 read resolve =
+    let private merge2GeneralizedHeaps g1 g2 h1 h2 read resolve =
         match h1, h2 with
         | Defined(r1, h1), Defined(r2, h2) ->
             assert(r1 = r2)
             Heap.merge2 h1 h2 (keysResolver2 r1 h1 h2 read Heap.getKey resolve) |> State.Defined r1
         | _ -> mergeGeneralizedHeaps read [g1; g2] [h1; h2]
 
-    and private addToPathConditionIfNeed cond pc = if isTrue cond then pc else cond :: pc
+    let private addToPathConditionIfNeed cond pc = if isTrue cond then pc else cond :: pc
 
-    and merge2States condition1 condition2 state1 state2 =
+    let merge2States condition1 condition2 state1 state2 =
         assert(state1.pc = state2.pc)
         assert(state1.frames = state2.frames)
         let mergedConditions = condition1 ||| condition2
@@ -216,7 +218,7 @@ module internal Merging =
             let mergedStatics = merge2GeneralizedHeaps condition1 condition2 state1.statics state2.statics readStatics resolve
             { state1 with stack = mergedStack; heap = mergedHeap; statics = mergedStatics; pc = mergedPC }
 
-    and mergeStates conditions states =
+    let mergeStates conditions states =
         assert(List.length states > 0)
         let first = List.head states
         let frames = first.frames
@@ -232,33 +234,24 @@ module internal Merging =
         let mergedPC = if isTrue mergedConditions then path else mergedConditions :: path
         { stack = mergedStack; heap = mergedHeap; statics = mergedStatics; frames = frames; pc = mergedPC; typeVariables = tv }
 
-    and genericSimplify gvs : (term * 'a) list =
-        let rec loop gvs out =
-            match gvs with
-            | [] -> out
-            | ((True, _) as gv)::_ -> [gv]
-            | (False, _)::gvs' -> loop gvs' out
-            | gv::gvs' -> loop gvs' (gv::out)
-        loop gvs [] |> mergeSame
-
-    and unguard = function
+    let unguard = function
         | {term = Union gvs} -> gvs
         | t -> [(True, t)]
 
-    and conditionUnderState condition state =
+    let conditionUnderState condition state =
         Propositional.conjunction condition.metadata (condition :: State.pathConditionOf state)
-        |> unguard |> merge
+        |> unguard |> merge // TODO: delete unguard and merge #do
 
 // ------------------------------------ Mapping non-term sequences ------------------------------------
 
-    and guardedMapWithoutMerge f gvs =
+    let guardedMapWithoutMerge f gvs =
         List.map (fun (g, v) -> (g, f v)) gvs
 
-    and commonGuardedMapk mapper gvs merge k =
+    let commonGuardedMapk mapper gvs merge k =
         let foldFunc gvs (g, v) k =
             mapper v (fun v' -> k ((g, v') :: gvs))
         Cps.List.foldlk foldFunc [] gvs (merge >> k)
-    and guardedMap mapper gvs = commonGuardedMapk (Cps.ret mapper) gvs merge id
+    let guardedMap mapper gvs = commonGuardedMapk (Cps.ret mapper) gvs merge id
 
 // ---------------------- Applying functions to terms and mapping term sequences ----------------------
 
@@ -304,7 +297,7 @@ module internal Merging =
         let ges, gvs = term |> unguard |> List.partition (snd >> isError)
         ges, merge gvs
 
-    let productUnion f t1 t2 =
+    let productUnion f t1 t2 = // TODO: dead code #do
         match t1.term, t2.term with
         | Union gvs1, Union gvs2 ->
             gvs1 |> List.collect (fun (g1, v1) ->
@@ -317,6 +310,15 @@ module internal Merging =
             gvs2 |> List.map (fun (g2, v2) -> (g2, f t1 v2)) |> merge
         | _ -> f t1 t2
 
+    let genericSimplify gvs : (term * 'a) list =
+        let rec loop gvs out =
+            match gvs with
+            | [] -> out
+            | ((True, _) as gv)::_ -> [gv]
+            | (False, _)::gvs' -> loop gvs' out
+            | gv::gvs' -> loop gvs' (gv::out)
+        loop gvs [] |> mergeSame
+
     let rec private genericGuardedCartesianProductRec mapper ctor gacc xsacc = function
         | x::xs ->
             mapper x
@@ -324,7 +326,7 @@ module internal Merging =
                 genericGuardedCartesianProductRec mapper ctor (gacc &&& g) (List.append xsacc [v]) xs)
             |> genericSimplify
         | [] -> [(gacc, ctor xsacc)]
-    let genericGuardedCartesianProduct mapper ctor xs =
+    let genericGuardedCartesianProduct mapper xs ctor =
         genericGuardedCartesianProductRec mapper ctor True [] xs
 
     let rec private guardedCartesianProductRec mapper ctor gacc xsacc = function
@@ -338,10 +340,10 @@ module internal Merging =
             |> genericSimplify
         | [] -> [(gacc, ctor xsacc)]
 
-    let guardedCartesianProduct mapper ctor terms =
+    let guardedCartesianProduct mapper terms ctor =
         guardedCartesianProductRec mapper ctor True [] terms
 
-    let rec private guardedSequentialProductRec gacc terms k =
+    let rec private guardedSequentialProductRec gacc terms k = // TODO: dead code #do
         match terms with
         | x::xs ->
             let errorsOfX, x' = List.partition (snd >> isError) (unguard x)
@@ -360,7 +362,7 @@ module internal Merging =
                 k (errorsOfX @ errors) results)
         | [] -> k [(gacc, Nop)] (Some []) gacc
 
-    let guardedSequentialProduct terms =
+    let guardedSequentialProduct terms = // TODO: dead code #do
         let simplify = genericSimplify >> function
             | [] -> None
             | [(True, v)] -> Some v

@@ -354,7 +354,10 @@ module internal Terms =
     let Concrete metadata obj typ = { term = Concrete(obj, typ); metadata = metadata }
     let Constant metadata name source typ = { term = Constant({v=name}, source, typ); metadata = metadata }
     let Array metadata dimension length lower constant contents lengths = { term = Array(dimension, length, lower, constant, contents, lengths); metadata = metadata }
-    let Expression metadata op args typ = { term = Expression(op, args, typ); metadata = metadata }
+    let Expression metadata op args typ =
+        if List.length args = 2 && op = Operator(OperationType.Equal, false)
+            then ()
+        { term = Expression(op, args, typ); metadata = metadata }
     let Struct metadata fields typ = { term = Struct(fields, typ); metadata = metadata }
     let Class metadata fields = { term = Class fields; metadata = metadata }
     let Block metadata fields typ = Option.fold (Struct metadata fields |> always) (Class metadata fields) typ
