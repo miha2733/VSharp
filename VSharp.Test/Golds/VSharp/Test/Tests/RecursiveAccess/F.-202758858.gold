@@ -14,6 +14,7 @@ HEAP:
 		| !hasKey#2 ~> 0
 		| hasKey#2 ~> VSharp.Test.Tests.Container.X]]
 ---------- s1 = ----------
+System.Object ==> CLASS []
 VSharp.Test.Tests.Bag ==> CLASS []
 VSharp.Test.Tests.Container ==> CLASS [
 	| X ~> UNION[

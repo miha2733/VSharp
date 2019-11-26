@@ -7,5 +7,8 @@ HEAP:
 	| VSharp::Test::Tests::Typecast::Coord2::X ~> arg.VSharp::Test::Tests::Typecast::Coord2::X + arg.VSharp::Test::Tests::Typecast::Coord2::X * arg.VSharp::Test::Tests::Typecast::Coord2::Y
 	| VSharp::Test::Tests::Typecast::Coord2::Y ~> arg.VSharp::Test::Tests::Typecast::Coord2::Y]
 ---------- s1 = ----------
+VSharp.Test.Tests.Typecast.Coord2 ==> VSharp.Test.Tests.Typecast.Coord2 STRUCT [
+	| VSharp::Test::Tests::Typecast::Coord2::X ~> VSharp.Test.Tests.Typecast.Coord2.VSharp::Test::Tests::Typecast::Coord2::X
+	| VSharp::Test::Tests::Typecast::Coord2::Y ~> VSharp.Test.Tests.Typecast.Coord2.VSharp::Test::Tests::Typecast::Coord2::Y]
 VSharp.Test.Tests.Typecast.Helper ==> CLASS []
 VSharp.Test.Tests.Typecast.INormalize ==> CLASS []

@@ -17,6 +17,7 @@ HEAP:
 3 ==> VSharp.Test.Tests.RecMutation+SmallClass CLASS [
 	| VSharp::Test::Tests::RecMutation::SmallClass::Field0 ~> 0]
 ---------- s2 = ----------
+System.Object ==> CLASS []
 VSharp.Test.Tests.RecMutation ==> CLASS []
 VSharp.Test.Tests.RecMutation+BigClass ==> CLASS []
 VSharp.Test.Tests.RecMutation+SmallClass ==> CLASS []

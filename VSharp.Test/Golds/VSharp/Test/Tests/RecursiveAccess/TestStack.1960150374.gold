@@ -10,5 +10,6 @@ b.VSharp::Test::Tests::Second::b ==> VSharp.Test.Tests.First CLASS [
 		| !(0 == b) & !(0 == b.VSharp::Test::Tests::Second::b) ~> 1 + b.VSharp::Test::Tests::Second::b.VSharp::Test::Tests::First::B
 		| 0 == b | 0 == b.VSharp::Test::Tests::Second::b ~> b.VSharp::Test::Tests::Second::b.VSharp::Test::Tests::First::B]]
 ---------- s1 = ----------
+VSharp.Test.Tests.First ==> CLASS []
 VSharp.Test.Tests.RecursiveAccess ==> CLASS []
 VSharp.Test.Tests.Second ==> CLASS []

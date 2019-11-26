@@ -11,5 +11,15 @@ HEAP:
 			| VSharp::Test::Tests::ClassesSimpleC::_n ~> n]]
 	| VSharp::Test::Tests::ClassesSimpleA::_intField ~> 100500]
 ---------- s1 = ----------
+System.Object ==> CLASS []
 VSharp.Test.Tests.ClassesSimple ==> CLASS []
 VSharp.Test.Tests.ClassesSimpleA ==> CLASS []
+VSharp.Test.Tests.ClassesSimpleB ==> VSharp.Test.Tests.ClassesSimpleB STRUCT [
+	| VSharp::Test::Tests::ClassesSimpleB::_c ~> VSharp.Test.Tests.ClassesSimpleC STRUCT [
+		| VSharp::Test::Tests::ClassesSimpleC::<M1>k__BackingField ~> VSharp.Test.Tests.ClassesSimpleB.VSharp::Test::Tests::ClassesSimpleB::_c.VSharp::Test::Tests::ClassesSimpleC::<M1>k__BackingField
+		| VSharp::Test::Tests::ClassesSimpleC::_m2 ~> VSharp.Test.Tests.ClassesSimpleB.VSharp::Test::Tests::ClassesSimpleB::_c.VSharp::Test::Tests::ClassesSimpleC::_m2
+		| VSharp::Test::Tests::ClassesSimpleC::_n ~> VSharp.Test.Tests.ClassesSimpleB.VSharp::Test::Tests::ClassesSimpleB::_c.VSharp::Test::Tests::ClassesSimpleC::_n]]
+VSharp.Test.Tests.ClassesSimpleC ==> VSharp.Test.Tests.ClassesSimpleC STRUCT [
+	| VSharp::Test::Tests::ClassesSimpleC::<M1>k__BackingField ~> VSharp.Test.Tests.ClassesSimpleC.VSharp::Test::Tests::ClassesSimpleC::<M1>k__BackingField
+	| VSharp::Test::Tests::ClassesSimpleC::_m2 ~> VSharp.Test.Tests.ClassesSimpleC.VSharp::Test::Tests::ClassesSimpleC::_m2
+	| VSharp::Test::Tests::ClassesSimpleC::_n ~> VSharp.Test.Tests.ClassesSimpleC.VSharp::Test::Tests::ClassesSimpleC::_n]

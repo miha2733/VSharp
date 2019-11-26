@@ -8,5 +8,6 @@ HEAP:
 3 ==> VSharp.Test.Tests.ClassesSimplePropertyAccessModify+SimpleStruct CLASS [
 	| VSharp::Test::Tests::ClassesSimplePropertyAccessModify::SimpleStruct::X ~> anyVarName]
 ---------- s1 = ----------
+System.Object ==> CLASS []
 VSharp.Test.Tests.ClassesSimplePropertyAccessModify ==> CLASS []
 VSharp.Test.Tests.ClassesSimplePropertyAccessModify+SimpleStruct ==> CLASS []
