@@ -655,14 +655,14 @@ module internal Memory =
         if getFQLOfKey k' |> isTopLevelHeapConcreteAddr && Heap.contains k' h |> not then Heap.add k' v' h // TODO: think about statics #do
         else updateHeap restricted (updateLocation v') ctx.mtd h k'.key k'.typ []
 
-    and private fillAndMutateStackLocation (ctx : compositionContext) state k v =
+    and private fillAndMutateStackLocation (ctx : compositionContext) state memory k v =
         let v' = fillHoles ctx state v
         match k with
         | (name, token) when Pointers.symbolicThisStackKey.Equals(name) ->
             let loc = "this", token
             let thisRef = stackDeref (stackLazyInstantiator state loc) state loc |> fst
-            update (updateLocation v') ctx.mtd state thisRef |> snd
-        | loc -> updateStack (updateLocation v') ctx.mtd state loc []
+            update (updateLocation v') ctx.mtd memory thisRef |> snd
+        | loc -> updateStack (updateLocation v') ctx.mtd memory loc []
 
     and private composeDefinedHeaps updateHeap keySubst (ctx : compositionContext) restricted state h h' =
         Heap.fold (fillAndMutateHeapLocation updateHeap keySubst ctx restricted state) h h'
@@ -727,9 +727,9 @@ module internal Memory =
 
     and composeStacksOf ctx state state' = // TODO: care about update! #do
         let state'Bottom, state'RestStack, state'RestFrames = State.bottomAndRestFrames state'
-        let state2 = MappedStack.fold (fillAndMutateStackLocation ctx) state state'Bottom         // apply effect of bottom frame
+        let state2 = MappedStack.fold (fillAndMutateStackLocation ctx state) state state'Bottom         // apply effect of bottom frame
         let state3 = {state2 with frames = State.concatFrames state'RestFrames state2.frames}     // add rest frames
-        MappedStack.fold (fillAndMutateStackLocation ctx) state3 state'RestStack                  // fill and copy effect of rest frames
+        MappedStack.fold (fillAndMutateStackLocation ctx state) state3 state'RestStack                  // fill and copy effect of rest frames
 
     and composeHeapsOf ctx state heap =
         composeGeneralizedHeaps readHeap updateHeap fillHole ctx heapOf withHeap state heap
