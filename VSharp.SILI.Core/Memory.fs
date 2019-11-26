@@ -652,7 +652,7 @@ module internal Memory =
     and private fillAndMutateHeapLocation updateHeap keySubst ctx restricted state h k v =
         let k' = fillHolesInMemoryCell ctx keySubst state k
         let v' = fillHoles ctx state v
-        if getFQLOfKey k' |> isTopLevelHeapConcreteAddr && Heap.contains k' h |> not then Heap.add k' v' h // TODO: think about statics #do
+        if isTopLevelHeapConcreteAddr (getFQLOfKey k') && not (Heap.contains k' h) then Heap.add k' v' h // TODO: think about statics #do
         else updateHeap restricted (updateLocation v') ctx.mtd h k'.key k'.typ []
 
     and private fillAndMutateStackLocation (ctx : compositionContext) state k v =
