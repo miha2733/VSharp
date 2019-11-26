@@ -1,7 +1,7 @@
 namespace VSharp
 
 [<CustomEquality;NoComparison>]
-type public memoryCell<'a, 'fql, 'typ> when 'a : equality and 'fql : equality =
+type public memoryCell<'a, 'fql, 'typ> when 'a : equality and 'fql : equality = // TODO: delete key and typ (use only FQL)? #do
     { key : 'a; FQL : 'fql option; typ : 'typ }  // Key * Fully qualified location * termType
     override x.GetHashCode() = x.key.GetHashCode()
 

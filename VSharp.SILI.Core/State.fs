@@ -167,28 +167,6 @@ module internal State =
     let writeStackLocation (s : state) key value : state =
         { s with stack = MappedStack.add key value s.stack }
 
-    let stackFold = MappedStack.fold
-
-    let private heapFold keyFolder termFolder acc h =
-        Heap.fold (fun acc k value -> let acc = keyFolder acc k in termFolder acc value) acc h
-
-    let rec private generalizedHeapFold<'a, 'b when 'b : equality> (keyFolder : 'a -> 'b -> 'a) (typeFolder : 'a -> termType -> 'a) (termFolder : 'a -> term -> 'a) (acc : 'a) = function
-        | Defined(_, h) -> heapFold keyFolder termFolder acc h
-        | Composition(h1, _, h2) ->
-            let acc = fold typeFolder termFolder acc h1
-            generalizedHeapFold keyFolder typeFolder termFolder acc h2
-        | Mutation(h1, h2) ->
-            let acc = generalizedHeapFold keyFolder typeFolder termFolder acc h1
-            heapFold keyFolder termFolder acc h2
-        | Merged ghs ->
-            List.fold (fun acc (g, h) -> let acc = termFolder acc g in generalizedHeapFold keyFolder typeFolder termFolder acc h) acc ghs
-        | _ -> acc
-
-    and fold typeFolder termFolder acc state =
-        let acc = stackFold (fun acc _ v -> termFolder acc v) acc state.stack
-        let acc = generalizedHeapFold termFolder typeFolder termFolder acc state.heap
-        generalizedHeapFold typeFolder typeFolder termFolder acc state.statics
-
     let inline private keyOfEntry en = en.key
 
     let typeOfStackLocation (s : state) key =
