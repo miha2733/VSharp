@@ -420,7 +420,7 @@ module internal InstructionsSet =
         let referenceAndState = Memory.AllocateString string state
         pushResultOnStack cilState referenceAndState :: []
     let allocateValueTypeInHeap v (cilState : cilState) =
-        let address, state = Memory.AllocateInHeap cilState.state (TypeOf v) v
+        let address, state = Memory.AllocateValueTypeInHeap cilState.state (TypeOf v) v
         {cilState with opStack = address :: cilState.opStack; state = state} :: []
     let ldnull (cilState : cilState) =
         pushResultOnStack cilState (MakeNullRef (), cilState.state) :: []

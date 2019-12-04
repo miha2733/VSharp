@@ -140,7 +140,8 @@ module API =
         val ReadBlockField : term -> string -> termType -> term
 
         val AllocateOnStack : state -> stackKey -> termType -> term -> state
-        val AllocateInHeap : state -> termType -> term -> term * state
+        val AllocateReferenceTypeInHeap : state -> termType -> term -> term * state
+        val AllocateValueTypeInHeap : state -> termType -> term -> term * state
         val AllocateDefaultStatic : state -> termType -> state
         val MakeDefaultBlock : termType -> fql -> term
         val AllocateDefaultBlock : state -> termType -> term * state

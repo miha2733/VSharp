@@ -825,16 +825,16 @@ module internal Memory =
                     let g, h = List.unzip gvh
                     mergeGeneralizedHeaps (fun _ _ _ _ -> __unreachable__()) g h) id
 
-    let allocateInHeap metadata s address typ term : term * state =
-        let ref = HeapRef metadata address typ typ []
-        let fql = makeTopLevelFQL TopLevelHeap (address, typ, typ)
-        let memoryCell = makeKey address fql typ
+    let allocateInHeap metadata s address baseType sightType term : term * state =
+        let ref = HeapRef metadata address baseType sightType []
+        let fql = makeTopLevelFQL TopLevelHeap (address, baseType, sightType)
+        let memoryCell = makeKey address fql baseType
         (ref, { s with heap = allocateInGeneralizedHeap memoryCell term s.heap } )
 
     let allocateString metadata state string =
         let address = freshHeapLocation metadata
         let fql = makeTopLevelFQL TopLevelHeap (address, String, String)
-        Strings.makeConcreteStringStruct metadata string fql |> allocateInHeap metadata state address String
+        Strings.makeConcreteStringStruct metadata string fql |> allocateInHeap metadata state address String String
 
     let mkDefaultStatic metadata state targetType fql =
         let defaultValue metadata _ typ fql' = defaultOf metadata typ fql'
