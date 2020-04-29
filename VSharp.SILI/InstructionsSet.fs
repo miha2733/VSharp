@@ -137,7 +137,7 @@ module internal InstructionsSet =
             (List.collect snd)
             (fun _ _ -> Memory.EmptyState)
             (fun _ _ -> List.append)
-            (fun _ _ _ _ -> Memory.EmptyState)
+            (fun _ _ _ _ -> {Memory.EmptyState with pc = [True]}) // this is for path condition to pop in commonGuardedErroredStatedMapk
             (fun _ -> __notImplemented__()) // TODO: update, when exceptions will be implemented
             (fst >> k)
     let GuardedApply (cilState : cilState) term f k =
@@ -188,35 +188,17 @@ module internal InstructionsSet =
         let stackKey = LocalVariableKey lvi
         let typ = Types.FromDotNetType state lvi.LocalType
         Memory.ReferenceLocalVariable stackKey, state, typ
-    let getArgTerm state index (methodBase : MethodBase) =
+    let getArgTerm index (methodBase : MethodBase) =
         let pi = methodBase.GetParameters().[index]
-        Memory.ReferenceLocalVariable (ParameterKey pi), state
+        Memory.ReferenceLocalVariable (ParameterKey pi)
 
-    let castToType (cilState : cilState) isChecked typ term state  =
-        let term =
-            if isReference term && Types.IsPointer typ then Types.CastReferenceToPointer state term
-            else term
-        let canCast = Types.CanCast term typ
-        let goodCilState = Types.Cast (AddConditionToState state canCast) term typ isChecked (fun _ -> __unreachable__()) (fun (res, state) ->
-            {cilState with opStack = res :: cilState.opStack; state = state})
-//        let error, state = RuntimeExceptions.InvalidCastException (AddConditionToState state !!canCast) id
-//        let exceptionState = {cilState with exceptionFlag = Some error; opStack = []; state = state}
-//        goodCilState :: exceptionState :: []
-        goodCilState :: []
-//    let castToTypeK isChecked typ term state k =
-//        if isReference term && Types.IsPointer typ then
-//            let ptr = Types.CastReferenceToPointer state term // TODO: casting to pointer is weird
-//            Types.Cast state ptr typ isChecked (fun st _ _ -> RuntimeExceptions.InvalidCastException st Error) k
-//        else
-//            Types.Cast state term typ isChecked (fun st _ _ -> RuntimeExceptions.InvalidCastException st Error) k
-    let castToTypeK isChecked typ term state k =
-        let term =
-            if isReference term && Types.IsPointer typ then Types.CastReferenceToPointer state term
-            else term
-        let canCast = Types.CanCast term typ
-        Types.Cast (AddConditionToState state canCast) term typ isChecked (fun state _ _ ->
-            internalfail "cast should always succeed!") k
-    let castUnchecked typ = castToTypeK false typ
+    let castToType isChecked typ term state k =
+        if isReference term && Types.IsPointer typ then
+            let ptr = Types.CastReferenceToPointer state term // TODO: casting to pointer is weird
+            Types.Cast state ptr typ isChecked (fun st _ _ -> internalfail "pointer cast should always succeed!") k
+        else
+            Types.Cast state term typ isChecked (fun _ _ _ -> internalfail "cast should always succeed!") k
+    let castUnchecked typ = castToType false typ
     let popStack (cilState : cilState) =
         match cilState.opStack with
         | t :: ts -> Some t, {cilState with opStack = ts}
@@ -240,21 +222,21 @@ module internal InstructionsSet =
             match cilState.this, cfg.methodBase.IsStatic with
             | None, _
             | Some _, true ->
-                let term, state = getArgTerm state argumentIndex cfg.methodBase
+                let term = getArgTerm argumentIndex cfg.methodBase
                 Memory.Dereference state term
             | Some this, _ when argumentIndex = 0 -> this, state
             | Some _, false ->
-                let term, state = getArgTerm state (argumentIndex - 1) cfg.methodBase
+                let term = getArgTerm (argumentIndex - 1) cfg.methodBase
                 Memory.Dereference state term
         pushResultOnStack cilState (arg, state) :: []
     let ldarga numberCreator (cfg : cfgData) shiftedOffset (cilState : cilState) =
         let argumentIndex = numberCreator cfg.ilBytes shiftedOffset
         let state = cilState.state
-        let address, state =
+        let address =
             match cilState.this with
-            | None -> getArgTerm state argumentIndex cfg.methodBase
+            | None -> getArgTerm argumentIndex cfg.methodBase
             | Some _ when argumentIndex = 0 -> internalfail "can't load address of ``this''"
-            | Some _ -> getArgTerm state (argumentIndex - 1) cfg.methodBase
+            | Some _ -> getArgTerm (argumentIndex - 1) cfg.methodBase
         pushResultOnStack cilState (address, state) :: []
     let stloc numberCreator (cfg : cfgData) shiftedOffset (cilState : cilState) =
         let variableIndex = numberCreator cfg.ilBytes shiftedOffset
@@ -285,7 +267,7 @@ module internal InstructionsSet =
         let signedTyp = TypeUtils.unsigned2signedOrId typ
         if TypeUtils.isIntegerTermType typ && typ <> signedTyp then
             let isChecked = false // no specs found about overflows
-            castToTypeK isChecked signedTyp term state k
+            castToType isChecked signedTyp term state k
         else k (term, state)
     let standardPerformBinaryOperation op isChecked =
         performCILBinaryOperation op isChecked makeSignedInteger makeSignedInteger idTransformation
@@ -362,14 +344,14 @@ module internal InstructionsSet =
         | _ -> __notImplemented__()
     let starg numCreator (cfg : cfgData) offset (cilState : cilState) =
         let argumentIndex = numCreator cfg.ilBytes offset
-        let argTerm, state =
+        let argTerm =
            match cilState.this with
-           | None -> getArgTerm cilState.state argumentIndex cfg.methodBase
-           | Some this when argumentIndex = 0 -> this, cilState.state
-           | Some _ -> getArgTerm cilState.state (argumentIndex - 1) cfg.methodBase
+           | None -> getArgTerm argumentIndex cfg.methodBase
+           | Some this when argumentIndex = 0 -> this
+           | Some _ -> getArgTerm (argumentIndex - 1) cfg.methodBase
         match cilState.opStack with
         | value :: stack ->
-            let _, state = Memory.Mutate state argTerm value
+            let _, state = Memory.Mutate cilState.state argTerm value
             { cilState with opStack = stack; state = state} :: []
         | _ -> __notImplemented__()
     let brcommon condTransform offsets (cilState : cilState) =
@@ -441,7 +423,7 @@ module internal InstructionsSet =
         let unsignedTyp = TypeUtils.signed2unsignedOrId typ
         if TypeUtils.isIntegerTermType typ && typ <> unsignedTyp then
             let isChecked = false // no specs found about overflows
-            castToTypeK isChecked unsignedTyp term state k
+            castToType isChecked unsignedTyp term state k
         else k (term, state)
     let performUnsignedIntegerOperation op isChecked (cilState : cilState) =
         match cilState.opStack with
@@ -464,7 +446,7 @@ module internal InstructionsSet =
     let castTopOfOperationalStack isChecked targetType typeForStack (cilState : cilState) k =
         match cilState.opStack with
         | t :: stack ->
-            castToTypeK isChecked targetType t cilState.state (fun (term, state) ->
+            castToType isChecked targetType t cilState.state (fun (term, state) ->
             castUnchecked typeForStack term state (pushResultOnStack {cilState with opStack = stack} >> k))
         | _ -> __notImplemented__()
     let convu (cilState : cilState) = cilState :: []
@@ -559,7 +541,7 @@ module internal InstructionsSet =
         match cilState.opStack with
         | term :: stack ->
             let typ = resolveTermTypeFromMetadata cilState.state cfg (offset + OpCodes.Castclass.Size)
-            castToType {cilState with opStack = stack} false typ term cilState.state
+            castUnchecked typ term cilState.state (pushResultOnStack {cilState with opStack = stack} >> List.singleton)
 //            castUnchecked typ term cilState.state (pushResultOnStack {cilState with opStack = stack} >> List.singleton)
         | _ -> __notImplemented__()
     let initobj (cfg : cfgData) offset (cilState : cilState) =

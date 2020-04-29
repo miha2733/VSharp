@@ -86,6 +86,7 @@ module internal Common =
         | Null, _
         | Void, _   | _, Void
         | Bottom, _ | _, Bottom -> makeFalse mtd
+        | ArrayType _, ClassType(Id obj, _) when obj <> typedefof<obj> -> makeFalse mtd // TODO: use more common heuristics
         | Pointer _, Pointer _ -> makeTrue mtd
         | ArrayType _, ArrayType(_, SymbolicDimension) -> makeTrue mtd
         | ArrayType(t1, ConcreteDimension d1), ArrayType(t2, ConcreteDimension d2) ->

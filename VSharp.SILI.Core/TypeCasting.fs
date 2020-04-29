@@ -51,7 +51,6 @@ module internal TypeCasting =
                     (fun state k -> hierarchyCast state term k)
                     k
             | Ptr _
-            | Array _
             | Struct _ -> hierarchyCast state term k
             | _ -> __unreachable__()
         Merging.guardedErroredStatedApplyk primitiveCast state term k
