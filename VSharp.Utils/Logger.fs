@@ -1,7 +1,6 @@
 namespace VSharp
 
 module Logger =
-    open System
 
     let Error = 1
     let Warning = 2
