@@ -128,7 +128,7 @@ namespace VSharp.Test
                 InterpretEntryPoint(dictionary, ep);
             }
 
-            _statistics.PrintExceptionsStats();
+            _statistics.SaveExceptionsShortStats();
 
             return dictionary.ToDictionary(kvp => kvp.Key, kvp => ResultToString(kvp.Value));
         }
