@@ -100,6 +100,7 @@ module internal Pointers =
         | RefNullAddress, RefNullAddress -> makeTrue mtd
         | RefTopLevelHeap(addr, _, _), RefNullAddress
         | RefNullAddress, RefTopLevelHeap(addr, _, _) -> isZeroAddress mtd addr
+        | RefTopLevelStackEffects(addr1, _), RefTopLevelStackEffects(addr2, _)
         | RefTopLevelHeap(addr1, _, _), RefTopLevelHeap(addr2, _, _) -> fastNumericCompare mtd addr1 addr2
         | RefTopLevelStatics typ1, RefTopLevelStatics typ2 -> typesEqual mtd typ1 typ2
         | RefTopLevelStack key1, RefTopLevelStack key2 -> makeBool mtd (key1 = key2)
@@ -278,6 +279,7 @@ module internal Pointers =
 
     let topLevelLocation = Merging.guardedErroredApply (term >> function
         | Ref(RefTopLevelHeap (a, _, _), [])
+        | Ref(RefTopLevelStackEffects(a, _), [])
         | Ptr(RefTopLevelHeap (a, _, _), [], _, _) -> a
         | Ref(RefNullAddress, _)
         | Ptr(RefNullAddress, _, _, _) -> makeZeroAddress Metadata.empty

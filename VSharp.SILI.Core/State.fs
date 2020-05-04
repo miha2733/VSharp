@@ -15,6 +15,7 @@ type pathCondition = term list
 type entry = { key : stackKey; mtd : termMetadata; typ : termType }
 type stackFrame = { func : (IFunctionIdentifier * pathCondition) option; entries : entry list }
 type frames = { f : stackFrame stack; sh : stackHash }
+type stackEffects = term heap // TODO: add precondition that ref points to stack local variable #do
 type 'key generalizedHeap when 'key : equality =
     | Defined of bool * 'key heap // bool = restricted
     | HigherOrderApplication of term * concreteHeapAddress
@@ -24,7 +25,7 @@ type 'key generalizedHeap when 'key : equality =
     | Merged of (term * 'key generalizedHeap) list
 and staticMemory = termType generalizedHeap
 and typeVariables = mappedStack<typeId, termType> * typeId list stack
-and state = { stack : stack; heap : term generalizedHeap; statics : staticMemory; frames : frames; pc : pathCondition; typeVariables : typeVariables }
+and state = { stack : stack; heap : term generalizedHeap; statics : staticMemory; frames : frames; stackEffects : stackEffects; pc : pathCondition; typeVariables : typeVariables }
 
 type IActivator =
     abstract member CreateInstance : locationBinding -> System.Type -> term list -> state -> (term * state)
@@ -77,7 +78,8 @@ module internal State =
         stack = MappedStack.empty;
         heap = Defined false Heap.empty;
         statics = Defined false Heap.empty;
-        frames = { f = Stack.empty; sh = List.empty };
+        frames = { f = Stack.empty; sh = List.empty }
+        stackEffects = Heap.empty;
         pc = List.empty;
         typeVariables = (MappedStack.empty, Stack.empty)
     }
@@ -86,7 +88,8 @@ module internal State =
         stack = MappedStack.empty;
         heap = Defined true Heap.empty;
         statics = Defined true Heap.empty;
-        frames = { f = Stack.empty; sh = List.empty };
+        frames = { f = Stack.empty; sh = List.empty }
+        stackEffects = Heap.empty;
         pc = List.empty;
         typeVariables = (MappedStack.empty, Stack.empty)
     }
@@ -187,11 +190,13 @@ module internal State =
     let heapOf (s : state) = s.heap
     let staticsOf (s : state) = s.statics
     let framesOf (s : state) = s.frames
+    let stackEffectsOf (s : state) = s.stackEffects
     let framesHashOf (s : state) = s.frames.sh
     let pathConditionOf (s : state) = s.pc
 
     let withHeap (s : state) h' = { s with heap = h' }
     let withStatics (s : state) m' = { s with statics = m' }
+    let withStackEffects (s : state) se' = { s with stackEffects = se' }
 
     let mkMetadata (location : locationBinding) state =
         { origins = [{ location = location; stack = framesHashOf state}]; misc = null }
@@ -227,6 +232,7 @@ module internal State =
             if MappedStack.containsKey key ms then MappedStack.find key ms else typ
         | ArrayType(t, dim) -> ArrayType(substituteTypeVariables t, dim)
         | Pointer t -> Pointer(substituteTypeVariables t)
+        | ByRef t -> ByRef(substituteTypeVariables t)
 
 // ------------------------------- Memory layer -------------------------------
 

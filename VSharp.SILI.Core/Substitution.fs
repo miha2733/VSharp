@@ -9,6 +9,7 @@ module Substitution =
         | RefTopLevelStatics typ -> [True, typ |> typeSubst |> RefTopLevelStatics]
         | RefNullAddress
         | RefTopLevelStack _ as tl -> [True, tl]
+        | RefTopLevelStackEffects(addr, typ) -> addressSubst addr typ // TODO: keySubst and typeSubst?
 
     let rec substituteHeap<'a when 'a : equality> keySubst subst addressSubst typeSubst (heap : 'a heap) : 'a heap =
         Heap.map (fun (k, v) -> substituteHeapKey keySubst subst addressSubst typeSubst k, substitute subst addressSubst typeSubst v) heap

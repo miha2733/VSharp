@@ -192,11 +192,14 @@ module internal Merging =
                 let definedGuard = disjunction Metadata.empty definedGuards
                 (definedGuard, definedHeap)::undefined |> mergeSame |> Merged
 
+    let private merge2DefinedHeaps h1 h2 restricted read resolve =
+        Heap.merge2 h1 h2 (keysResolver2 restricted h1 h2 read Heap.getKey resolve)
+
     let private merge2GeneralizedHeaps g1 g2 h1 h2 read resolve =
         match h1, h2 with
         | Defined(r1, h1), Defined(r2, h2) ->
             assert(r1 = r2)
-            Heap.merge2 h1 h2 (keysResolver2 r1 h1 h2 read Heap.getKey resolve) |> State.Defined r1
+            merge2DefinedHeaps h1 h2 r1 read resolve |> State.Defined r1
         | _ -> mergeGeneralizedHeaps read [g1; g2] [h1; h2]
 
     let private addToPathConditionIfNeed cond pc = if isTrue cond then pc else cond :: pc
@@ -216,7 +219,8 @@ module internal Merging =
             let mergedStack = Utils.MappedStack.merge2 state1.stack state2.stack resolve (State.stackLazyInstantiator state1)
             let mergedHeap = merge2GeneralizedHeaps condition1 condition2 state1.heap state2.heap readHeap resolve
             let mergedStatics = merge2GeneralizedHeaps condition1 condition2 state1.statics state2.statics readStatics resolve
-            { state1 with stack = mergedStack; heap = mergedHeap; statics = mergedStatics; pc = mergedPC }
+            let mergedStackEffects = merge2DefinedHeaps state1.stackEffects state2.stackEffects false readHeap resolve // TODO: do we need restricted in stackEffects? #do
+            { state1 with stack = mergedStack; heap = mergedHeap; statics = mergedStatics; stackEffects = mergedStackEffects; pc = mergedPC } // TODO: может совместить эту проблему с проблемой SymbolicThisKey (сделать один символьный ключ) #do
 
     let mergeStates conditions states =
         assert(List.length states > 0)
@@ -230,9 +234,10 @@ module internal Merging =
         let mergedStack = Utils.MappedStack.merge conditions (List.map State.stackOf states) merge (State.stackLazyInstantiator first)
         let mergedHeap = mergeGeneralizedHeaps readHeap conditions (List.map State.heapOf states)
         let mergedStatics = mergeGeneralizedHeaps readStatics conditions (List.map State.staticsOf states)
+        let mergedStackEffects = mergeDefinedHeaps false readHeap conditions (List.map State.stackEffectsOf states) // TODO: do we need restricted in stackEffects? #do
         let mergedConditions = disjunction Metadata.empty conditions
         let mergedPC = if isTrue mergedConditions then path else mergedConditions :: path
-        { stack = mergedStack; heap = mergedHeap; statics = mergedStatics; frames = frames; pc = mergedPC; typeVariables = tv }
+        { stack = mergedStack; heap = mergedHeap; statics = mergedStatics; frames = frames; stackEffects = mergedStackEffects; pc = mergedPC; typeVariables = tv }
 
     let unguard = function
         | {term = Union gvs} -> gvs

@@ -8,7 +8,7 @@ open Types.Constructor
 
 [<CustomEquality;CustomComparison>]
 type stackKey =
-    | SymbolicThisKey of Reflection.MethodBase
+    | SymbolicThisKey of Reflection.MethodBase // TODO: add precondition that struct is laying on stack #do
     | ThisKey of Reflection.MethodBase
     | ParameterKey of Reflection.ParameterInfo
     | LocalVariableKey of Reflection.LocalVariableInfo
@@ -234,6 +234,7 @@ type termNode =
             | RefTopLevelHeap _ -> makeRef "Heap"
             | RefTopLevelStack _ -> makeRef "Stack"
             | RefTopLevelStatics _ -> makeRef "Static"
+            | RefTopLevelStackEffects _ -> makeRef "ByRef"
 
         and toStringWithIndent indent term = toStr -1 false indent term.term
 
@@ -275,6 +276,7 @@ and heapTopLevelAddress =
     | HeapTopLevelStack of stackKey
     | HeapTopLevelHeap of term * termType // Address * Base type
     | HeapTopLevelStatics of termType
+    | HeapTopLevelStackEffects of term * termType // Address * Base type // TODO: need type? #do
     interface ITopLevelAddress with
         override x.BaseType with get() =
             match x with
@@ -282,17 +284,20 @@ and heapTopLevelAddress =
             | HeapTopLevelStack _ -> Core.Void // TODO: this is temporary hack, support normal typing
             | HeapTopLevelHeap(_, baseType) -> baseType
             | HeapTopLevelStatics termType -> termType
+            | HeapTopLevelStackEffects(_, termType) -> termType
     member x.ConvertToRefTopLevel() =
         match x with
         | HeapNullAddress -> RefNullAddress
         | HeapTopLevelStack stackKey -> RefTopLevelStack stackKey
         | HeapTopLevelHeap(address, baseType) -> RefTopLevelHeap(address, baseType, baseType)
         | HeapTopLevelStatics termType -> RefTopLevelStatics termType
+        | HeapTopLevelStackEffects(address, termType) -> RefTopLevelStackEffects(address, termType)
     override x.ToString() =
         match x with
         | HeapTopLevelStack key -> toString key
         | HeapTopLevelStatics typ -> toString typ
         | HeapTopLevelHeap(key, _) -> toString key
+        | HeapTopLevelStackEffects(key, _) -> toString key
         | HeapNullAddress -> "null"
 
 and refTopLevelAddress =
@@ -300,6 +305,7 @@ and refTopLevelAddress =
     | RefTopLevelStack of stackKey
     | RefTopLevelHeap of term * termType * termType // Address * Base type * Sight type
     | RefTopLevelStatics of termType
+    | RefTopLevelStackEffects of term * termType // TODO: think about casts and second type #do
     member private x.Type(needBaseType) =
         match x with
         | RefNullAddress -> Null
@@ -307,6 +313,7 @@ and refTopLevelAddress =
         | RefTopLevelHeap(_, baseType, _) when needBaseType -> baseType
         | RefTopLevelHeap(_, _, sightType) -> sightType
         | RefTopLevelStatics termType -> termType
+        | RefTopLevelStackEffects(_, termType) -> termType
     interface ITopLevelAddress with
         override x.BaseType with get() = x.Type(true)
     member x.SightType with get() = x.Type(false)
@@ -316,11 +323,13 @@ and refTopLevelAddress =
         | RefTopLevelStack stackKey -> HeapTopLevelStack stackKey
         | RefTopLevelHeap(address, baseType, _) -> HeapTopLevelHeap(address, baseType)
         | RefTopLevelStatics termType -> HeapTopLevelStatics termType
+        | RefTopLevelStackEffects(address, termType) -> HeapTopLevelStackEffects(address, termType)
     override x.ToString() =
         match x with
         | RefTopLevelStack key -> toString key
         | RefTopLevelStatics typ -> toString typ
         | RefTopLevelHeap(key, _, _) -> toString key
+        | RefTopLevelStackEffects(key, _) -> toString key
         | RefNullAddress -> "null"
 
 and pathSegment =
@@ -413,6 +422,7 @@ module internal Terms =
     let Class metadata fields = HashMap.addTerm (Class fields) metadata
     let StackRef metadata key path = HashMap.addTerm (Ref(RefTopLevelStack key, path)) metadata
     let HeapRef metadata addr baseType sightType path = HashMap.addTerm (Ref(RefTopLevelHeap(addr, baseType, sightType), path)) metadata
+    let ByRef metadata addr typ path = HashMap.addTerm (Ref(RefTopLevelStackEffects(addr, typ), path)) metadata
     let StaticRef metadata typ path = HashMap.addTerm (Ref(RefTopLevelStatics typ, path)) metadata
     let StackPtr metadata key path typ = HashMap.addTerm (Ptr(RefTopLevelStack key, path, typ, None)) metadata
     let HeapPtr metadata addr baseType sightType path ptrTyp = HashMap.addTerm (Ptr(RefTopLevelHeap(addr, baseType, sightType), path, ptrTyp, None)) metadata
@@ -634,7 +644,7 @@ module internal Terms =
         | Union gvs -> List.forall (snd >> isStruct) gvs
         | _ -> false
 
-    let rec isReference term =
+    let rec isReference term = // TODO: mb add ByRef? #do
         match term.term with
         | Union gvs -> List.forall (snd >> isReference) gvs
         | _ -> isRef term
@@ -829,7 +839,8 @@ module internal Terms =
         folder state term
 
     and foldTopLevel folder visited state = function
-        | RefTopLevelHeap(addr, _, _) -> doFold folder visited state addr
+        | RefTopLevelHeap(addr, _, _)
+        | RefTopLevelStackEffects(addr, _) -> doFold folder visited state addr
         | RefNullAddress
         | RefTopLevelStack _
         | RefTopLevelStatics _ -> state

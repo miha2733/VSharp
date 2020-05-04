@@ -59,7 +59,7 @@ module internal Memory =
             override x.WithExtractor e = {x with extractor = e} :> IExtractingSymbolicConstantSource
         interface IExtractingSymbolicTypeSource with
             override x.WithTypeExtractor e = {x with typeExtractor = e} :> IExtractingSymbolicTypeSource
-            override x.TypeCompose ctx state =
+            override x.TypeCompose ctx state = // TODO: dead code! #do
                 (x :> IStatedSymbolicConstantSource).Compose ctx state |> typeOf |> x.typeExtractor.TypeExtract
             override x.TypeEquals other =
                 match other with
@@ -69,9 +69,9 @@ module internal Memory =
     let lazyInstantiationWithExtractor location heap extractor typeExtractor : IExtractingSymbolicConstantSource =
         let gli heap = {location = location; heap = heap; extractor = extractor; typeExtractor = typeExtractor} :> IExtractingSymbolicConstantSource
         match heap, location.term with
-        | None, Ref(RefTopLevelHeap _, _) -> gli (None : term generalizedHeap option)
-        | None, Ref(RefTopLevelStatics _, _) -> gli (None : termType generalizedHeap option)
-        | None, Ref(RefTopLevelStack _, _) -> gli (None : obj generalizedHeap option)
+        | None, Ref(RefTopLevelHeap _, _) -> gli None
+        | None, Ref(RefTopLevelStatics _, _) -> gli None
+        | None, Ref(RefTopLevelStack _, _) -> gli None
         | Some _, _ -> gli heap
         | _ -> __notImplemented__()
 
@@ -137,6 +137,7 @@ module internal Memory =
         | StructType _ ->
             mkStruct metadata false (fun m _ t -> defaultOf m t) typ fql
         | Pointer typ -> makeNullPtr metadata typ
+        | ByRef _ -> __unreachable__() // TODO: mb makeNullRef metadata
         | _ -> __notImplemented__()
 
     let mkDefaultBlock metadata targetType fql =
@@ -251,6 +252,9 @@ module internal Memory =
         | Pointer typ' ->
             let makePtr mtd tl bTyp sTyp path = HeapPtr mtd tl bTyp sTyp path sTyp
             makeSymbolicHeapReference metadata source name typ' makePtr
+        | ByRef typ' ->
+            let makeRef mtd tl typ _ path = ByRef mtd tl typ path
+            makeSymbolicHeapReference metadata source name typ' makeRef
         | Null -> makeNullRef metadata
         | Void -> Nop
         | Bottom -> __unreachable__()
@@ -499,7 +503,7 @@ module internal Memory =
         match Database.querySummary codeLoc with
         | Some summary ->
             let t, _ = read exploredRecursiveIds summary.state
-            let li = genericLazyInstantiator Metadata.empty (None : 'a generalizedHeap option) (getFQLOfRef location) (typeOf location) ()
+            let li = genericLazyInstantiator Metadata.empty (None : 'a generalizedHeap option) (getFQLOfRef location) (baseTypeOfRef location) ()
             li = t
         | None -> false
 
@@ -574,6 +578,9 @@ module internal Memory =
                     commonHierarchicalStaticsAccess read r updateDefined metadata groundHeap h contextList lazyInstantiator location path
                 let result, m' = accessGeneralizedHeap read (readStatics metadata) staticsOf term accessDefined (staticsOf state)
                 result, withStatics state m'
+            | Ref(RefTopLevelStackEffects(addr, typ), path) ->
+                let result, se' = commonHierarchicalHeapAccess read false updateDefined metadata None (stackEffectsOf state) [] None addr typ path
+                result, withStackEffects state se'
             | Ptr(_, _, viewType, shift) ->
                 let ref = getReferenceFromPointer metadata term
                 let term, state = hierarchicalAccess validate read actionNull updateDefined metadata state ref

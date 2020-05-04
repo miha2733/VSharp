@@ -26,6 +26,7 @@ type termType =
     | TypeVariable of typeId
     | ArrayType of termType * arrayDimensionType
     | Pointer of termType // C-style pointers like int*
+    | ByRef of termType // Managed pointer ("ref" keyword) // TODO: mb rename #do
 
     override x.ToString() =
         match x with
@@ -48,6 +49,7 @@ type termType =
         | ArrayType(t, ConcreteDimension rank) -> t.ToString() + "[" + new string(',', rank - 1) + "]"
         | ArrayType(_, SymbolicDimension) -> "System.Array"
         | Pointer t -> sprintf "<Pointer to %O>" t
+        | ByRef t -> sprintf "<Reference to %O>" t
 
 and [<CustomEquality;CustomComparison>]
     typeId =
@@ -89,7 +91,7 @@ module internal Types =
         | InterfaceType _
         | ArrayType _ -> Some(ReferenceType)
         | TypeVariable(Id t) when TypeUtils.isReferenceTypeParameter t -> Some(ReferenceType)
-        | _ -> None
+        | _ -> None // TODO: include byref here? #do
 
     let (|ComplexType|_|) = function
         | StructureType
@@ -170,6 +172,7 @@ module internal Types =
         | ArrayType(t, Vector) -> (toDotNetType t).MakeArrayType()
         | ArrayType(t, ConcreteDimension rank) -> (toDotNetType t).MakeArrayType(rank)
         | Pointer t -> (toDotNetType t).MakePointerType()
+        | ByRef t -> (toDotNetType t).MakeByRefType()
         | Null -> __unreachable__()
         | _ -> __notImplemented__()
 
@@ -209,6 +212,7 @@ module internal Types =
             match dotNetType with
             | null -> Null
             | p when p.IsPointer -> p.GetElementType() |> fromDotNetType |> Pointer
+            | r when r.IsByRef -> r.GetElementType() |> fromDotNetType |> ByRef
             | v when v.FullName = "System.Void" -> Void
             | a when a.FullName = "System.Array" -> ArrayType(fromDotNetType typedefof<obj>, SymbolicDimension)
             | b when b.Equals(typedefof<bool>) -> Bool
