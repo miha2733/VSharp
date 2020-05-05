@@ -4,23 +4,34 @@
 
 open VSharp
 open VSharp.Core.Types
+open VSharp.Core.State
 
 type SolverResult = Sat | Unsat | Unknown
 type ISolver =
-    abstract Solve : term -> SolverResult
-    abstract SolvePathCondition : term -> term list -> SolverResult
+    abstract SolvePathCondition : term list -> SolverResult
 
 module internal Common =
+
+// ----------------------------- Solver Interaction -----------------------------
     let mutable private solver : ISolver option = None
-    let configureSolver s = solver <- Some s
-    let private solve term =
-        match solver with
-        | Some s -> s.Solve term
-        | None -> Unknown
-    let private solvePC term pc =
-        match solver with
-        | Some s -> s.SolvePathCondition term pc
-        | None -> Unknown
+    let mutable private typeSolver : ISolver option = None
+    let configureSolver s ts =
+        solver <- Some s
+        typeSolver <- Some ts
+
+    let combineSolversResults res1 res2 =
+        match res1, res2 with
+        | Sat, Sat -> Sat
+        | _, Unsat | Unsat, _ -> Unsat
+        | _ -> Unknown
+
+    let private solvePC (pc : pathCondition) =
+        match pc, solver, typeSolver with
+        | {termPC = []; typePC = pc}, _, Some ts -> ts.SolvePathCondition pc
+        | {termPC = pc; typePC = []}, Some s, _ -> s.SolvePathCondition pc
+        | {termPC = termPC; typePC = typePC}, Some s, Some ts ->
+            combineSolversResults (s.SolvePathCondition termPC) (ts.SolvePathCondition typePC)
+        | _ -> Unknown
 
 // ------------------------------- Simplification -------------------------------
 
@@ -185,7 +196,7 @@ module internal Common =
 
 // ---------------------------------------- Branching ---------------------------------------
 
-    let commonStatelessConditionalExecutionk pc conditionInvocation thenBranch elseBranch merge merge2 errorHandler k =
+    let commonStatelessConditionalExecutionk condIsType (pc : pathCondition) conditionInvocation thenBranch elseBranch merge merge2 errorHandler k =
         let execution condition k =
             thenBranch (fun thenResult ->
             elseBranch (fun elseResult ->
@@ -195,25 +206,29 @@ module internal Common =
             | Terms.True ->  thenBranch k
             | Terms.False -> elseBranch k
             | condition ->
-                match solvePC condition pc with
+                match addToPathCondition condIsType pc condition |> solvePC  with
                 | Unsat -> elseBranch k
                 | _ ->
-                    match solvePC (!!condition) pc with
+                    match addToPathCondition condIsType pc !!condition |> solvePC with
                     | Unsat -> thenBranch k
                     | _ -> execution condition k
         conditionInvocation (fun condition ->
         Merging.commonGuardedErroredApplyk chooseBranch errorHandler condition merge k)
 
-    let statelessConditionalExecutionWithMergek pc conditionInvocation thenBranch elseBranch k = commonStatelessConditionalExecutionk pc conditionInvocation thenBranch elseBranch Merging.merge Merging.merge2Terms id k
-    let statelessConditionalExecutionWithMerge pc conditionInvocation thenBranch elseBranch = statelessConditionalExecutionWithMergek pc conditionInvocation thenBranch elseBranch id
+    let statelessConditionalExecutionWithMergek pc conditionInvocation thenBranch elseBranch k =
+        commonStatelessConditionalExecutionk false pc conditionInvocation thenBranch elseBranch Merging.merge Merging.merge2Terms id k
+    let statelessConditionalExecutionWithMerge pc conditionInvocation thenBranch elseBranch =
+        statelessConditionalExecutionWithMergek pc conditionInvocation thenBranch elseBranch id
+    let statelessTypeConditionalExecutionWithMerge pc conditionInvocation thenBranch elseBranch =
+        commonStatelessConditionalExecutionk true pc conditionInvocation thenBranch elseBranch Merging.merge Merging.merge2Terms id id
 
-    let commonStatedConditionalExecutionk (state : state) conditionInvocation thenBranch elseBranch mergeResults mergeStates merge2Results merge2States errorHandler k =
+    let commonStatedConditionalExecutionk condIsType (state : state) conditionInvocation thenBranch elseBranch mergeResults mergeStates merge2Results merge2States errorHandler k =
         let execution conditionState condition k =
             assert (condition <> True && condition <> False)
-            thenBranch (State.withPathCondition conditionState condition) (fun (thenResult, thenState) ->
-            elseBranch (State.withPathCondition conditionState !!condition) (fun (elseResult, elseState) ->
+            thenBranch (State.withPathCondition condIsType conditionState condition) (fun (thenResult, thenState) ->
+            elseBranch (State.withPathCondition condIsType conditionState !!condition) (fun (elseResult, elseState) ->
             let result = merge2Results condition !!condition thenResult elseResult
-            let state = merge2States condition !!condition (State.popPathCondition thenState) (State.popPathCondition elseState)
+            let state = merge2States condition !!condition (State.popPathCondition condIsType thenState) (State.popPathCondition condIsType elseState)
             k (result, state)))
         let chooseBranch conditionState condition k =
             let thenCondition = Merging.conditionUnderState condition conditionState
@@ -222,15 +237,19 @@ module internal Common =
             | False, _ -> elseBranch conditionState k
             | _, False -> thenBranch conditionState k
             | _ ->
-                match solvePC condition (State.pathConditionOf conditionState) with
+                let pc = State.addToPathCondition condIsType conditionState.pc condition
+                match solvePC pc with
                 | Unsat -> elseBranch conditionState k
                 | _ ->
-                    match solvePC !!condition (State.pathConditionOf conditionState) with
+                    let pc = State.addToPathCondition condIsType conditionState.pc !!condition
+                    match solvePC pc with
                     | Unsat -> thenBranch conditionState k
                     | _ -> execution conditionState condition k
         conditionInvocation state (fun (condition, conditionState) ->
         Merging.commonGuardedErroredStatedApplyk chooseBranch errorHandler conditionState condition mergeResults mergeStates k)
 
     let statedConditionalExecutionWithMergek state conditionInvocation thenBranch elseBranch k =
-        commonStatedConditionalExecutionk state conditionInvocation thenBranch elseBranch Merging.merge Merging.mergeStates Merging.merge2Terms Merging.merge2States id k
+        commonStatedConditionalExecutionk false state conditionInvocation thenBranch elseBranch Merging.merge Merging.mergeStates Merging.merge2Terms Merging.merge2States id k
+    let statedTypeConditionalExecutionWithMergek state conditionInvocation thenBranch elseBranch k =
+        commonStatedConditionalExecutionk true state conditionInvocation thenBranch elseBranch Merging.merge Merging.mergeStates Merging.merge2Terms Merging.merge2States id k
     let statedConditionalExecutionWithMerge state conditionInvocation thenBranch elseBranch = statedConditionalExecutionWithMergek state conditionInvocation thenBranch elseBranch id

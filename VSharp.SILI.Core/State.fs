@@ -11,7 +11,7 @@ type compositionContext =
     static member Empty = { mtd = Metadata.empty; addr = [] }
 
 type stack = mappedStack<stackKey, term>
-type pathCondition = term list
+type pathCondition = { termPC : term list; typePC : term list }
 type entry = { key : stackKey; mtd : termMetadata; typ : termType }
 type stackFrame = { func : (IFunctionIdentifier * pathCondition) option; entries : entry list }
 type frames = { f : stackFrame stack; sh : stackHash }
@@ -71,6 +71,10 @@ module internal State =
 
 // ------------------------------- Primitives -------------------------------
 
+    let public emptyPC = { termPC = List.empty; typePC = List.empty }
+    let public addTermPC cond pc = { pc with termPC = cond :: pc.termPC }
+    let public addTypePC cond pc = { pc with typePC = cond :: pc.typePC }
+
     let Defined r h = Defined(r, h)
 
     let empty : state = {
@@ -78,7 +82,7 @@ module internal State =
         heap = Defined false Heap.empty;
         statics = Defined false Heap.empty;
         frames = { f = Stack.empty; sh = List.empty };
-        pc = List.empty;
+        pc = emptyPC;
         typeVariables = (MappedStack.empty, Stack.empty)
     }
 
@@ -87,7 +91,7 @@ module internal State =
         heap = Defined true Heap.empty;
         statics = Defined true Heap.empty;
         frames = { f = Stack.empty; sh = List.empty };
-        pc = List.empty;
+        pc = emptyPC;
         typeVariables = (MappedStack.empty, Stack.empty)
     }
 
@@ -177,18 +181,24 @@ module internal State =
         | Some t -> t
         | None -> internalfailf "stack does not contain key %O!" key
 
-    let withPathCondition (s : state) cond : state = { s with pc = cond::s.pc }
-    let popPathCondition (s : state) : state =
+    let addToPathCondition condIsType pc cond =
+        if condIsType then addTypePC cond pc else addTermPC cond pc
+    let withPathCondition condIsType (s : state) cond : state =
+        { s with pc = addToPathCondition condIsType s.pc cond }
+    let popPathCondition condIsType (s : state) : state =
         match s.pc with
-        | [] -> internalfail "cannot pop empty path condition"
-        | _::p' -> { s with pc = p' }
+        | { termPC = [] } when not condIsType -> internalfail "cannot pop empty path condition"
+        | { termPC = _::p' } when not condIsType -> { s with pc = { s.pc with termPC = p' } }
+        | { typePC = [] } when condIsType -> internalfail "cannot pop empty (type) path condition"
+        | { typePC = _::p' } when condIsType -> { s with pc = { s.pc with typePC = p' } }
+        | _ -> __unreachable__()
 
     let stackOf (s : state) = s.stack
     let heapOf (s : state) = s.heap
     let staticsOf (s : state) = s.statics
     let framesOf (s : state) = s.frames
     let framesHashOf (s : state) = s.frames.sh
-    let pathConditionOf (s : state) = s.pc
+    let combinedPathConditionOf (s : state) = List.append s.pc.termPC s.pc.typePC
 
     let withHeap (s : state) h' = { s with heap = h' }
     let withStatics (s : state) m' = { s with statics = m' }

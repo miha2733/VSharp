@@ -38,14 +38,9 @@ type public Z3Simplifier() =
 
 type public SmtSolverWrapper<'TAst>(solver : ISmtSolver<'TAst>) =
     interface VSharp.Core.ISolver with
-        override x.Solve term =
-            match solver.Solve [term] with
-            | SmtSat _ -> VSharp.Core.Sat
-            | SmtUnsat -> VSharp.Core.Unsat
-            | SmtUnknown _ -> VSharp.Core.Unknown
-        override x.SolvePathCondition term pc =
+        override x.SolvePathCondition pc =
             // TODO: solving should be incremental!
-            match solver.Solve (term::pc) with
+            match solver.Solve pc with
             | SmtSat _ -> VSharp.Core.Sat
             | SmtUnsat -> VSharp.Core.Unsat
             | SmtUnknown _ -> VSharp.Core.Unknown

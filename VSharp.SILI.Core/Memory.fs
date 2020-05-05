@@ -117,7 +117,7 @@ module internal Memory =
         Class metadata contents
 
     let private mkBlock metadata isStatic mkField typ fql =
-        Common.statelessConditionalExecutionWithMerge []
+        Common.statelessTypeConditionalExecutionWithMerge emptyPC
             (fun k -> k <| Common.isValueType metadata typ)
             (fun k -> k <| mkStruct metadata isStatic mkField typ fql)
             (fun k -> k <| mkClass metadata isStatic mkField typ fql)
@@ -130,7 +130,7 @@ module internal Memory =
         | ClassType _
         | InterfaceType _ -> makeNullRef metadata
         | TypeVariable (Id t) ->
-            Common.statelessConditionalExecutionWithMerge []
+            Common.statelessTypeConditionalExecutionWithMerge emptyPC
                 (fun k -> k <| Common.isValueType metadata typ)
                 (fun k -> k <| CastConcrete false 0 t metadata) // TODO: add "default" symbolic constant source
                 (fun k -> k <| makeNullRef metadata)
@@ -236,7 +236,7 @@ module internal Memory =
         | Numeric _ -> Constant metadata name source typ
         | StructType _ -> makeSymbolicStruct metadata source name typ fql
         | TypeVariable _ ->
-            Common.statelessConditionalExecutionWithMerge []
+            Common.statelessTypeConditionalExecutionWithMerge emptyPC
                 (fun k -> k <| Common.isValueType metadata typ)
                 (fun k -> k <| Constant metadata name source typ)
                 (fun k -> k <| makeSymbolicClass metadata source name typ fql)
@@ -746,8 +746,9 @@ module internal Memory =
         let heap = composeHeapsOf ctx stateWithOldFrames state'.heap
         let statics = composeStaticsOf ctx stateWithOldFrames state'.statics
         assert(state'.typeVariables |> snd |> Stack.isEmpty)
-        let pc = List.map (fillHoles ctx stateWithOldFrames) state'.pc |> List.append stateWithOldFrames.pc
-        { stateWithNewFrames with heap = heap; statics = statics; pc = pc }
+        let termPC = List.map (fillHoles ctx stateWithOldFrames) state'.pc.termPC |> List.append stateWithOldFrames.pc.termPC
+        let typePC = List.map (fillHoles ctx stateWithOldFrames) state'.pc.typePC |> List.append stateWithOldFrames.pc.typePC
+        { stateWithNewFrames with heap = heap; statics = statics; pc = { termPC = termPC; typePC = typePC } }
 
 // ------------------------------- High-level read/write -------------------------------
 

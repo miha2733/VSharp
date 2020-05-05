@@ -75,7 +75,7 @@ namespace VSharp.Test
 
             var svm = new SVM(new ILInterpreter());
             // SVM.ConfigureSimplifier(new Z3Simplifier()); can be used to enable Z3-based simplification (not recommended)
-            svm.ConfigureSolver(new SmtSolverWrapper<Microsoft.Z3.AST>(new Z3Solver()));
+            svm.ConfigureSolver(new SmtSolverWrapper<Microsoft.Z3.AST>(new Z3Solver()), new TypeSolver());
             TestSvmAttribute.SetUpSVM(svm);
         }
     }

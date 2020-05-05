@@ -86,7 +86,7 @@ type public ExplorerBase() =
                         let state = {state with pc = p}
                         Memory.NewStackFrame state f fr
                     | None -> Memory.NewScope state fr) frames.f State.empty
-                { state with pc = List.empty; frames = frames}
+                { state with pc = State.emptyPC; frames = frames}
             match codeLoc with
             | :? IFunctionIdentifier as funcId ->
                 let this, state, isMethodOfStruct =
@@ -99,11 +99,11 @@ type public ExplorerBase() =
                             Memory.makeSymbolicThis metadata initialState m.Token declaringType
                             |> (fun (f, s, flag) -> Some f, s, flag)
                     | _ -> __notImplemented__()
-                let thisIsNotNull = if Option.isSome this then !!( Pointers.isNull metadata (Option.get this)) else Nop
-                let state = if Option.isSome this && thisIsNotNull <> True then State.withPathCondition state thisIsNotNull else state
+                let thisIsNotNull = if Option.isSome this then !! (Pointers.isNull metadata (Option.get this)) else Nop
+                let state = if Option.isSome this && thisIsNotNull <> True then State.withPathCondition false state thisIsNotNull else state
                 let state = x.FormInitialState funcId state this
                 x.Invoke funcId state this (fun (res, state) ->
-                    let state = if Option.isSome this && thisIsNotNull <> True then State.popPathCondition state else state
+                    let state = if Option.isSome this && thisIsNotNull <> True then State.popPathCondition false state else state
                     let state = if isMethodOfStruct then State.popStack state else state
                     CurrentlyBeingExploredLocations.Remove funcId |> ignore
                     Database.report funcId res state |> k)
@@ -253,16 +253,20 @@ type public InterpreterBase<'InterpreterState when 'InterpreterState :> IInterpr
                 | _ -> pc1, pc2, common
             let st1 = x.InternalState
             let st2 = y.InternalState
-            let cond1List, cond2List, commonPc = findCommonSuffix [] (List.rev st1.pc) (List.rev st2.pc)
-            let cond1 = conjunction cond1List
-            let cond2 = conjunction cond2List
-            let common = conjunction commonPc
+            let pc1 = st1.pc
+            let pc2 = st2.pc
+            let cond1ListTerm, cond2ListTerm, commonTermPC = findCommonSuffix [] (List.rev pc1.termPC) (List.rev pc2.termPC)
+            let cond1ListType, cond2ListType, commonTypePC = findCommonSuffix [] (List.rev pc1.typePC) (List.rev pc2.typePC)
+            let cond1 = List.append cond1ListTerm cond1ListType |> conjunction
+            let cond2 = List.append cond2ListTerm cond2ListType |> conjunction
+            let common = List.append commonTermPC commonTypePC |> conjunction
+            let commonPC = { termPC = commonTermPC; typePC = commonTypePC }
             let result =
                 match x.ResultTerm, y.ResultTerm with
                 | None, None -> None
                 | Some t1, Some t2 -> Some <| Merging.merge2Terms (cond1 &&& common) (cond2 &&& common) t1 t2
                 | _ -> internalfail "only one state has result"
-            let mergedInternalState = Merging.merge2States cond1 cond2 {st1 with pc = commonPc} {st2 with pc = commonPc}
+            let mergedInternalState = Merging.merge2States cond1 cond2 {st1 with pc = commonPC} {st2 with pc = commonPC}
             let newSt = x.SetState mergedInternalState
             newSt.SetResultTerm(result)
         let rec interpret' current =

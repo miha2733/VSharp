@@ -84,9 +84,9 @@ namespace VSharp.Test
             return ResultToString(summary);
         }
 
-        public void ConfigureSolver(ISolver solver)
+        public void ConfigureSolver(ISolver solver, ISolver typeSolver)
         {
-            API.ConfigureSolver(solver);
+            API.ConfigureSolver(solver, typeSolver);
         }
 
         public IDictionary<MethodInfo, string> Run(Assembly assembly, List<string> ignoredList)

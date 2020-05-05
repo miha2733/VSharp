@@ -141,6 +141,17 @@ module internal InstructionsSet =
             (fun _ _ _ _ -> Memory.EmptyState)
             (fun _ -> __notImplemented__()) // TODO: update, when exceptions will be implemented
             (fst >> k)
+    let StatedTypeConditionalExecutionCIL (cilState : cilState) condition thenBranch elseBranch k =
+        StatedTypeConditionalExecution cilState.state condition
+            (fun state k -> thenBranch {cilState with state = state} (fun cilState -> k (cilState, state)))
+            (fun state k -> elseBranch {cilState with state = state} (fun cilState -> k (cilState, state)))
+            (List.collect snd)
+            (fun _ _ -> Memory.EmptyState)
+            (fun _ _ -> List.append)
+            (fun _ _ _ _ -> Memory.EmptyState)
+            (fun _ -> __notImplemented__()) // TODO: update, when exceptions will be implemented
+            (fst >> k)
+
     let GuardedApply (cilState : cilState) term f k =
         GuardedErroredStatedApplyk
             (fun state term k -> f {cilState with state = state} term (fun cilState -> k (cilState, state)))
@@ -564,7 +575,7 @@ module internal InstructionsSet =
         | object :: stack ->
             let typ = resolveTermTypeFromMetadata cilState.state cfg (offset + OpCodes.Isinst.Size)
             let isCast = Types.IsCast cilState.state typ object
-            StatedConditionalExecutionCIL cilState
+            StatedConditionalExecutionCIL cilState // TODO: StatedConditionalExecutionCIL can be used here, but condition is !(x == 0) && someTypeCondition
                 (fun state k -> k (isCast, state))
                 (fun cilState k -> k [cilState])
                 (fun cilState k -> k [{cilState with opStack = MakeNullRef() :: stack}])

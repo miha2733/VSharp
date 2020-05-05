@@ -11,8 +11,8 @@ module API =
 
     let Configure activator =
         State.configure activator
-    let ConfigureSolver solver =
-        Common.configureSolver solver
+    let ConfigureSolver solver typeSolver =
+        Common.configureSolver solver typeSolver
     let ConfigureSimplifier simplifier =
         Propositional.configureSimplifier simplifier
     let Reset() =
@@ -32,7 +32,10 @@ module API =
         BranchStatements state (fun state k -> k (Pointers.isNull m.Value reference, state)) thenStatement elseStatement k
     let BranchExpressions state condition thenBranch elseExpression k =
         Common.statelessConditionalExecutionWithMergek state.pc condition thenBranch elseExpression k
-    let StatedConditionalExecution = Common.commonStatedConditionalExecutionk
+    let StatedConditionalExecution state conditionInvocation thenBranch elseBranch mergeResults mergeStates merge2Results merge2States errorHandler k =
+        Common.commonStatedConditionalExecutionk false state conditionInvocation thenBranch elseBranch mergeResults mergeStates merge2Results merge2States errorHandler k
+    let StatedTypeConditionalExecution state conditionInvocation thenBranch elseBranch mergeResults mergeStates merge2Results merge2States errorHandler k =
+        Common.commonStatedConditionalExecutionk true state conditionInvocation thenBranch elseBranch mergeResults mergeStates merge2Results merge2States errorHandler k
 
     let GuardedApplyExpression term f = Merging.guardedErroredApply f term
     let GuardedStatedApplyStatementK state term f k = Merging.guardedErroredStatedApplyk f state term k
@@ -80,8 +83,6 @@ module API =
 
         let ConstantsOf terms = discoverConstants terms
 
-        let AddConditionToState conditionState condition = State.withPathCondition conditionState condition
-
     module Types =
         let Numeric t = Types.Numeric t
 
@@ -95,7 +96,6 @@ module API =
         let IsInteger t = Types.isInteger t
         let IsReal t = Types.isReal t
         let IsPointer t = Types.isPointer t
-        let IsValueType t = Common.isValueType m.Value t
 
         let String = Types.String
         let (|StringType|_|) t = Types.(|StringType|_|) t
@@ -104,6 +104,7 @@ module API =
 
         let TypeIsType leftType rightType = Common.typeIsType m.Value leftType rightType
         let TypeIsNullable typ = Common.isNullable m.Value typ
+        let TypeIsValueType typ = Common.isValueType m.Value typ
         let TypeIsRef typ ref = Common.typeIsRef m.Value typ ref
         let RefIsType ref typ = Common.refIsType m.Value ref typ
         let RefIsRef leftRef rightRef = Common.refIsRef m.Value leftRef rightRef

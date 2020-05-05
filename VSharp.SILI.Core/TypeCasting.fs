@@ -33,7 +33,7 @@ module internal TypeCasting =
 
     let cast mtd isChecked state term targetType fail k =
         let hierarchyCast state term =
-            Common.statedConditionalExecutionWithMergek state
+            Common.statedTypeConditionalExecutionWithMergek state
                 (fun state k -> k (canCast mtd term targetType, state))
                 (fun state k -> k (doCast mtd term targetType isChecked, state))
                 (fun state k -> k (fail state term targetType))

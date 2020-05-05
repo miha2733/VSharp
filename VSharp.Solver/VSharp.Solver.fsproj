@@ -10,6 +10,7 @@
         <Compile Include="Encode.fs" />
         <Compile Include="Z3.fs" />
         <Compile Include="Solver.fs" />
+        <Compile Include="TypeSolver.fs" />
     </ItemGroup>
 
     <ItemGroup>

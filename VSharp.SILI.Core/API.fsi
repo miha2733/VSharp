@@ -7,7 +7,7 @@ module API =
     val Enter : locationBinding -> state -> ('a -> 'b) -> ('a -> 'b)
 
     val Configure : IActivator -> unit
-    val ConfigureSolver : ISolver -> unit
+    val ConfigureSolver : ISolver -> ISolver -> unit
     val ConfigureSimplifier : IPropositionalSimplifier -> unit
     val Reset : unit -> unit
     val SaveConfiguration : unit -> unit
@@ -18,6 +18,7 @@ module API =
     val BranchStatementsOnNull : state -> term -> (state -> (term * state -> 'a) -> 'a) -> (state -> (term * state -> 'a) -> 'a) -> (term * state -> 'a) -> 'a
     val BranchExpressions : state -> ((term -> 'a) -> 'b) -> ((term -> 'a) -> 'a) -> ((term -> 'a) -> 'a) -> (term -> 'a) -> 'b
     val StatedConditionalExecution : (state -> (state -> (term * state -> 'a) -> 'b) -> (state -> ('item * state -> 'a) -> 'a) -> (state -> ('item * state -> 'a) -> 'a) -> ((term * 'item) list -> 'item) -> (term list -> state list -> state) -> (term -> term -> 'item -> 'item -> 'item) -> (term -> term -> state -> state -> state) -> (term -> 'item) -> ('item * state -> 'a) -> 'b)
+    val StatedTypeConditionalExecution : (state -> (state -> (term * state -> 'a) -> 'b) -> (state -> ('item * state -> 'a) -> 'a) -> (state -> ('item * state -> 'a) -> 'a) -> ((term * 'item) list -> 'item) -> (term list -> state list -> state) -> (term -> term -> 'item -> 'item -> 'item) -> (term -> term -> state -> state -> state) -> (term -> 'item) -> ('item * state -> 'a) -> 'b)
 
     val GuardedApplyExpression : term -> (term -> term) -> term
     val GuardedStatedApplyStatementK : state -> term -> (state -> term -> (term * state -> 'a) -> 'a) -> (term * state -> 'a) -> 'a
@@ -63,8 +64,6 @@ module API =
 
         val ConstantsOf : term seq -> term System.Collections.Generic.ISet
 
-        val AddConditionToState : state -> term -> state
-
     module RuntimeExceptions =
         val InvalidCastException : state -> (term -> 'a) -> 'a * state
         val TypeInitializerException : string -> term -> state -> (term -> 'a) -> 'a * state
@@ -84,7 +83,6 @@ module API =
         val IsInteger : termType -> bool
         val IsReal : termType -> bool
         val IsPointer : termType -> bool
-        val IsValueType : termType -> term
 
         val String : termType
         val (|StringType|_|) : termType -> unit option
@@ -93,6 +91,7 @@ module API =
 
         val TypeIsType : termType -> termType -> term
         val TypeIsNullable : termType -> term
+        val TypeIsValueType : termType -> term
         val TypeIsRef : termType -> term -> term
         val RefIsType : term -> termType -> term
         val RefIsRef : term -> term -> term

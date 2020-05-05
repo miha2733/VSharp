@@ -38,9 +38,10 @@ type public CodePortionInterpreter(ilInterpreter : ILInterpreter, codeLoc : ICod
         | _ -> __notImplemented__()
     override x.MakeEpsilonState (ist : cilState) =
         let state = ist.state
-        let pcForEpsilon = !! (conjunction state.pc)
+        let pc = state.pc
+        let termPC = [!! (List.append pc.termPC pc.typePC |> conjunction)]
         let state = { Memory.EmptyState with
-                        pc = [pcForEpsilon]
+                        pc = { termPC = termPC; typePC = [] }
                         frames = state.frames
                         stack = (fst Memory.EmptyState.stack, snd state.stack)
                     }
@@ -207,12 +208,12 @@ and public ILInterpreter() as this =
         let callForConcreteType typ state k =
             x.CallMethodFromTermType caller funcId state this parameters typ methodInfo k
         let tryToCallForBaseType cilState =
-            StatedConditionalExecutionCIL cilState
+            StatedTypeConditionalExecutionCIL cilState
                 (fun state k -> k (API.Types.TypeIsRef baseType this &&& API.Types.TypeIsType baseType sightType, state))
                 (callForConcreteType baseType)
                 (x.CallAbstract caller funcId)
         let tryToCallForSightType cilState =
-            StatedConditionalExecutionCIL cilState
+            StatedTypeConditionalExecutionCIL cilState
                 (fun state k -> k (API.Types.TypeIsRef sightType this, state))
                 (callForConcreteType sightType)
                 tryToCallForBaseType
@@ -290,8 +291,8 @@ and public ILInterpreter() as this =
                         value, Memory.PopStack state
                     mapAndPushFunctionResultsk modifyResult results k
                 callConstructor {cilState with state = state} ref k
-            StatedConditionalExecutionCIL cilState
-                (fun state k -> k (Types.IsValueType constructedTermType, state))
+            StatedTypeConditionalExecutionCIL cilState
+                (fun state k -> k (Types.TypeIsValueType constructedTermType, state))
                 valueTypeCase
                 referenceTypeCase
                 id
@@ -382,12 +383,12 @@ and public ILInterpreter() as this =
         | v :: stack ->
             let boxValueType (cilState : cilState) =
                 let cilState' = {cilState with opStack = stack}
-                StatedConditionalExecutionCIL cilState'
+                StatedTypeConditionalExecutionCIL cilState'
                     (fun state k -> k (Types.TypeIsNullable termType, state))
                     (fun cilState k -> x.BoxNullable t v cilState |> k)
                     (fun cilState k -> allocateValueTypeInHeap v cilState |> k)
-            StatedConditionalExecutionCIL cilState
-                (fun state k -> k (Types.IsValueType termType, state))
+            StatedTypeConditionalExecutionCIL cilState
+                (fun state k -> k (Types.TypeIsValueType termType, state))
                 boxValueType
                 (fun cilState k -> k [cilState])
                 id
@@ -401,7 +402,7 @@ and public ILInterpreter() as this =
         | obj :: stack ->
             assert(isReference obj)
             let nullCase (cilState : cilState) =
-                StatedConditionalExecutionCIL cilState
+                StatedTypeConditionalExecutionCIL cilState
                     (fun state k -> k (Types.TypeIsNullable termType, state))
                     (fun cilState k ->
                         let address, state = Memory.AllocateDefaultBlock cilState.state termType
@@ -409,7 +410,7 @@ and public ILInterpreter() as this =
                     (x.Raise x.NullReferenceException)
             let canCastValueTypeToNullableTargetCase (cilState : cilState) =
                 let underlyingTypeOfNullableT = Nullable.GetUnderlyingType(t)
-                StatedConditionalExecutionCIL cilState
+                StatedTypeConditionalExecutionCIL cilState
                     (fun state k -> k (Types.RefIsType obj (Types.FromDotNetType state underlyingTypeOfNullableT), state))
                     (fun cilState k ->
                         let value, _ = Memory.Dereference cilState.state obj
@@ -419,18 +420,18 @@ and public ILInterpreter() as this =
                         x.ReduceMethodBaseCall nullableConstructor {cilState with state = state} (Some address) (Specified [value]) modifyResults)
                     (x.Raise InvalidCastException)
             let canCastValueTypeToTargetCase (cilState : cilState) =
-                StatedConditionalExecutionCIL cilState
+                StatedTypeConditionalExecutionCIL cilState
                     (fun state k -> k (Types.TypeIsNullable termType, state))
                     canCastValueTypeToNullableTargetCase
                     (fun cilState k -> k [handleRestResults(castUnchecked termType obj cilState.state fst, cilState)])
             let valueTypeCase (cilState : cilState) =
-                StatedConditionalExecutionCIL cilState
+                StatedTypeConditionalExecutionCIL cilState
                     (fun state k -> k (Types.CanCast obj termType, state))
                     canCastValueTypeToTargetCase
                     (x.Raise InvalidCastException)
             let nonNullCase (cilState : cilState) =
                 let SystemValueType = Types.FromDotNetType cilState.state typedefof<System.ValueType>
-                StatedConditionalExecutionCIL cilState
+                StatedTypeConditionalExecutionCIL cilState
                     (fun state k -> k (Types.RefIsType obj SystemValueType, state))
                     valueTypeCase
                     (handleReferenceType obj termType)
@@ -445,7 +446,7 @@ and public ILInterpreter() as this =
     member private x.UnboxAny (cfg : cfgData) offset (cilState : cilState) =
         let InvalidCastException state = RuntimeExceptions.InvalidCastException state id
         let handleReferenceTypeResults obj termType cilState =
-            StatedConditionalExecutionCIL cilState
+            StatedTypeConditionalExecutionCIL cilState
                 (fun state k -> k (Types.CanCast obj termType, state))
                 (fun cilState k -> k [castUnchecked termType obj cilState.state fst, cilState])
                 (x.Raise InvalidCastException)

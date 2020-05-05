@@ -199,7 +199,7 @@ module internal Merging =
             Heap.merge2 h1 h2 (keysResolver2 r1 h1 h2 read Heap.getKey resolve) |> State.Defined r1
         | _ -> mergeGeneralizedHeaps read [g1; g2] [h1; h2]
 
-    let private addToPathConditionIfNeed cond pc = if isTrue cond then pc else cond :: pc
+    let private addToPathConditionIfNeed cond pc = if isTrue cond then pc else State.addTermPC cond pc
 
     let merge2States condition1 condition2 state1 state2 =
         assert(state1.pc = state2.pc)
@@ -231,7 +231,7 @@ module internal Merging =
         let mergedHeap = mergeGeneralizedHeaps readHeap conditions (List.map State.heapOf states)
         let mergedStatics = mergeGeneralizedHeaps readStatics conditions (List.map State.staticsOf states)
         let mergedConditions = disjunction Metadata.empty conditions
-        let mergedPC = if isTrue mergedConditions then path else mergedConditions :: path
+        let mergedPC = if isTrue mergedConditions then path else State.addTermPC mergedConditions path
         { stack = mergedStack; heap = mergedHeap; statics = mergedStatics; frames = frames; pc = mergedPC; typeVariables = tv }
 
     let unguard = function
@@ -239,7 +239,7 @@ module internal Merging =
         | t -> [(True, t)]
 
     let conditionUnderState condition state =
-        Propositional.conjunction condition.metadata (condition :: State.pathConditionOf state)
+        Propositional.conjunction condition.metadata (condition :: State.combinedPathConditionOf state)
 
 // ------------------------------------ Mapping non-term sequences ------------------------------------
 
@@ -276,7 +276,7 @@ module internal Merging =
             match pc with
             | False -> k (gvs, egs, vgs, states)
             | _ when isError v -> k ((g, errorMapper v) :: gvs, g :: egs, vgs, states)
-            |_ -> mapper (State.withPathCondition state g) v (fun (t, s) -> k ((g, t) :: gvs, egs, g :: vgs, State.popPathCondition s :: states))
+            |_ -> mapper (State.withPathCondition false state g) v (fun (t, s) -> k ((g, t) :: gvs, egs, g :: vgs, State.popPathCondition false s :: states))
         Cps.List.foldlk foldFunc ([], [], [], []) gvs (fun (gvs, egs, vgs, states) ->
         let eg = disjunction Metadata.empty egs
         let state' = mergeStates (eg :: vgs) (state :: states)
