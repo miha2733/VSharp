@@ -107,6 +107,32 @@ namespace VSharp.Test.Tests.Typecast
             return a ? 10 : 20;
         }
 
+        class TestClass
+        {
+            public int x;
+        }
+
+        public static object DownCast85Lvl(Object o)
+        {
+            if (o is int[])
+            {
+                var a = o as int[];
+                a[3] = 42;
+            }
+            if (o is TestClass)
+            {
+                var p = o as TestClass;
+                p.x = 17;
+            }
+            return o;
+        }
+        // Gold result:
+        // o ->
+        //     Block[
+        //         3 -> Union[o :> int[], 42; !(o :> int[]), LI]
+        //         x -> Union[o :> TestClass, 17; !(o :> TestClass), LI]
+        //     ]
+
         [TestSvm]
         public static int CheckCastNullWithTrick()
         {

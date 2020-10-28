@@ -317,7 +317,7 @@ module internal Memory =
 
     let private canPoint mtd keyCompare ptr key = // TODO: implement using fql compare
         // TODO: what if locationType is Null?
-        let addrEqual = keyCompare mtd ptr.location key.key
+        let addrEqual = keyCompare mtd ptr.location key.key // TODO: symbolic address in heap not equal to concrete address
         let typeEqual = Common.typesEqual mtd ptr.typ key.typ
         if isConcrete addrEqual then addrEqual else addrEqual &&& typeEqual
 
