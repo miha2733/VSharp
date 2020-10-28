@@ -116,7 +116,44 @@ type IMemoryAccessConstantSource =
     inherit IStatedSymbolicConstantSource
     abstract TypeOfLocation : symbolicType
 
+module public SolverInteraction =
+
+    type model() = class end
+    type unsatCore() = class end
+
+    type level = uint32
+    type formula = term
+
+    type path =
+        { lvl : level; state : state }
+    type lemma =
+        { lvl : level; lemFml : formula }
+    type query =
+        { lvl : level; queryFml : formula }
+
+    type satInfo = { mdl : model; usedPaths : path seq }
+    type unsatInfo = { core : unsatCore }
+
+    type smtResult =
+        | SmtSat of satInfo
+        | SmtUnsat of unsatInfo
+        | SmtUnknown of string
+
+    type ISolver =
+        abstract CheckSat : query -> smtResult
+        abstract Assert : level -> formula -> unit
+        abstract AddPath : path -> unit
+
+    let mutable private solver : ISolver option = None
+    let configureSolver s = solver <- Some s
+    let internal solve term =
+        match solver with
+        | Some s -> s.CheckSat {lvl = 0u; queryFml = term}
+        | None -> SmtUnknown ""
+
 module internal Memory =
+
+    open SolverInteraction
 
 // ------------------------------- Primitives -------------------------------
 
@@ -274,6 +311,37 @@ module internal Memory =
             override x.Time = x.time
             override x.TypeOfLocation = x.picker.sort.TypeOfLocation
 
+    let (|HeadReading|_|) (src : IMemoryAccessConstantSource) =
+        match src with
+        | :? heapReading<heapAddressKey, vectorTime intervals> as hr -> Some(hr.key, hr.memoryObject)
+        | _ -> None
+
+    let (|ArrayIndexReading|_|) (src : IMemoryAccessConstantSource) =
+        match src with
+        | :? heapReading<heapArrayIndexKey, productRegion<vectorTime intervals, int points listProductRegion>> as ar ->
+            Some(isConcreteHeapAddress ar.key.address, ar.key, ar.memoryObject)
+        | _ -> None
+
+    let (|VectorIndexReading|_|) (src : IMemoryAccessConstantSource) =
+        let hasDefaultValue = function
+            | ArrayLowerBoundSort _ -> true
+            | _ -> false
+        match src with
+        | :? heapReading<heapVectorIndexKey, productRegion<vectorTime intervals, int points>> as vr ->
+            Some(hasDefaultValue vr.picker.sort, vr.key, vr.memoryObject)
+        | _ -> None
+
+    let (|StackBufferReading|_|) (src : IMemoryAccessConstantSource) =
+        match src with
+        | :? heapReading<stackBufferIndexKey, int points> as sbr -> Some(sbr.key, sbr.memoryObject)
+        | _ -> None
+
+    let (|StaticsReading|_|) (src : IMemoryAccessConstantSource) =
+        match src with
+        | :? heapReading<symbolicTypeKey, freeRegion<symbolicType>> as sr -> Some(sr.key, sr.memoryObject)
+        | _ -> None
+
+
     [<StructuralEquality;NoComparison>]
     type private structField =
         {baseSource : IMemoryAccessConstantSource; field : fieldId}
@@ -281,6 +349,11 @@ module internal Memory =
             override x.SubTerms = x.baseSource.SubTerms
             override x.Time = x.baseSource.Time
             override x.TypeOfLocation = x.field.typ |> fromDotNetType
+
+    let (|StructFieldSource|_|) (src : IMemoryAccessConstantSource) =
+        match src with
+        | :? structField as sf -> Some(sf.field)
+        | _ -> None
 
     [<StructuralEquality;NoComparison>]
     type private heapAddressSource =
@@ -290,12 +363,22 @@ module internal Memory =
             override x.Time = x.baseSource.Time
             override x.TypeOfLocation = x.baseSource.TypeOfLocation
 
+    let (|HeapAddressSource|_|) (src : IMemoryAccessConstantSource) =
+        match src with
+        | :? heapAddressSource -> Some()
+        | _ -> None
+
     [<StructuralEquality;NoComparison>]
     type private typeInitialized =
         {typ : symbolicType; matchingTypes : symbolicTypeSet}
         interface IStatedSymbolicConstantSource  with
             override x.SubTerms = Seq.empty
             override x.Time = VectorTime.zero
+
+    let (|TypeInitializedSource|_|) (src : IStatedSymbolicConstantSource) =
+        match src with
+        | :? typeInitialized as ti -> Some(ti.typ, ti.matchingTypes)
+        | _ -> None
 
     [<StructuralEquality;NoComparison>]
     type private functionResultConstantSource =
@@ -304,6 +387,11 @@ module internal Memory =
             override x.SubTerms = Seq.empty
             override x.TypeOfLocation = x.callSite.SymbolicType
             override x.Time = x.calledTime
+
+    let (|FunctionResultSource|_|) (src : IMemoryAccessConstantSource) =
+        match src with
+        | :? functionResultConstantSource as fr -> Some(fr.calledTime, fr.callSite)
+        | _ -> None
 
     let private foldFields isStatic folder acc typ =
         let dotNetType = Types.toDotNetType typ
@@ -370,6 +458,10 @@ module internal Memory =
         | Union gvs -> gvs |> List.map (fun (g, v) -> (g, extractAddress v)) |> Merging.merge
         | _ -> internalfail "Extracting heap address: expected heap reference, but got %O" reference
 
+    let isConcreteHeapAddress = term >> function
+        | ConcreteHeapAddress _ -> true
+        | _ -> false
+
     let private isHeapAddressDefault state = term >> function
         | ConcreteHeapAddress addr -> VectorTime.lessOrEqual state.startingTime addr
         | _ -> false
@@ -409,7 +501,8 @@ module internal Memory =
             let copiedMemory = readArrayCopy state arrayType extractor addr indices
             let mkname = fun (key : heapArrayIndexKey) -> sprintf "%O[%s]" key.address (List.map toString key.indices |> join ", ")
             makeSymbolicHeapRead {sort = ArrayIndexSort arrayType; extract = extractor; mkname = mkname; isDefaultKey = isDefault} key state.startingTime typ (MemoryRegion.deterministicCompose copiedMemory memory)
-        MemoryRegion.read region key isDefault instantiate
+        let res = MemoryRegion.read region key isDefault instantiate
+        res
 
     and readArrayRegionExt state arrayType extractor region addr indices (*copy info follows*) srcIndex dstIndex length dstType =
         __notImplemented__()
@@ -477,7 +570,7 @@ module internal Memory =
         | Union gvs -> gvs |> List.map (fun (g, v) -> (g, readDelegate state v)) |> Merging.merge
         | _ -> internalfailf "Reading delegate: expected heap reference, but got %O" reference
 
-    let rec readAddress state = function
+    let rec private readAddress state = function
         | PrimitiveStackLocation key -> readStackLocation state key
         | ClassField(addr, field) -> readClassField state addr field
         | ArrayIndex(addr, indices, typ) -> readArrayIndex state addr indices typ
@@ -574,7 +667,13 @@ module internal Memory =
         match thenCondition, elseCondition with
         | False, _ -> elseBranch conditionState (List.singleton >> k)
         | _, False -> thenBranch conditionState (List.singleton >> k)
-        | _ -> execution conditionState condition k)
+        | _ ->
+            match solve thenCondition with
+            | SmtUnsat _ -> elseBranch conditionState (List.singleton >> k)
+            | _ ->
+                match solve elseCondition with
+                | SmtUnsat _ -> thenBranch conditionState (List.singleton >> k)
+                | _ -> execution conditionState condition k)
 
     let statedConditionalExecutionWithMergek state conditionInvocation thenBranch elseBranch k =
         commonStatedConditionalExecutionk state conditionInvocation thenBranch elseBranch merge2Results k
@@ -608,6 +707,7 @@ module internal Memory =
         let mr = accessRegion state.arrays arrayType elementType
         let key = {address = addr; indices = indices}
         let mr' = MemoryRegion.write mr key value
+        let mo = MemoryRegion.flatten mr'
         { state with arrays = PersistentDict.add arrayType mr' state.arrays }
 
     let writeStaticField state typ (field : fieldId) value =
@@ -690,27 +790,28 @@ module internal Memory =
         HeapRef address typ, state
 
     let allocateArray state typ lowerBounds lengths =
-        let concreteAddress, state = freshAddress state
+        let concreteAddress, state1 = freshAddress state
         let address = ConcreteHeapAddress concreteAddress
-        let state = {state with allocatedTypes = PersistentDict.add concreteAddress typ state.allocatedTypes}
+        let state2 = {state1 with allocatedTypes = PersistentDict.add concreteAddress typ state1.allocatedTypes}
         let arrayType = symbolicTypeToArrayType typ
-        let state =
+        let state3 =
             let d = List.length lengths
             assert(d = snd3 arrayType)
-            let state = List.fold2 (fun state l i -> writeLength state address (Concrete i lengthType) arrayType l) state lengths [0 .. d-1]
+            let state = List.fold2 (fun state l i -> writeLength state address (Concrete i lengthType) arrayType l) state2 lengths [0 .. d-1]
             match lowerBounds with
             | None -> state
             | Some lowerBounds ->
                 assert(List.length lowerBounds = d)
                 List.fold2 (fun state l i -> writeLowerBound state address (Concrete i lengthType) arrayType l) state lowerBounds [0 .. d-1]
-        address, state
+        address, state3
 
-    let allocateVector state typ length =
-        let address, state = allocateArray state typ None [length]
-        HeapRef address typ, state
+    let allocateVector state elementType length =
+        let lbs = Some [makeNumber 0]
+        let typ = ArrayType(elementType, Vector)
+        allocateArray state typ lbs [length]
 
     let private allocateConcreteVector state elementType length contents =
-        let address, state = allocateArray state (ArrayType(elementType, Vector)) None [makeNumber length]
+        let address, state = allocateVector state elementType (makeNumber length)
         // TODO: optimize this for large concrete arrays (like images)!
         address, Seq.foldi (fun state i value -> writeArrayIndex state address [Concrete i lengthType] (elementType, 1, true) (Concrete value elementType)) state contents
 
