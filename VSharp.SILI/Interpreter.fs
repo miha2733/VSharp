@@ -189,7 +189,7 @@ and public ILInterpreter() as this =
     let cfgs = Dictionary<ILMethodMetadata, cfg>()
     let findCfg (ilmm : ILMethodMetadata) =
         Dict.getValueOrUpdate cfgs ilmm (fun () -> CFG.build ilmm.methodBase)
-    let internalImplementations : Map<string, (state -> term option -> term list -> state list)> =
+    let internalImplementations : Map<string, (state -> term option -> term list -> state list)> = // TODO: why this is not in InternalCalls?
         Map.ofList [
             "System.Int32 System.Array.GetLength(this, System.Int32)", this.CommonGetArrayLength
             "System.Int32 System.Array.GetLowerBound(this, System.Int32)", this.GetArrayLowerBound
@@ -256,8 +256,10 @@ and public ILInterpreter() as this =
         let args = methodBase.GetParameters() |> Seq.map (Memory.ReadArgument state) |> List.ofSeq
         let fullMethodName = Reflection.GetFullMethodName methodBase
         let (&&&) = Microsoft.FSharp.Core.Operators.(&&&)
-        if Map.containsKey fullMethodName internalImplementations then
+        if Map.containsKey fullMethodName internalImplementations then // TODO: all questions to Ura!
             (internalImplementations.[fullMethodName] state thisOption args) |> k
+        elif fullMethodName.Contains ".Get(" then // TODO: write implementation of arbitrary Get(<params>)
+            __notImplemented__()
         elif Map.containsKey fullMethodName Loader.internalImplementations then
             let thisAndArguments : term list =
                 match thisOption with
@@ -461,9 +463,9 @@ and public ILInterpreter() as this =
         // NOTE: It is not quite strict to ReduceFunctionSignature here because, but it does not matter because signatures of virtual methods are the same
         x.ReduceFunctionSignature cilState.state ancestorMethodBase (Some this) (Specified args) false (fun state ->
         x.CommonCallVirt ancestorMethodBase state (pushResultFromStateToCilState cilState))
-    member x.ReduceArrayCreation (arrayType : Type) (methodBase : MethodBase) (state : state) (parameters : term list) k =
+    member x.ReduceArrayCreation (arrayType : Type) (_ : MethodBase) (state : state) (lengths : term list) k =
         let arrayTyp = Types.FromDotNetType state arrayType
-        let reference, state = Memory.AllocateDefaultArray state parameters arrayTyp
+        let reference, state = Memory.AllocateDefaultArray state lengths arrayTyp
         withResult reference state |> List.singleton |> k
     member x.CommonCreateDelegate (ctor : ConstructorInfo) (state : state) (args : term list) (k : state list -> 'a) =
         let target, methodPtr =
@@ -521,7 +523,7 @@ and public ILInterpreter() as this =
         let nonDelegateCase (state : state) =
             x.InitializeStatics state typ (List.map (fun state ->
             if typ.IsArray && constructorInfo.GetMethodBody() = null
-                then x.ReduceArrayCreation typ constructorInfo state args id
+                then x.ReduceArrayCreation typ constructorInfo state args id // TODO: this args are lengths?
                 else blockCase state) >> List.concat)
         if Reflection.IsDelegateConstructor constructorInfo
             then x.CommonCreateDelegate constructorInfo state args k
@@ -1041,11 +1043,11 @@ and public ILInterpreter() as this =
         let (>>=) = API.Arithmetics.(>>=)
         let elemType = resolveTermTypeFromMetadata cilState.state cfg (offset + OpCodes.Newarr.Size)
         match cilState.opStack with
-        | numElements :: stack ->
+        | length :: stack ->
             StatedConditionalExecutionCIL {cilState with opStack = stack}
-                (fun state k -> k (numElements >>= TypeUtils.Int32.Zero, state))
+                (fun state k -> k (length >>= TypeUtils.Int32.Zero, state))
                 (fun cilState k ->
-                    let ref, state = Memory.AllocateDefaultArray cilState.state [numElements] (ArrayType(elemType, Vector))
+                    let ref, state = Memory.AllocateVectorArray cilState.state length elemType
                     k [ref, {cilState with state = state}])
                 (fun (cilState : cilState) k -> this.Raise this.OverflowException cilState.state (List.map (fun state -> state.exceptionsRegister.GetError(), {cilState with state = state}) >> k))
                 pushFunctionResults

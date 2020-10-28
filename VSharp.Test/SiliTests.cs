@@ -75,6 +75,7 @@ namespace VSharp.Test
 
             // var svm = new SVM(new ILInterpreter());
             var svm = new SVM(new VSharp.Analyzer.StepInterpreter());
+            svm.ConfigureSolver();
             // SVM.ConfigureSimplifier(new Z3Simplifier()); can be used to enable Z3-based simplification (not recommended)
             TestSvmAttribute.SetUpSVM(svm);
         }
@@ -231,8 +232,8 @@ namespace VSharp.Test
         private const string ResultSeparator = "RESULT: ";
         private const string GoldsDirectoryName = "Golds";
         private const string IdealTestFileExtension = ".gold";
-        // private const string IdealTemporaryFileExtension = ".tmp";
-        private const string IdealTemporaryFileExtension = "";
+        private const string IdealTemporaryFileExtension = ".tmp";
+        // private const string IdealTemporaryFileExtension = "";
 
         private string _idealValuePath;
         public string ExpectedValue;

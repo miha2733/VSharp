@@ -173,7 +173,6 @@ module public CFA =
             Prelude.releaseAssert(Map.isEmpty effect.callSiteResults)
         override x.Type = "StepEdge"
         override x.PropagatePath (path : path) =
-
             Memory.ComposeStates path.state effect (fun states ->
                 x.PrintLog "composition left"  <| Memory.Dump path.state
                 x.PrintLog "composition right" <| Memory.Dump effect
@@ -232,7 +231,7 @@ module public CFA =
         override x.ToString() =
             sprintf "%s\nstate = %O\n" (base.ToString()) (API.Memory.Dump stateWithArgsOnFrameAndAllocatedType)
 
-    module cfaBuilder =
+    module public cfaBuilder =
         let private alreadyComputedCFAs = Dictionary<MethodBase, cfa>()
 
         let private createEmptyCFA cfg method =
@@ -246,7 +245,7 @@ module public CFA =
             edge.Src.OutgoingEdges.Add edge
             edge.Dst.IncomingEdges.Add edge
 
-        let private executeInstructions (ilintpr : ILInterpreter) cfg cilState =
+        let public executeInstructions (ilintpr : ILInterpreter) cfg cilState =
             assert (cilState.ip.CanBeExpanded())
             let startingOffset = cilState.ip.Vertex ()
             let endOffset =
@@ -341,7 +340,7 @@ module public CFA =
                         newStates |> List.iter (fun state -> currentTime <- VectorTime.max currentTime state.state.currentTime)
                         let goodStates = List.filter (fun (cilState : cilState) -> not cilState.HasException) newStates
                         let erroredStates = List.filter (fun (cilState : cilState) -> cilState.HasException) newStates
-                        goodStates |> List.iter (fun (cilState' : cilState) ->
+                        goodStates |> List.iter (fun (cilState' : cilState) -> // TODO: here we had allocated type Int[], but in the next cfa block we don't have it #dma
                             let dstVertex = createOrGetVertex (cilState'.ip, cilState'.opStack)
                             if not cilState'.leaveInstructionExecuted then addEdge <| StepEdge(srcVertex, dstVertex, cilState'.state)
                             else
@@ -419,7 +418,7 @@ type StepInterpreter() =
                 let shouldGetAllPaths = true // TODO: resolve this problem: when set to ``true'' recursion works too long, when set to ``false'' recursion doesn't work at all
                 let paths : path list = vertex.Paths.OfLevel shouldGetAllPaths lvl
                 let newDsts = edges |> Seq.fold (fun acc (edge : CFA.Edge) ->
-                    let propagated = Seq.map edge.PropagatePath paths |> Seq.fold (||) false
+                    let propagated = Seq.map edge.PropagatePath paths |> Seq.fold (||) false // composition is here!
                     if propagated then (edge.Dst :: acc) else acc) []
                 List.iter (dfs (lvl + 1u)) newDsts
         cfa.body.entryPoint.Paths.Add {lvl = 0u; state = initialState}
@@ -432,15 +431,17 @@ type StepInterpreter() =
                              match state.returnRegister with
                              | None -> Nop, state
                              | Some res -> res, state)
+        let f (_, state : state) =
+           match Solve (conjunction state.pc) with
+           | SolverInteraction.SmtUnsat _ -> false
+           | _ -> true
+        let resultStates = List.filter f resultStates
         k resultStates
 
     override x.Invoke codeLoc =
-
-
         match codeLoc with
         | :? ILMethodMetadata as ilmm ->
             CFA.configureInterpreter x
-
             try
                 let cfa = CFA.cfaBuilder.computeCFA x ilmm
                 x.ForwardExploration cfa codeLoc
