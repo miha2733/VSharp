@@ -381,7 +381,46 @@ namespace VSharp.Test.Tests
 
         public struct A
         {
+            public int x;
+            public A(int value)
+            {
+                x = value;
+            }
 
+            public void SetX(int v)
+            {
+                x = v;
+            }
+
+            public int GetX()
+            {
+                return x;
+            }
+        }
+
+        public class ClassWithStructInside
+        {
+            private A _a;
+
+            public ClassWithStructInside(int n)
+            {
+                A localA;
+                localA = new A(n);
+                _a = localA;
+            }
+        }
+
+        [TestSvm]
+        public static ClassWithStructInside CreateClassThatHasStructInside(int n)
+        {
+            return new ClassWithStructInside(n);
+        }
+
+        [TestSvm]
+        public static int CreateStructViaNewobj(int n)
+        {
+            int res1 = new A(n).GetX();
+            return res1 + n;
         }
 
         public static A W2(int x, int y) {

@@ -99,7 +99,9 @@ module public CFA =
                 true
             else false
         override x.ToString() = x.commonToString()
-        member x.commonToString() = sprintf "%s ID:[%d --> %d] Offset:[%x --> %x] Method:%O" x.Type x.Src.Id x.Dst.Id x.Src.Offset x.Dst.Offset x.Method
+        member x.commonToString() =
+            sprintf "%s ID:[%d --> %d] Offset:[%x --> %x] Method:%s"
+                x.Type x.Src.Id x.Dst.Id x.Src.Offset x.Dst.Offset (Reflection.GetFullMethodName x.Method)
 
 
     type 'a unitBlock =
@@ -201,9 +203,7 @@ module public CFA =
                 else callSiteResults
             let k states =
                 let propagateStateAfterCall acc state =
-                    let state = Memory.PopStack state
                     assert(path.state.frames = state.frames) // TODO: assert fails in ClassesSimple.Test1
-                    assert(path.state.stack = state.stack)
                     x.PrintLog "propagation through callEdge" callSite
                     x.PrintLog "call edge: composition left" (Memory.Dump path.state)
                     x.PrintLog "call edge: composition result" (Memory.Dump state)
@@ -220,8 +220,8 @@ module public CFA =
                 match callSite.opCode with
                 | Instruction.Call     ->
                     interpreter.CommonCall callSite.calledMethod state k
-                | Instruction.NewObj   when Reflection.IsDelegateConstructor callSite.calledMethod -> k [state]
-                | Instruction.NewObj   when Reflection.IsArrayConstructor callSite.calledMethod -> k [state]
+                | Instruction.NewObj   when Reflection.IsDelegateConstructor callSite.calledMethod -> k [Memory.PopStack state]
+                | Instruction.NewObj   when Reflection.IsArrayConstructor callSite.calledMethod -> k [Memory.PopStack state]
                 | Instruction.NewObj   ->
                     interpreter.CommonCall callSite.calledMethod state k
                 | Instruction.CallVirt -> interpreter.CommonCallVirt callSite.calledMethod state k
