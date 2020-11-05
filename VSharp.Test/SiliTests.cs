@@ -231,7 +231,8 @@ namespace VSharp.Test
         private const string ResultSeparator = "RESULT: ";
         private const string GoldsDirectoryName = "Golds";
         private const string IdealTestFileExtension = ".gold";
-        private const string IdealTemporaryFileExtension = ".tmp";
+        // private const string IdealTemporaryFileExtension = ".tmp";
+        private const string IdealTemporaryFileExtension = "";
 
         private string _idealValuePath;
         public string ExpectedValue;

@@ -1,16 +1,18 @@
 METHOD: System.Int32 VSharp.Test.Tests.Generic.GenericMethod.TestFoo(System.Collections.Generic.LinkedList`1[System.Int32])
-RESULT: UNION[
-	| !(0 == l) & !(0 == l.System::Collections::Generic::LinkedList`1::head) ~> 1 + l.System::Collections::Generic::LinkedList`1::head.System::Collections::Generic::LinkedListNode`1::item
-	| !(0 == l) & 0 == l.System::Collections::Generic::LinkedList`1::head ~> 1
-	| 0 == l ~> 0]
-HEAP:
-{ heap = h0, statics = s1 } where
----------- h0 = ----------
-l.System::Collections::Generic::LinkedList`1::head ==> System.Collections.Generic.LinkedListNode`1[System.Int32] CLASS [
-	| System::Collections::Generic::LinkedListNode`1::item ~> UNION[
-		| !(0 == l) & !(0 == l.System::Collections::Generic::LinkedList`1::head) ~> 1 + l.System::Collections::Generic::LinkedList`1::head.System::Collections::Generic::LinkedListNode`1::item
-		| 0 == l | 0 == l.System::Collections::Generic::LinkedList`1::head ~> l.System::Collections::Generic::LinkedList`1::head.System::Collections::Generic::LinkedListNode`1::item]]
----------- s1 = ----------
-System.Collections.Generic.LinkedListNode`1[System.Int32] ==> CLASS []
-System.Collections.Generic.LinkedList`1[System.Int32] ==> CLASS []
-VSharp.Test.Tests.Generic.GenericMethod ==> CLASS []
+RESULT: Totally 3 states:
+0
+MEMORY DUMP:
+Path condition: 0 == l
+Initialized types = { VSharp.Test.Tests.Generic.GenericMethod }
+
+1
+MEMORY DUMP:
+Path condition: !System.Collections.Generic.LinkedList`1[System.Int32]_initialized /\ !(0 == l) /\ !(0 == l) /\ 0 == l.head
+Initialized types = { VSharp.Test.Tests.Generic.GenericMethod, System.Collections.Generic.LinkedList`1[System.Int32] }
+
+1 + l.head.item
+MEMORY DUMP:
+Path condition: !System.Collections.Generic.LinkedListNode`1[System.Int32]_initialized /\ !System.Collections.Generic.LinkedList`1[System.Int32]_initialized /\ !(0 == l) /\ !(0 == l) /\ !(0 == l.head) /\ !(0 == l) /\ !(0 == l.head) /\ !(0 == l.head)
+--------------- Fields: ---------------
+item ==> {l.head <- 1 + l.head.item}
+Initialized types = { System.Collections.Generic.LinkedListNode`1[System.Int32], VSharp.Test.Tests.Generic.GenericMethod, System.Collections.Generic.LinkedList`1[System.Int32] }

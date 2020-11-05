@@ -1,8 +1,26 @@
 METHOD: System.Int32 VSharp.Test.Tests.Typecast.Typecast.Unboxing(System.Object)
-RESULT: UNION[
-	| !((HeapRef obj) <: System.Int32) | 0 == obj ~> 23
-	| !(0 == obj) & ((HeapRef obj) <: System.Int32) ~> 13]
-HEAP:
-{ heap = <empty>, statics = s0 } where
----------- s0 = ----------
-VSharp.Test.Tests.Typecast.Typecast ==> CLASS []
+RESULT: Totally 5 states:
+13
+MEMORY DUMP:
+Path condition: 0 == obj /\ !((HeapRef 0 to System.Int32) == 0)
+Initialized types = { VSharp.Test.Tests.Typecast.Typecast }
+
+13
+MEMORY DUMP:
+Path condition: !(obj <: System.Int32) /\ !(0 == obj) /\ !((HeapRef 0 to System.Int32) == 0)
+Initialized types = { VSharp.Test.Tests.Typecast.Typecast }
+
+23
+MEMORY DUMP:
+Path condition: 0 == obj /\ (HeapRef 0 to System.Int32) == 0
+Initialized types = { VSharp.Test.Tests.Typecast.Typecast }
+
+23
+MEMORY DUMP:
+Path condition: !(obj <: System.Int32) /\ !(0 == obj) /\ (HeapRef 0 to System.Int32) == 0
+Initialized types = { VSharp.Test.Tests.Typecast.Typecast }
+
+13
+MEMORY DUMP:
+Path condition: (obj <: System.Int32) /\ !(0 == obj) /\ !(0 == obj)
+Initialized types = { VSharp.Test.Tests.Typecast.Typecast }

@@ -1,0 +1,2 @@
+METHOD: System.Void VSharp.Test.Tests.PDR.CheckFinallyOrderForNestedTryBlocks2()
+RESULT: No states were obtained!

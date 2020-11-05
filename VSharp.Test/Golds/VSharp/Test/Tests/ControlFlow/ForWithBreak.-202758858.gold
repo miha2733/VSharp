@@ -1,13 +1,46 @@
 METHOD: System.Int32 VSharp.Test.Tests.ControlFlow.ForWithBreak(System.Int32)
-RESULT: UNION[
-	| !(0 < x) ~> 0
-	| !(μ[Vertex = 7, RV = [7], __loc__1] < μ[Vertex = 7, RV = [7], x]) & 0 < x ~> μ[Vertex = 7, RV = [7], __loc__0]
-	| 0 < x & 12 == μ[Vertex = 7, RV = [7], __loc__1] & μ[Vertex = 7, RV = [7], __loc__1] < μ[Vertex = 7, RV = [7], x] ~> 42 + μ[Vertex = 7, RV = [7], __loc__0]]
-HEAP:
-{ heap = merge[
-	(!(μ[Vertex = 7, RV = [7], __loc__1] < μ[Vertex = 7, RV = [7], x]) & 0 < x | 0 < x & 12 == μ[Vertex = 7, RV = [7], __loc__1], { heap = <empty>, statics = s0 } ⚪ recapp(Vertex = 7, RV = [7])),
-	(!(0 < x), <empty>)], statics = merge[
-	(!(μ[Vertex = 7, RV = [7], __loc__1] < μ[Vertex = 7, RV = [7], x]) & 0 < x | 0 < x & 12 == μ[Vertex = 7, RV = [7], __loc__1], { heap = <empty>, statics = s0 } ⚪ recapp(Vertex = 7, RV = [7])),
-	(!(0 < x), s0)] } where
----------- s0 = ----------
-VSharp.Test.Tests.ControlFlow ==> CLASS []
+RESULT: Totally 9 states:
+0
+MEMORY DUMP:
+Path condition: !(0 < x)
+Initialized types = { VSharp.Test.Tests.ControlFlow }
+
+1
+MEMORY DUMP:
+Path condition: 0 < x /\ !(1 < x)
+Initialized types = { VSharp.Test.Tests.ControlFlow }
+
+2
+MEMORY DUMP:
+Path condition: 0 < x /\ 1 < x /\ !(2 < x)
+Initialized types = { VSharp.Test.Tests.ControlFlow }
+
+3
+MEMORY DUMP:
+Path condition: 0 < x /\ 1 < x /\ 2 < x /\ !(3 < x)
+Initialized types = { VSharp.Test.Tests.ControlFlow }
+
+4
+MEMORY DUMP:
+Path condition: 0 < x /\ 1 < x /\ 2 < x /\ 3 < x /\ !(4 < x)
+Initialized types = { VSharp.Test.Tests.ControlFlow }
+
+5
+MEMORY DUMP:
+Path condition: 0 < x /\ 1 < x /\ 2 < x /\ 3 < x /\ 4 < x /\ !(5 < x)
+Initialized types = { VSharp.Test.Tests.ControlFlow }
+
+6
+MEMORY DUMP:
+Path condition: 0 < x /\ 1 < x /\ 2 < x /\ 3 < x /\ 4 < x /\ 5 < x /\ !(6 < x)
+Initialized types = { VSharp.Test.Tests.ControlFlow }
+
+7
+MEMORY DUMP:
+Path condition: 0 < x /\ 1 < x /\ 2 < x /\ 3 < x /\ 4 < x /\ 5 < x /\ 6 < x /\ !(7 < x)
+Initialized types = { VSharp.Test.Tests.ControlFlow }
+
+8
+MEMORY DUMP:
+Path condition: 0 < x /\ 1 < x /\ 2 < x /\ 3 < x /\ 4 < x /\ 5 < x /\ 6 < x /\ 7 < x /\ !(8 < x)
+Initialized types = { VSharp.Test.Tests.ControlFlow }

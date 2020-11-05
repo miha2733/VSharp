@@ -1,12 +1,76 @@
 METHOD: System.Int32 VSharp.Test.Tests.ControlFlow.ForSimple(System.Int32)
-RESULT: UNION[
-	| !(1 <= x) ~> 0
-	| 1 <= x ~> μ[Vertex = 3, RV = [3], __loc__0]]
-HEAP:
-{ heap = merge[
-	(!(1 <= x), <empty>),
-	(1 <= x, { heap = <empty>, statics = s0 } ⚪ recapp(Vertex = 3, RV = [3]))], statics = merge[
-	(!(1 <= x), s0),
-	(1 <= x, { heap = <empty>, statics = s0 } ⚪ recapp(Vertex = 3, RV = [3]))] } where
----------- s0 = ----------
-VSharp.Test.Tests.ControlFlow ==> CLASS []
+RESULT: Totally 15 states:
+0
+MEMORY DUMP:
+Path condition: !(1 <= x)
+Initialized types = { VSharp.Test.Tests.ControlFlow }
+
+1
+MEMORY DUMP:
+Path condition: 1 <= x /\ !(2 <= x)
+Initialized types = { VSharp.Test.Tests.ControlFlow }
+
+3
+MEMORY DUMP:
+Path condition: 1 <= x /\ 2 <= x /\ !(3 <= x)
+Initialized types = { VSharp.Test.Tests.ControlFlow }
+
+6
+MEMORY DUMP:
+Path condition: 1 <= x /\ 2 <= x /\ 3 <= x /\ !(4 <= x)
+Initialized types = { VSharp.Test.Tests.ControlFlow }
+
+10
+MEMORY DUMP:
+Path condition: 1 <= x /\ 2 <= x /\ 3 <= x /\ 4 <= x /\ !(5 <= x)
+Initialized types = { VSharp.Test.Tests.ControlFlow }
+
+15
+MEMORY DUMP:
+Path condition: 1 <= x /\ 2 <= x /\ 3 <= x /\ 4 <= x /\ 5 <= x /\ !(6 <= x)
+Initialized types = { VSharp.Test.Tests.ControlFlow }
+
+21
+MEMORY DUMP:
+Path condition: 1 <= x /\ 2 <= x /\ 3 <= x /\ 4 <= x /\ 5 <= x /\ 6 <= x /\ !(7 <= x)
+Initialized types = { VSharp.Test.Tests.ControlFlow }
+
+28
+MEMORY DUMP:
+Path condition: 1 <= x /\ 2 <= x /\ 3 <= x /\ 4 <= x /\ 5 <= x /\ 6 <= x /\ 7 <= x /\ !(8 <= x)
+Initialized types = { VSharp.Test.Tests.ControlFlow }
+
+36
+MEMORY DUMP:
+Path condition: 1 <= x /\ 2 <= x /\ 3 <= x /\ 4 <= x /\ 5 <= x /\ 6 <= x /\ 7 <= x /\ 8 <= x /\ !(9 <= x)
+Initialized types = { VSharp.Test.Tests.ControlFlow }
+
+45
+MEMORY DUMP:
+Path condition: 1 <= x /\ 2 <= x /\ 3 <= x /\ 4 <= x /\ 5 <= x /\ 6 <= x /\ 7 <= x /\ 8 <= x /\ 9 <= x /\ !(10 <= x)
+Initialized types = { VSharp.Test.Tests.ControlFlow }
+
+55
+MEMORY DUMP:
+Path condition: 1 <= x /\ 2 <= x /\ 3 <= x /\ 4 <= x /\ 5 <= x /\ 6 <= x /\ 7 <= x /\ 8 <= x /\ 9 <= x /\ 10 <= x /\ !(11 <= x)
+Initialized types = { VSharp.Test.Tests.ControlFlow }
+
+66
+MEMORY DUMP:
+Path condition: 1 <= x /\ 2 <= x /\ 3 <= x /\ 4 <= x /\ 5 <= x /\ 6 <= x /\ 7 <= x /\ 8 <= x /\ 9 <= x /\ 10 <= x /\ 11 <= x /\ !(12 <= x)
+Initialized types = { VSharp.Test.Tests.ControlFlow }
+
+78
+MEMORY DUMP:
+Path condition: 1 <= x /\ 2 <= x /\ 3 <= x /\ 4 <= x /\ 5 <= x /\ 6 <= x /\ 7 <= x /\ 8 <= x /\ 9 <= x /\ 10 <= x /\ 11 <= x /\ 12 <= x /\ !(13 <= x)
+Initialized types = { VSharp.Test.Tests.ControlFlow }
+
+91
+MEMORY DUMP:
+Path condition: 1 <= x /\ 2 <= x /\ 3 <= x /\ 4 <= x /\ 5 <= x /\ 6 <= x /\ 7 <= x /\ 8 <= x /\ 9 <= x /\ 10 <= x /\ 11 <= x /\ 12 <= x /\ 13 <= x /\ !(14 <= x)
+Initialized types = { VSharp.Test.Tests.ControlFlow }
+
+105
+MEMORY DUMP:
+Path condition: 1 <= x /\ 2 <= x /\ 3 <= x /\ 4 <= x /\ 5 <= x /\ 6 <= x /\ 7 <= x /\ 8 <= x /\ 9 <= x /\ 10 <= x /\ 11 <= x /\ 12 <= x /\ 13 <= x /\ 14 <= x /\ !(15 <= x)
+Initialized types = { VSharp.Test.Tests.ControlFlow }

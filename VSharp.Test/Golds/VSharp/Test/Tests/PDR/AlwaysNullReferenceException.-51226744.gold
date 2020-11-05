@@ -1,0 +1,2 @@
+METHOD: System.Void VSharp.Test.Tests.PDR.AlwaysNullReferenceException()
+RESULT: No states were obtained!

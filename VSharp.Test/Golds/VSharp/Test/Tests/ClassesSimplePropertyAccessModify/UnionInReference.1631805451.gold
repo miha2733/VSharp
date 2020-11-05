@@ -1,0 +1,13 @@
+METHOD: System.Void VSharp.Test.Tests.ClassesSimplePropertyAccessModify.UnionInReference(VSharp.Test.Tests.ClassesSimplePropertyAccessModify+SimpleContainer)
+RESULT: Totally 2 states:
+<VOID>
+MEMORY DUMP:
+Path condition: 0 == a
+Initialized types = { VSharp.Test.Tests.ClassesSimplePropertyAccessModify }
+
+<VOID>
+MEMORY DUMP:
+Path condition: !VSharp.Test.Tests.ClassesSimplePropertyAccessModify+SimpleContainer_initialized /\ !(0 == a) /\ !(0 == a)
+--------------- Fields: ---------------
+X ==> {a <- 42}
+Initialized types = { VSharp.Test.Tests.ClassesSimplePropertyAccessModify, VSharp.Test.Tests.ClassesSimplePropertyAccessModify+SimpleContainer }

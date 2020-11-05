@@ -1,11 +1,21 @@
 METHOD: System.Int32 VSharp.Test.Tests.Lists.LowerBoundTest()
-RESULT: 0
-HEAP:
-{ heap = h0, statics = s1 } where
----------- h0 = ----------
-1 ==> [| 0, 0 ~> 1; 0, 1 ~> 1; 1, 0 ~> 2; 1, 1 ~> 2; 2, 0 ~> 3; 2, 1 ~> 3; 3, 0 ~> 4; 3, 1 ~> 4 ... 4 x 2 ... |]
----------- s1 = ----------
-System.Array ==> CLASS []
-System.Int32[,] ==> CLASS []
-System.Runtime.CompilerServices.RuntimeHelpers ==> CLASS []
-VSharp.Test.Tests.Lists ==> CLASS []
+RESULT: Totally 1 state:
+0
+MEMORY DUMP:
+Path condition: !System.Runtime.CompilerServices.RuntimeHelpers_initialized /\ !(0 == this) /\ !(0 == this) /\ !System.Int32[,]_initialized /\ !(0 == this) /\ !(0 == this) /\ !(0 == this) /\ !(0 == this) /\ !(0 == this) /\ !(0 == this)
+--------------- Array contents: ---------------
+System.Int32[,] ==> {
+        1[0, 0] <- 1
+        1[0, 1] <- 1
+        1[1, 0] <- 2
+        1[1, 1] <- 2
+        1[2, 0] <- 3
+        1[2, 1] <- 3
+        1[3, 0] <- 4
+        1[3, 1] <- 4
+    }
+--------------- Array lengths: ---------------
+System.Int32[,] ==> {1[0] <- 4; 1[1] <- 2}
+--------------- Types tokens: ---------------
+1 ==> System.Int32[,]
+Initialized types = { System.Array, System.Runtime.CompilerServices.RuntimeHelpers, VSharp.Test.Tests.Lists, System.Int32[,] }

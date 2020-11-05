@@ -1,0 +1,10 @@
+METHOD: System.Int32 VSharp.Test.Tests.PDR.NewObjAndDup()
+RESULT: Totally 1 state:
+0
+MEMORY DUMP:
+Path condition: !VSharp.Test.Tests.PDR+ClassWithOneField_initialized
+--------------- Fields: ---------------
+x ==> {1 <- 42}
+--------------- Types tokens: ---------------
+1 ==> VSharp.Test.Tests.PDR+ClassWithOneField
+Initialized types = { VSharp.Test.Tests.PDR, System.Object, VSharp.Test.Tests.PDR+ClassWithOneField }
