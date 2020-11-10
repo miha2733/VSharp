@@ -220,8 +220,8 @@ module public CFA =
                 match callSite.opCode with
                 | Instruction.Call     ->
                     interpreter.CommonCall callSite.calledMethod state k
-                | Instruction.NewObj   when Reflection.IsDelegateConstructor callSite.calledMethod -> k [Memory.PopStack state]
-                | Instruction.NewObj   when Reflection.IsArrayConstructor callSite.calledMethod -> k [Memory.PopStack state]
+                | Instruction.NewObj   when Reflection.IsDelegateConstructor callSite.calledMethod -> k [path.state] //[Memory.PopStack state]
+                | Instruction.NewObj   when Reflection.IsArrayConstructor callSite.calledMethod -> k [path.state] //[Memory.PopStack state]
                 | Instruction.NewObj   ->
                     interpreter.CommonCall callSite.calledMethod state k
                 | Instruction.CallVirt -> interpreter.CommonCallVirt callSite.calledMethod state k
@@ -234,6 +234,8 @@ module public CFA =
 
     module cfaBuilder =
         let private alreadyComputedCFAs = Dictionary<MethodBase, cfa>()
+
+        type usedType = operationalStack * pdict<concreteHeapAddress, symbolicType> * pdict<arrayType, vectorRegion> * pdict<arrayType, vectorRegion>
 
         let private createEmptyCFA cfg method =
             {
@@ -269,7 +271,7 @@ module public CFA =
                 | list -> allErrors @ (list |> List.map (fun (offset, cilState) -> {cilState with ip = offset}))
             executeAllInstructions [] (Instruction startingOffset) cilState
 
-        let computeCFAForMethod (ilintptr : ILInterpreter) (initialState : state) (cfa : cfa) (used : Dictionary<offset * operationalStack, int>) (block : MethodBase unitBlock) =
+        let computeCFAForMethod (ilintptr : ILInterpreter) (initialState : state) (cfa : cfa) (used : Dictionary<offset * usedType, int>) (block : MethodBase unitBlock) =
             let cfg = cfa.cfg
             let mutable currentTime = initialState.currentTime
             let executeSeparatedOpCode offset (opCode : System.Reflection.Emit.OpCode) (cilStateWithArgs : cilState) =
@@ -304,52 +306,71 @@ module public CFA =
 
             let rec computeCFAForBlock (block : unitBlock<'a>) =
                 let createOrGetVertex = function
-                    | Instruction offset, opStack when used.ContainsKey(offset, opStack) ->
-                        block.vertices.[used.[offset, opStack]]
-                    | Instruction offset, opStack ->
+                    | Instruction offset, rest when used.ContainsKey(offset, rest) ->
+                        block.vertices.[used.[offset, rest]]
+                    | Instruction offset, (opStack, _, _, _) ->
                         let vertex = Vertex.CreateVertex cfg.methodBase offset opStack
                         block.AddVertex vertex
                         vertex
-                    | Exit, [] -> block.exitVertex
+                    | Exit, ([], _, _, _) -> block.exitVertex
                     | _ -> __unreachable__()
 
+                let isInsideCycle opStack (src : offset) (dst : ip) =
+                    match dst with
+                    | Instruction dst ->
+                        if cfg.topologicalTimes.[src] >= cfg.topologicalTimes.[dst] then
+                            Seq.tryFind (fun (offset', (opStack',_,_,_)) -> offset' = dst && opStack = opStack') used.Keys
+                            |> Option.map (fun (offset, rest) -> block.vertices.[used.[offset, rest]])
+                        else None
+                    | _ -> None
+
                 // note: entry point and exit vertex must be added to unit block
-                let rec bypass (vertex : Vertex) =
+                let rec bypass (vertex : Vertex) allocatedTypes lengths lowerBounds =
                     let id, offset, opStack = vertex.Id, vertex.Offset, vertex.OpStack
-                    if used.ContainsKey (offset, opStack) || vertex = block.exitVertex then
+                    if used.ContainsKey (offset, (opStack, allocatedTypes, lengths, lowerBounds)) || vertex = block.exitVertex then
                         Logger.printLog Logger.Trace "Again went to offset = %x\nnopStack = %O" offset opStack
                     else
-                    let wasAdded = used.TryAdd((offset, opStack), id)
+                    let wasAdded = used.TryAdd((offset, (opStack, allocatedTypes, lengths, lowerBounds)), id)
                     Prelude.releaseAssert(wasAdded)
                     let srcVertex = block.vertices.[id]
                     Logger.printLog Logger.Trace "[Starting computing cfa for offset = %x]\nopStack = %O" offset opStack
                     System.Console.WriteLine("Making initial CFA state with STARTING TIME = {0}", currentTime)
-                    let initialCilState = {cilState.Empty with state = {initialState with currentTime = currentTime; startingTime = currentTime}}
+                    let modifiedState = {initialState with allocatedTypes = allocatedTypes; lengths = lengths; lowerBounds = lowerBounds
+                                                           currentTime = currentTime; startingTime = currentTime}
+                    let initialCilState = {cilState.Empty with state = modifiedState}
                     match cfg.offsetsDemandingCall.ContainsKey offset with
                     | true ->
                         let opCode, calledMethod = cfg.offsetsDemandingCall.[offset]
                         let callSite = {sourceMethod = cfg.methodBase; offset = offset; calledMethod = calledMethod; opCode = opCode}
                         let nextOffset, this, args, cilState' = executeSeparatedOpCode offset opCode {initialCilState with ip = Instruction offset; opStack = opStack}
-                        let dstVertex = createOrGetVertex (Instruction nextOffset, cilState'.opStack)
+                        let dstVertex =
+                            let s = cilState'.state
+                            createOrGetVertex (Instruction nextOffset, (cilState'.opStack, s.allocatedTypes, s.lengths, s.lowerBounds))
                         block.AddVertex dstVertex
                         let stateWithArgsOnFrame = ilintptr.ReduceFunctionSignature cilState'.state calledMethod this (Specified args) false (fun x -> x)
                         currentTime <- VectorTime.max currentTime stateWithArgsOnFrame.currentTime
                         addEdge <| CallEdge(srcVertex, dstVertex, callSite, stateWithArgsOnFrame)
-                        bypass dstVertex
+                        bypass dstVertex stateWithArgsOnFrame.allocatedTypes stateWithArgsOnFrame.lengths stateWithArgsOnFrame.lowerBounds
                     | _ ->
                         let newStates = executeInstructions ilintptr cfg {initialCilState with ip = Instruction offset; opStack = opStack}
                         newStates |> List.iter (fun state -> currentTime <- VectorTime.max currentTime state.state.currentTime)
                         let goodStates = List.filter (fun (cilState : cilState) -> not cilState.HasException) newStates
                         let erroredStates = List.filter (fun (cilState : cilState) -> cilState.HasException) newStates
                         goodStates |> List.iter (fun (cilState' : cilState) ->
-                            let dstVertex = createOrGetVertex (cilState'.ip, cilState'.opStack)
-                            if not cilState'.leaveInstructionExecuted then addEdge <| StepEdge(srcVertex, dstVertex, cilState'.state)
-                            else
-                                Prelude.releaseAssert(List.isEmpty cilState'.opStack)
-                                addEdgesToFinallyBlocks initialCilState.state srcVertex dstVertex
-                            bypass dstVertex)
+                            match isInsideCycle cilState'.opStack offset cilState'.ip with
+                            | Some vertex ->
+                                assert (not cilState'.leaveInstructionExecuted)
+                                addEdge <| StepEdge(srcVertex, vertex, cilState'.state)
+                            | None ->
+                                let s = cilState'.state
+                                let dstVertex = createOrGetVertex (cilState'.ip, (cilState'.opStack, s.allocatedTypes, s.lengths, s.lowerBounds))
+                                if not cilState'.leaveInstructionExecuted then addEdge <| StepEdge(srcVertex, dstVertex, cilState'.state)
+                                else
+                                    Prelude.releaseAssert(List.isEmpty cilState'.opStack)
+                                    addEdgesToFinallyBlocks initialCilState.state srcVertex dstVertex
+                                bypass dstVertex cilState'.state.allocatedTypes cilState'.state.lengths cilState'.state.lowerBounds)
                         srcVertex.AddErroredStates erroredStates
-                bypass block.entryPoint
+                bypass block.entryPoint initialState.allocatedTypes initialState.lengths initialState.lowerBounds
             and addEdgesToFinallyBlocks emptyEffect (srcVertex : Vertex) (dstVertex : Vertex) =
                 let method = cfg.methodBase
                 let ehcs = method.GetMethodBody().ExceptionHandlingClauses
@@ -377,7 +398,7 @@ module public CFA =
                 let cfg = CFG.build methodBase
                 let cfa = createEmptyCFA cfg methodBase
 
-                let used = Dictionary<offset * operationalStack, int>()
+                let used = Dictionary<offset * usedType, int>()
                 computeCFAForMethod ilintptr initialState cfa used cfa.body
                 alreadyComputedCFAs.[methodBase] <- cfa
                 Logger.printLog Logger.Trace "Computed cfa: %O" cfa
@@ -416,7 +437,7 @@ type StepInterpreter() =
             else
                 visit vertex
                 let edges = vertex.OutgoingEdges
-                let shouldGetAllPaths = true // TODO: resolve this problem: when set to ``true'' recursion works too long, when set to ``false'' recursion doesn't work at all
+                let shouldGetAllPaths = false // TODO: resolve this problem: when set to ``true'' recursion works too long, when set to ``false'' recursion doesn't work at all
                 let paths : path list = vertex.Paths.OfLevel shouldGetAllPaths lvl
                 let newDsts = edges |> Seq.fold (fun acc (edge : CFA.Edge) ->
                     let propagated = Seq.map edge.PropagatePath paths |> Seq.fold (||) false
@@ -425,18 +446,17 @@ type StepInterpreter() =
         cfa.body.entryPoint.Paths.Add {lvl = 0u; state = initialState}
         Logger.trace "starting Forward exploration for %O" codeLoc
         dfs 0u cfa.body.entryPoint
-        let resultStates = List.init (maxBorder |> int) (fun lvl -> cfa.body.exitVertex.Paths.OfLevel true (lvl |> uint32) |> List.ofSeq)
+        let resultStates = List.init (maxBorder |> int) (fun lvl -> cfa.body.exitVertex.Paths.OfLevel false (lvl |> uint32) |> List.ofSeq)
                          |> List.concat
                          |> List.map (fun (path : path) ->
                              let state = path.state
                              match state.returnRegister with
                              | None -> Nop, state
                              | Some res -> res, state)
+        if List.length resultStates = 0 then internalfailf "No states were obtained. Most likely such a situation is a bug. Check it!"
         k resultStates
 
     override x.Invoke codeLoc =
-
-
         match codeLoc with
         | :? ILMethodMetadata as ilmm ->
             CFA.configureInterpreter x

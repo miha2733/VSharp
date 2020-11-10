@@ -110,8 +110,9 @@ type Lemmas(m : MethodBase, offset : int) =
 type Paths(m : MethodBase, offset : int) =
     let id = Database.idOfVertex m offset
     let parsed = new Dictionary<level, HashSet<path>>()
-    let used = HashSet<path>()
+    let used = HashSet<path>() // TODO: ``used'' set should be moved to Analyzer
     member x.Add (path : path) =
+        if used.Contains path then used.Remove path |> ignore
         Database.addPath id path
         let paths = Dict.getValueOrUpdate parsed path.lvl (fun () -> new HashSet<_>())
         paths.Add path |> ignore

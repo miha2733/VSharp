@@ -1,0 +1,9 @@
+METHOD: System.Int32 VSharp.Test.Tests.PDR.TestLengths_1()
+RESULT: Totally 1 state:
+20
+MEMORY DUMP:
+--------------- Array lengths: ---------------
+System.Int32[,] ==> {1[0] <- 4; 1[1] <- 5}
+--------------- Types tokens: ---------------
+1 ==> System.Int32[,]
+Initialized types = { System.Array, VSharp.Test.Tests.PDR }
