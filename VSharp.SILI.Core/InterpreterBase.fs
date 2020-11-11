@@ -172,22 +172,21 @@ type public ExplorerBase() =
         | _ when t.IsGenericParameter -> k (List.singleton state)
         | _ ->
             let termType = t |> Types.FromDotNetType state
-            let typeInitialized = Memory.IsTypeInitialized state termType
-            match typeInitialized with
-            | True -> k (List.singleton state)
-            | _ ->
-                let state = Memory.AllocateDefaultStatic state termType
-                let state = Seq.fold x.InitStaticFieldWithDefaultValue state fields
-                let states =
+            StatedConditionalExecutionAppendResults state
+                (fun state k -> k (Memory.IsTypeInitialized state termType, state))
+                (fun state k -> k [state])
+                (fun state k ->
+                    let state = Memory.AllocateDefaultStatic state termType
+                    let state = Seq.fold x.InitStaticFieldWithDefaultValue state fields
                     match staticConstructor with
                     | Some cctor ->
                         let removeCallSiteResultAndPopStack (stateAfterCallingCCtor : state) =
                             let stateAfterCallingCCtor = Memory.PopStack stateAfterCallingCCtor
                             {stateAfterCallingCCtor with callSiteResults = state.callSiteResults}
                         x.ReduceFunctionSignature state cctor None (Specified []) false (fun state ->
-                        x.ReduceConcreteCall cctor state  (List.map (snd >> removeCallSiteResultAndPopStack)))
-                    | None -> state |> List.singleton
-                k (states |> List.map (fun state -> Memory.withPathCondition state (!!typeInitialized)))
+                        x.ReduceConcreteCall cctor state (List.map (snd >> removeCallSiteResultAndPopStack) >> k))
+                    | None -> state |> List.singleton |> k)
+                k
 
     member x.CallAbstractMethod (funcId : IFunctionIdentifier) state k =
         __insufficientInformation__ "Can't call abstract method %O, need more information about the object type" funcId

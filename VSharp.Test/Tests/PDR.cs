@@ -175,6 +175,27 @@ namespace VSharp.Test.Tests
             public int x;
         }
 
+        public class ClassWithOneStaticField
+        {
+            public static int x;
+        }
+
+        [TestSvm]
+        public static void DoubleInitializeObjects()
+        {
+            new object();
+            new object();
+        }
+
+        [TestSvm]
+        public static int MultipleInitializeStaticFieldsInCFA(int a)
+        {
+            ClassWithOneStaticField.x = a;
+            if (a > 10)
+                ClassWithOneStaticField.x = 20;
+            return ClassWithOneStaticField.x;
+        }
+
         private static int ReadFieldOfCLass(ClassWithOneField classWithOneField)
         {
             return classWithOneField.x;
