@@ -220,8 +220,8 @@ module public CFA =
                 match callSite.opCode with
                 | Instruction.Call     ->
                     interpreter.CommonCall callSite.calledMethod state k
-                | Instruction.NewObj   when Reflection.IsDelegateConstructor callSite.calledMethod -> k [path.state] //[Memory.PopStack state]
-                | Instruction.NewObj   when Reflection.IsArrayConstructor callSite.calledMethod -> k [path.state] //[Memory.PopStack state]
+                | Instruction.NewObj   when Reflection.IsDelegateConstructor callSite.calledMethod -> k [Memory.PopStack state]
+                | Instruction.NewObj   when Reflection.IsArrayConstructor callSite.calledMethod -> k [Memory.PopStack state]
                 | Instruction.NewObj   ->
                     interpreter.CommonCall callSite.calledMethod state k
                 | Instruction.CallVirt -> interpreter.CommonCallVirt callSite.calledMethod state k

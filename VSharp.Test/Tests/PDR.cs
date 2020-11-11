@@ -385,6 +385,19 @@ namespace VSharp.Test.Tests
             return result;
         }
 
+        private static int Return100()
+        {
+            int x;
+            return 100;
+        }
+
+        [TestSvm]
+        public static int TestPopStackWithReservedVariable()
+        {
+            return Return100();
+        }
+
+
         // expecting 20
         [TestSvm]
         public static int TestLengths_1()
