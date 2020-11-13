@@ -35,12 +35,12 @@ type heapAddressKey =
 //            | ConcreteHeapAddress _ -> true
 //            | _ -> false
         override x.Region = MemoryKeyUtils.regionOfHeapAddress x.address
-        override x.Map mapTerm _ mapTime reg =
+        override x.Map mapTerm _ mapTime reg = // TODO: here goes reg = [0; 0]
             let zeroReg = intervals<vectorTime>.Singleton VectorTime.zero
             let newReg =
                 if (reg :> IRegion<vectorTime intervals>).CompareTo zeroReg = Includes then
-                    let reg' = (reg :> IRegion<vectorTime intervals>).Subtract zeroReg
-                    let rightBound = mapTime [1u] |> List.lastAndRest |> snd
+                    let reg' = (reg :> IRegion<vectorTime intervals>).Subtract zeroReg // TODO: reg' = []
+                    let rightBound = mapTime [1u] |> List.lastAndRest |> snd // TODO: mapTime [1u] = [1], rightBound = []
                     let rightBoundInterval = intervals<vectorTime>.Singleton rightBound
                     let mappedZeroInterval = (intervals<vectorTime>.Closed VectorTime.zero rightBound :> IRegion<vectorTime intervals>).Subtract(rightBoundInterval)
                     mappedZeroInterval.Union(reg'.Map mapTime)

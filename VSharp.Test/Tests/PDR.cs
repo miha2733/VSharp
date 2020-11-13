@@ -415,9 +415,31 @@ namespace VSharp.Test.Tests
             return checked(x + y);
         }
 
+        public class Aaaa
+        {
+            public int a;
+        }
 
+        public static int Foooo(int x)
+        {
+            return x + 42;
+        }
 
+        [TestSvm]
+        public static int TestFieldsComposition(Aaaa c)
+        {
+            c.a = c.a * c.a;
+            // c.a = Foooo(c.a);
+            return c.a;
+        }
 
+        [TestSvm]
+        public static int TestFieldsComposition1(Aaaa c)
+        {
+            c.a = c.a * c.a;
+            Foooo(0);
+            return c.a;
+        }
 
         // [TestSvm]
         // public static int CheckOperationalStackBalance(int x)
