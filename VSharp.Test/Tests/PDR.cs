@@ -667,10 +667,28 @@ namespace VSharp.Test.Tests
             }
         }
 
+        public class ClassWithClassInside
+        {
+            private ClassWithOneField _classWithOneField;
+
+            public ClassWithClassInside(int n)
+            {
+                ClassWithOneField local = new ClassWithOneField();
+                local.x = n;
+                _classWithOneField = local;
+            }
+        }
+
         [TestSvm]
         public static ClassWithStructInside CreateClassThatHasStructInside(int n)
         {
             return new ClassWithStructInside(n);
+        }
+
+        [TestSvm]
+        public static ClassWithClassInside CreateClassThatHasClassInside(int n)
+        {
+            return new ClassWithClassInside(n);
         }
 
         [TestSvm]

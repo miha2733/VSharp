@@ -22,10 +22,12 @@ type public CodePortionInterpreter(ilInterpreter : ILInterpreter, codeLoc : ICod
         let ilCodePortion = ILCodePortion(cilState.ip.Vertex(), cilState.recursiveVertices, methodId, cilState.state)
         ilInterpreter.ReproduceEffect ilCodePortion cilState.state (List.map (fun (_, state) -> {cilState with state = state}))
 
-    member x.Invoke state k =
+    member x.Invoke initialState k =
         let getResultsAndStates = function
             | [] -> internalfail "Exception handling is not implemented!" //TODO: __unreachable__()
-            | cilStates -> List.map (fun (st : cilState) -> st.state.returnRegister |?? Nop, st.state) cilStates
+            | cilStates -> List.map (fun (cilState : cilState) ->
+                let state = { cilState.state with currentTime = initialState.currentTime}
+                state.returnRegister |?? Nop, state) cilStates
 
         let interpret state curV targetV rvs =
             { cilState.MakeEmpty curV targetV state with recursiveVertices = rvs}
@@ -33,13 +35,13 @@ type public CodePortionInterpreter(ilInterpreter : ILInterpreter, codeLoc : ICod
             |> getResultsAndStates
         match codeLoc with
         | :? ILMethodMetadata ->
-            ilInterpreter.InitializeStatics state cfg.methodBase.DeclaringType (List.map (fun state ->
+            ilInterpreter.InitializeStatics initialState cfg.methodBase.DeclaringType (List.map (fun state ->
             interpret state (Instruction 0) ip.Exit []) >> List.concat >> k)
 
         | :? ILCodePortion as ilcode ->
             let u = Instruction ilcode.VertexNumber
             let rvs = ilcode.RecursiveVertices
-            interpret state u u rvs |> k
+            interpret initialState u u rvs |> k
         | _ -> __notImplemented__()
     override x.MakeEpsilonState (ist : cilState) =
         let state = ist.state

@@ -1002,18 +1002,30 @@ module internal Memory =
 
 // ------------------------------- Pretty-printing -------------------------------
 
+    let private dumpSection section (sb : StringBuilder) =
+        sprintf "--------------- %s: ---------------" section |> sb.AppendLine
+
     let private dumpDict section sorter keyToString valueToString (sb : StringBuilder) d =
         if PersistentDict.isEmpty d then sb
         else
-            let sb = sprintf "--------------- %s: ---------------" section |> sb.AppendLine
+            let sb = dumpSection section sb
             PersistentDict.dump d sorter keyToString valueToString |> sb.AppendLine
+
+    let private dumpStack (sb : StringBuilder) stack =
+        let print (sb : StringBuilder) k v =
+            sprintf "key = %O, value = %O" k v |> sb.AppendLine
+        let sb1 = MappedStack.fold print (StringBuilder()) stack
+        if sb1.Length = 0 then sb
+        else
+            let sb = dumpSection "Stack" sb
+            sb.Append(sb1)
 
     let dump (s : state) =
         let arrayTypeToString (elementType, dimension, isVector) =
             if isVector then ArrayType(elementType, Vector)
             else ArrayType(elementType, ConcreteDimension dimension)
             |> toString
-        // TODO: print stack and lower bounds?
+        // TODO: lower bounds?
         let sb = StringBuilder()
         let sb = if s.pc.IsEmpty then sb else (s.pc |> List.map toString |> join " /\ " |> sprintf ("Path condition: %s") |> sb.AppendLine)
         let sb = dumpDict "Fields" id toString (MemoryRegion.toString "    ") sb s.classFields
@@ -1025,5 +1037,7 @@ module internal Memory =
         let sb = dumpDict "Array copies" id VectorTime.print (fun (addr, mr) -> sprintf "from %O with updates %O" addr (MemoryRegion.toString "    " mr)) sb s.entireCopies
         let sb = dumpDict "Array copies (ext)" id VectorTime.print toString sb s.extendedCopies
         let sb = dumpDict "Delegates" id VectorTime.print toString sb s.delegates
-        let sb = if SymbolicSet.isEmpty s.initializedTypes then sb else sprintf "Initialized types = %s" (SymbolicSet.print s.initializedTypes) |> sb.AppendLine
+        let sb = if s.currentTime = [] then sb else VectorTime.print s.currentTime |> (dumpSection "CurrentTime" sb).AppendLine
+        let sb = dumpStack sb s.stack
+        let sb = if SymbolicSet.isEmpty s.initializedTypes then sb else (SymbolicSet.print s.initializedTypes) |> (dumpSection "Initialized types" sb).AppendLine
         if sb.Length = 0 then "<Empty>" else sb.ToString()

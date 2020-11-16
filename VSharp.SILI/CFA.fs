@@ -85,7 +85,7 @@ module public CFA =
         Edge(src : Vertex, dst : Vertex) =
         abstract member Type : string
         abstract member PropagatePath : path -> bool
-        member x.PrintLog msg obj = Logger.printLog Logger.Trace "[%s]\n%s: %O" (x.commonToString()) msg obj
+        member x.PrintLog msg obj = Logger.printLog Logger.Trace "[%s]\n%s %O" (x.commonToString()) msg obj
         member x.Src = src
         member x.Dst = dst
         member x.Method = x.Src.Method
@@ -177,9 +177,9 @@ module public CFA =
         override x.PropagatePath (path : path) =
 
             Memory.ComposeStates path.state effect (fun states ->
-                x.PrintLog "composition left"  <| Memory.Dump path.state
-                x.PrintLog "composition right" <| Memory.Dump effect
-                x.PrintLog (sprintf "composition resulted in %d states" <| List.length states) <| (List.map Memory.Dump states |> join "\n")
+                x.PrintLog "composition left:\n"  <| Memory.Dump path.state
+                x.PrintLog "composition right:\n" <| Memory.Dump effect
+                x.PrintLog (sprintf "composition resulted in %d states:\n" <| List.length states) <| (List.map Memory.Dump states |> join "\n")
                 assert(List.forall (fun state -> path.state.frames = state.frames) states)
                 // Do NOT turn this List.fold into List.exists to be sure that EVERY returned state is propagated
                 List.fold (fun acc state -> acc || x.CommonPropagatePath (path.lvl + 1u) state) false states)
@@ -204,9 +204,9 @@ module public CFA =
             let k states =
                 let propagateStateAfterCall acc state =
                     assert(path.state.frames = state.frames) // TODO: assert fails in ClassesSimple.Test1
-                    x.PrintLog "propagation through callEdge" callSite
-                    x.PrintLog "call edge: composition left" (Memory.Dump path.state)
-                    x.PrintLog "call edge: composition result" (Memory.Dump state)
+                    x.PrintLog "propagation through callEdge:\n" callSite
+                    x.PrintLog "call edge: composition left:\n" (Memory.Dump path.state)
+                    x.PrintLog "call edge: composition result:\n" (Memory.Dump state)
                     let result' = x.CommonPropagatePath (path.lvl + 1u) {state with callSiteResults = addCallSiteResult path.state.callSiteResults callSite state.returnRegister
                                                                                     returnRegister = None}
                     acc || result'
@@ -218,10 +218,9 @@ module public CFA =
             match states with
             | [state] ->
                 match callSite.opCode with
-                | Instruction.Call     ->
-                    interpreter.CommonCall callSite.calledMethod state k
                 | Instruction.NewObj   when Reflection.IsDelegateConstructor callSite.calledMethod -> k [Memory.PopStack state]
                 | Instruction.NewObj   when Reflection.IsArrayConstructor callSite.calledMethod -> k [Memory.PopStack state]
+                | Instruction.Call
                 | Instruction.NewObj   ->
                     interpreter.CommonCall callSite.calledMethod state k
                 | Instruction.CallVirt -> interpreter.CommonCallVirt callSite.calledMethod state k
@@ -444,7 +443,7 @@ type StepInterpreter() =
                     if propagated then (edge.Dst :: acc) else acc) []
                 List.iter (dfs (lvl + 1u)) newDsts
         cfa.body.entryPoint.Paths.Add {lvl = 0u; state = initialState}
-        Logger.trace "starting Forward exploration for %O" codeLoc
+        Logger.trace "Starting Forward exploration for %O" codeLoc
         dfs 0u cfa.body.entryPoint
         let resultStates = List.init (maxBorder |> int) (fun lvl -> cfa.body.exitVertex.Paths.OfLevel false (lvl |> uint32) |> List.ofSeq)
                          |> List.concat

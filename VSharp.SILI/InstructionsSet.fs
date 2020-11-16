@@ -6,12 +6,11 @@ open System.Reflection.Emit
 
 open VSharp
 open VSharp.Core
-open VSharp.Reflection
 open CFG
 
 type public ILMethodMetadata =
     { methodBase : MethodBase }
-    override x.ToString () = x.methodBase.Name
+    override x.ToString () = VSharp.Reflection.GetFullMethodName x.methodBase
     interface IMethodIdentifier with
         member x.IsStatic = x.methodBase.IsStatic
         member x.IsConstructor = x.methodBase.IsConstructor
