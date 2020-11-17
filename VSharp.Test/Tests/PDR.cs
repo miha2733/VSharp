@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.IO;
 using NUnit.Framework;
 using NUnit.Framework.Internal;
@@ -665,6 +666,11 @@ namespace VSharp.Test.Tests
                 localA = new A(n);
                 _a = localA;
             }
+
+            public int GetN()
+            {
+                return _a.x;
+            }
         }
 
         public class ClassWithClassInside
@@ -683,6 +689,13 @@ namespace VSharp.Test.Tests
         public static ClassWithStructInside CreateClassThatHasStructInside(int n)
         {
             return new ClassWithStructInside(n);
+        }
+
+        [TestSvm]
+        public static bool SameN(int n)
+        {
+            ClassWithStructInside c = new ClassWithStructInside(n);
+            return n == c.GetN();
         }
 
         [TestSvm]

@@ -24,10 +24,9 @@ type public CodePortionInterpreter(ilInterpreter : ILInterpreter, codeLoc : ICod
 
     member x.Invoke initialState k =
         let getResultsAndStates = function
-            | [] -> internalfail "Exception handling is not implemented!" //TODO: __unreachable__()
-            | cilStates -> List.map (fun (cilState : cilState) ->
-                let state = { cilState.state with currentTime = initialState.currentTime}
-                state.returnRegister |?? Nop, state) cilStates
+            | [] -> internalfail "Exception handling is not implemented!" // TODO: __unreachable__()
+            | cilStates ->
+                List.map (fun (cilState : cilState) -> let state = cilState.state in state.returnRegister |?? Nop, state) cilStates
 
         let interpret state curV targetV rvs =
             { cilState.MakeEmpty curV targetV state with recursiveVertices = rvs}
