@@ -1,0 +1,16 @@
+METHOD: System.Void VSharp.Test.Tests.PDR.NewObjInLoop()
+RESULT: Totally 1 state:
+<VOID>
+MEMORY DUMP:
+--------------- Types tokens: ---------------
+2 ==> System.Object
+2.2 ==> System.Object
+2.2.2 ==> System.Object
+2.2.2.2 ==> System.Object
+2.2.2.2.2 ==> System.Object
+--------------- CurrentTime: ---------------
+2.2.2.2.2
+--------------- Stack: ---------------
+key = __loc__0, value = 5
+--------------- Initialized types: ---------------
+{ VSharp.Test.Tests.PDR, System.Object }

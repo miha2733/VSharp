@@ -4,18 +4,24 @@ RESULT: Totally 2 states:
 MEMORY DUMP:
 Path condition: !f
 --------------- Array lengths: ---------------
-System.Int32[] ==> {1[0] <- 100}
+System.Int32[] ==> {2[0] <- 100}
 --------------- Types tokens: ---------------
-1 ==> System.Int32[]
-Initialized types = { System.Array, VSharp.Test.Tests.PDR }
+2 ==> System.Int32[]
+--------------- Stack: ---------------
+key = __loc__0, value = 0
+--------------- Initialized types: ---------------
+{ System.Array, VSharp.Test.Tests.PDR }
 
 0
 MEMORY DUMP:
 Path condition: f
 --------------- Array lengths: ---------------
-System.Int32[] ==> {1[0] <- 100}
-System.Int32[,] ==> {2[0] <- 4; 2[1] <- 5}
+System.Int32[] ==> {2[0] <- 100}
+System.Int32[,] ==> {3[0] <- 4; 3[1] <- 5}
 --------------- Types tokens: ---------------
-1 ==> System.Int32[]
-2 ==> System.Int32[,]
-Initialized types = { System.Array, VSharp.Test.Tests.PDR, System.Int32[,] }
+2 ==> System.Int32[]
+3 ==> System.Int32[,]
+--------------- Stack: ---------------
+key = __loc__0, value = 0
+--------------- Initialized types: ---------------
+{ System.Array, VSharp.Test.Tests.PDR, System.Int32[,] }

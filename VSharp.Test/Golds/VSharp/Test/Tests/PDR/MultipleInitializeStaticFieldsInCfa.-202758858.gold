@@ -5,7 +5,8 @@ MEMORY DUMP:
 Path condition: a <= 10
 --------------- Static fields: ---------------
 x ==> {VSharp.Test.Tests.PDR+ClassWithOneStaticField <- a}
-Initialized types = { VSharp.Test.Tests.PDR+ClassWithOneStaticField, VSharp.Test.Tests.PDR }
+--------------- Initialized types: ---------------
+{ VSharp.Test.Tests.PDR+ClassWithOneStaticField, VSharp.Test.Tests.PDR }
 
 20
 MEMORY DUMP:
@@ -14,4 +15,5 @@ Path condition: !(a <= 10)
 x ==> {
         VSharp.Test.Tests.PDR+ClassWithOneStaticField <- 20
     }
-Initialized types = { VSharp.Test.Tests.PDR+ClassWithOneStaticField, VSharp.Test.Tests.PDR }
+--------------- Initialized types: ---------------
+{ VSharp.Test.Tests.PDR+ClassWithOneStaticField, VSharp.Test.Tests.PDR }
