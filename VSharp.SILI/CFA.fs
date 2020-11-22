@@ -171,13 +171,14 @@ module public CFA =
         override x.Type = "StepEdge"
         override x.PropagatePath (path : path) =
 
-            Memory.ComposeStates path.state effect (fun states ->
-                x.PrintLog "composition left"  <| Memory.Dump path.state
-                x.PrintLog "composition right" <| Memory.Dump effect
-                x.PrintLog (sprintf "composition resulted in %d states" <| List.length states) <| (List.map Memory.Dump states |> join "\n")
+            let res = Memory.ComposeStates path.state effect (fun states ->
+                x.PrintLog "composition left:\n"  <| Memory.Dump path.state
+                x.PrintLog "composition right:\n" <| Memory.Dump effect
+                x.PrintLog (sprintf "composition resulted in %d states:\n" <| List.length states) <| (List.map Memory.Dump states |> join "\n")
                 assert(List.forall (fun state -> path.state.frames = state.frames) states)
                 // Do NOT turn this List.fold into List.exists to be sure that EVERY returned state is propagated
                 List.fold (fun acc state -> acc || x.CommonPropagatePath (path.lvl + 1u) state) false states)
+            res
 
         member x.Effect = effect
         member x.VisibleVariables() = __notImplemented__()

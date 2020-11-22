@@ -38,12 +38,12 @@ module API =
 
         val True : term
         val False : term
+        val NullRef : term
 
         val MakeBool : bool -> term
 
         val MakeFunctionResultConstant : state -> callSite -> term
         val MakeNumber : 'a -> term
-        val MakeNullRef : symbolicType -> term
 
         val TypeOf : term -> symbolicType
         val BaseTypeOfHeapRef : state -> term -> symbolicType
@@ -91,7 +91,7 @@ module API =
         val RefIsType : term -> symbolicType -> term
         val RefIsRef : term -> term -> term
         val IsCast : symbolicType -> term -> term
-        val Cast : term -> symbolicType -> term
+        val Cast : term list -> term -> symbolicType -> term
         val CastConcrete : 'a -> System.Type -> term
         val CastReferenceToPointer : state -> term -> term
 

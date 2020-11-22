@@ -403,7 +403,7 @@ and public ILInterpreter() as this =
                 mapAndPushFunctionResultsk (fun (term, state) -> castUnchecked typeForStack term state, state) results id
             StatedConditionalExecutionCIL {cilState with opStack = stack}
                 (fun state k -> k (canCastWithoutOverflow t targetType, state))
-                (fun cilState k -> k [Types.Cast t targetType, cilState])
+                (fun cilState k -> k [Types.Cast cilState.state.pc t targetType, cilState])
                 (fun (cilState : cilState) k -> x.Raise x.OverflowException cilState.state (List.map (fun state -> state.exceptionsRegister.GetError(), {cilState with state = state}) >> k))
                 castForStack
         | _ -> __corruptedStack__()
@@ -417,7 +417,7 @@ and public ILInterpreter() as this =
         let term = castReferenceToPointerIfNeeded term typ state
         StatedConditionalExecutionAppendResults state
             (fun state k -> k (IsNullReference term ||| Types.IsCast typ term, state))
-            (fun state k -> k [{state with returnRegister = Some <|Types.Cast term typ}])
+            (fun state k -> k [{state with returnRegister = Some <|Types.Cast state.pc term typ}])
             (x.Raise x.InvalidCastException)
             k
     member private x.CastClass (cfg : cfg) offset (cilState : cilState) : cilState list =
@@ -479,7 +479,7 @@ and public ILInterpreter() as this =
             GuardedApplyForState state methodPtr
                 (fun state methodPtr k -> x.ReduceMethodBaseCall (retrieveMethodInfo methodPtr) state k)
 //                    BranchOnNull state target
-//                        (fun _ _ -> __notImplemented__()) // TODO: check whether this situation is possible
+//                        (fun _ _ -> __notImplemented__()) // TODO: check whether this situation is possible -- it is possible in test DoubleValue (symbolic ref, because of cfa)
 //                        (x.ReduceMethodBaseCall (retrieveMethodInfo methodPtr))
 //                        k)
 
@@ -509,7 +509,7 @@ and public ILInterpreter() as this =
 //                let stackKey = SymbolicThisKey constructorInfo
 //                let freshValue = Memory.MakeDefaultBlock constructedTermType (HeapTopLevelStack stackKey, [])
                 let freshValue = Memory.DefaultOf constructedTermType
-                let ref, state = Memory.BoxValueType state freshValue
+                let ref, state = Memory.BoxValueType state freshValue // TODO: CreateStructViaNewobj fails -- need to box? #do
                 let k =
                     let modifyResult state =
                         let value = Memory.ReadSafe state ref
@@ -531,7 +531,8 @@ and public ILInterpreter() as this =
         let constructorInfo = resolveMethodFromMetadata cfg (offset + OpCodes.Newobj.Size) :?> ConstructorInfo
         assert (constructorInfo.IsConstructor)
         let args, cilState = retrieveActualParameters constructorInfo cilState
-        x.CommonNewObj true constructorInfo cilState.state args (pushResultFromStateToCilState cilState)
+        let res = x.CommonNewObj true constructorInfo cilState.state args (pushResultFromStateToCilState cilState)
+        res
 
     member x.LdsFld addressNeeded (cfg : cfg) offset (cilState : cilState) =
         let fieldInfo = resolveFieldFromMetadata cfg (offset + OpCodes.Ldsfld.Size)
@@ -630,7 +631,8 @@ and public ILInterpreter() as this =
 //                        checkTypeMismatchBasedOnTypeOfValue (Types.RefIsRef value reference) cilState k
                 let length = Memory.ArrayLengthByDimension state arrayRef (MakeNumber 0)
                 x.AccessArray checkTypeMismatch state length index k
-            x.NpeOrInvokeStatement cilState.state arrayRef checkedStElem (List.map (fun state -> {cilState with state = state; opStack = stack}))
+            let res = x.NpeOrInvokeStatement cilState.state arrayRef checkedStElem (List.map (fun state -> {cilState with state = state; opStack = stack}))
+            res
         | _ -> __corruptedStack__()
     member private x.StElemTyp typ (cilState : cilState) =
         x.StElemWithCast (castUnchecked typ) cilState
@@ -670,7 +672,7 @@ and public ILInterpreter() as this =
             StatedConditionalExecutionAppendResults state
                 (fun state k -> k (hasValue, state))
                 hasValueCase
-                (fun state k -> k [{state with returnRegister = Some <| MakeNullRef (Types.FromDotNetType state t)}])
+                (fun state k -> k [{state with returnRegister = Some NullRef}])
                 k
 
         x.ReduceFunctionSignature cilState.state hasValueMethodInfo (Some v) (Specified []) false (fun state ->
@@ -737,7 +739,7 @@ and public ILInterpreter() as this =
                 StatedConditionalExecutionAppendResults state
                     (fun state k -> k (Types.IsCast termType obj, state)) // TODO: Why not Types.RefIsType method?
                     (fun state k ->
-                        let res, state = handleRestResults(Types.Cast obj termType |> HeapReferenceToBoxReference, state)
+                        let res, state = handleRestResults(Types.Cast state.pc obj termType |> HeapReferenceToBoxReference, state)
                         k [{state with returnRegister = Some res}])
                     (fun (state : state) k -> x.Raise x.InvalidCastException state k)
 
@@ -805,8 +807,8 @@ and public ILInterpreter() as this =
     member private this.CommonUnsignedDivRem isRem performAction (cilState : cilState) =
         match cilState.opStack with
         | y :: x :: stack when TypeUtils.isInteger x && TypeUtils.isInteger y ->
-            let x = makeUnsignedInteger x id
-            let y = makeUnsignedInteger y id
+            let x = makeUnsignedInteger cilState.state x id
+            let y = makeUnsignedInteger cilState.state y id
             StatedConditionalExecutionCIL {cilState with opStack = stack}
                 (fun state k -> k (Arithmetics.IsZero y, state))
                 (fun (cilState : cilState) k -> this.Raise this.DivideByZeroException cilState.state (List.map (fun state -> state.exceptionsRegister.GetError(), {cilState with state = state}) >> k))
@@ -829,13 +831,13 @@ and public ILInterpreter() as this =
         | y :: TypeUtils.Int64 x :: stack
         | TypeUtils.UInt64 y :: x :: stack
         | y :: TypeUtils.UInt64 x :: stack ->
-            let x = makeUnsignedInteger x id
-            let y = makeUnsignedInteger y id
+            let x = makeUnsignedInteger cilState.state x id
+            let y = makeUnsignedInteger cilState.state y id
             let max = TypeUtils.UInt64.MaxValue
             let zero = TypeUtils.UInt64.Zero
             checkOverflowForUnsigned zero max x y {cilState with opStack = stack} // TODO: maybe rearrange x and y if y is concrete and x is symbolic
         | y :: x :: stack when TypeUtils.isInteger x && TypeUtils.isInteger y ->
-            let x, y = makeUnsignedInteger x id, makeUnsignedInteger y id
+            let x, y = makeUnsignedInteger cilState.state x id, makeUnsignedInteger cilState.state y id
             let max = TypeUtils.UInt32.MaxValue
             let zero = TypeUtils.UInt32.Zero
             checkOverflowForUnsigned zero max x y {cilState with opStack = stack} // TODO: maybe rearrange x and y if y is concrete and x is symbolic

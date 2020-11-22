@@ -5,7 +5,7 @@ open VSharp.Core
 type public 'a symbolicLambda = state -> (state list -> 'a) -> 'a
 
 module internal Lambdas =
-    let make (body : 'a symbolicLambda) typ (k : term -> 'a) = Concrete body typ |> k
+    let make (body : 'a symbolicLambda) typ (k : term -> 'a) = Concrete body typ |> k // TODO: here goes state (not [state])
 
     let private (|Lambda|_|) = function
         | Concrete(lambda, _) when (lambda :? 'a symbolicLambda) ->
@@ -16,6 +16,6 @@ module internal Lambdas =
         let callDelegate (state : state) deleg k =
             match deleg.term with
             | Lambda(lambda) -> lambda state k
-            | _ -> internalfailf "Invalid delegate term %O" deleg
+            | _ -> internalfailf "Invalid delegate term %O" deleg // TODO: here goes [state]
         let deleg = Memory.ReadDelegate state deleg
         InstructionsSet.GuardedApplyForState state deleg callDelegate k

@@ -380,7 +380,7 @@ module internal Memory =
     let readStackLocation (s : state) key =
         match MappedStack.tryFind key s.stack with
         | Some value -> value
-        | None -> makeSymbolicStackRead key (typeOfStackLocation s key) VectorTime.zero
+        | None -> makeSymbolicStackRead key (typeOfStackLocation s key) s.startingTime // TODO: RetOneDArray needs s.startingTime! #do
 
     let readStruct (structTerm : term) (field : fieldId) =
         match structTerm with
@@ -411,7 +411,7 @@ module internal Memory =
         let instantiate typ memory =
             let copiedMemory = readArrayCopy state arrayType extractor addr indices
             let mkname = fun (key : heapArrayIndexKey) -> sprintf "%O[%s]" key.address (List.map toString key.indices |> join ", ")
-            makeSymbolicHeapRead {sort = ArrayIndexSort arrayType; extract = extractor; mkname = mkname; isDefaultKey = isDefault} key VectorTime.zero typ (MemoryRegion.deterministicCompose copiedMemory memory)
+            makeSymbolicHeapRead {sort = ArrayIndexSort arrayType; extract = extractor; mkname = mkname; isDefaultKey = isDefault} key state.startingTime typ (MemoryRegion.deterministicCompose copiedMemory memory)
         MemoryRegion.read region key isDefault instantiate
 
     and readArrayRegionExt state arrayType extractor region addr indices (*copy info follows*) srcIndex dstIndex length dstType =
@@ -603,7 +603,7 @@ module internal Memory =
         let mr = accessRegion state.classFields field symbolicType
         let key = {address = addr}
         let mr' = MemoryRegion.write mr key value
-        { state with classFields = PersistentDict.add field mr' state.classFields  }
+        { state with classFields = PersistentDict.add field mr' state.classFields }
 
     let writeArrayIndex state addr indices arrayType value =
         let elementType = fst3 arrayType
@@ -717,7 +717,7 @@ module internal Memory =
         // TODO: optimize this for large concrete arrays (like images)!
         address, Seq.foldi (fun state i value -> writeArrayIndex state address [Concrete i lengthType] (elementType, 1, true) (Concrete value elementType)) state contents
 
-    let allocateString state (str : string) =
+    let allocateString state (str : string) = // TODO: mb write to concreteVector to m_FirstChar field? #do
         let address, state = allocateConcreteVector state Char (str.Length + 1) (Seq.append str (Seq.singleton '\000'))
         let state = writeClassField state address Reflection.stringLengthField (Concrete str.Length lengthType)
         HeapRef address Types.String, state
@@ -937,6 +937,9 @@ module internal Memory =
             // TODO: is this hack correct? We wish to fillHoles only in *potentially overlapping allocated* in state' addresses
             let state = {state with startingTime = state'.startingTime; currentTime = prefix}
             let pc = List.map (fillHoles state) state'.pc |> List.append state.pc
+//            match pc with
+//            | ls when List.contains False ls -> ()
+//            | _ ->
             let returnRegister = Option.map (fillHoles state) state'.returnRegister
             let exceptionRegister = composeRaisedExceptionsOf state state.exceptionsRegister
             let callSiteResults = composeCallSiteResultsOf state state'.callSiteResults
