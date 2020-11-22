@@ -46,10 +46,10 @@ module API =
 
         let True = True
         let False = False
+        let NullRef = nullRef
 
         let MakeBool b = makeBool b
         let MakeNumber n = makeNumber n
-        let MakeNullRef typ = makeNullRef typ
 
         let TypeOf term = typeOf term
         let rec BaseTypeOfHeapRef state ref =
@@ -116,7 +116,7 @@ module API =
         let RefIsRef leftRef rightRef = TypeCasting.refIsRef leftRef rightRef
 
         let IsCast targetType term = TypeCasting.canCast term targetType
-        let Cast term targetType = TypeCasting.cast term targetType id
+        let Cast pc term targetType = TypeCasting.cast pc term targetType id
         let CastConcrete value typ = castConcrete value typ
         let CastReferenceToPointer state reference = TypeCasting.castReferenceToPointer state reference
 
@@ -143,8 +143,6 @@ module API =
 
     module public Memory =
         let EmptyState = Memory.empty
-
-        let IsNullReference term = Merging.guardedApply Pointers.isNull term
 
         let PopStack state = Memory.popStack state
         let PopTypeVariables state = Memory.popTypeVariablesSubstitution state

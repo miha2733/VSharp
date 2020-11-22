@@ -111,6 +111,7 @@ type termNode =
             | Concrete(_, ClassType(Id t, _)) when t.IsSubclassOf(typedefof<System.Delegate>) ->
                 sprintf "<Lambda Expression %O>" t
             | Concrete(_, Null) -> "null"
+//            | Concrete(obj, AddressType) when (obj :?> int list) = [0] -> "null"
             | Concrete(c, Numeric (Id t)) when t = typedefof<char> && c :?> char = '\000' -> "'\\000'"
             | Concrete(c, Numeric (Id t)) when t = typedefof<char> -> sprintf "'%O'" c
             | Concrete(:? concreteHeapAddress as k, AddressType) -> VectorTime.print k
@@ -144,6 +145,7 @@ type termNode =
                     sprintf "| %s ~> %s" guardString termString
                 let printed = guardedTerms |> Seq.map guardedToString |> Seq.sort |> join ("\n" + indent)
                 formatIfNotEmpty (formatWithIndent indent) printed |> sprintf "UNION[%s]"
+//            | HeapRef({term = Concrete(obj, AddressType)}, _) when (obj :?> int list) = [0] -> "NullRef"
             | HeapRef(address, baseType) -> sprintf "(HeapRef %O to %O)" address baseType
             | Ref address -> sprintf "(%sRef %O)" (address.Zone()) address
             | Ptr(address, typ, shift) ->
@@ -310,7 +312,7 @@ module internal Terms =
 //        | path -> typeOfPath path
 
     let private typeOfUnion getType gvs =
-        let nonEmptyTypes = List.choose (fun (_, v) -> if isVoid v then None else Some (getType v)) gvs
+        let nonEmptyTypes = List.choose (fun (_, v) -> if isVoid v (* || getType v |> isNull  *) then None else Some (getType v)) gvs // TODO: think about NullRef with Null type #do
         match nonEmptyTypes with
         | [] -> Null
         | t::ts ->
@@ -444,8 +446,8 @@ module internal Terms =
     let zeroAddress =
         Concrete VectorTime.zero AddressType
 
-    let makeNullRef typ =
-        HeapRef zeroAddress typ
+    let nullRef =
+        HeapRef zeroAddress Null
 
     let makeNullPtr typ =
         Ptr None typ None
@@ -657,8 +659,8 @@ module internal Terms =
         | Numeric(Id t) -> castConcrete 0 t
         | ArrayType _
         | ClassType _
-        | InterfaceType _ -> makeNullRef typ
-        | TypeVariable(Id t) when TypeUtils.isReferenceTypeParameter t -> makeNullRef typ
+        | InterfaceType _ -> nullRef
+        | TypeVariable(Id t) when TypeUtils.isReferenceTypeParameter t -> nullRef
         | TypeVariable(Id t) -> __insufficientInformation__ "Cannot instantiate value of undefined type %O" t
         | StructType _ -> makeStruct false (fun _ t -> makeDefaultValue t) typ
         | Pointer typ -> makeNullPtr typ

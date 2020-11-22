@@ -26,6 +26,19 @@ module private MemoryKeyUtils =
 
     let regionsOfIntegerTerms = List.map regionOfIntegerTerm >> listProductRegion<points<int>>.OfSeq
 
+    let mapIntetervals mapTime reg = // TODO: mb this goes to Intervals.Map? #do
+        let zeroReg = intervals<vectorTime>.Singleton VectorTime.zero
+        if (reg :> IRegion<vectorTime intervals>).CompareTo zeroReg = Includes then
+            let rightBound = mapTime VectorTime.infty |> List.lastAndRest |> snd
+            if rightBound.IsEmpty then reg
+            else
+                let reg' = (reg :> IRegion<vectorTime intervals>).Subtract zeroReg
+                let mappedZeroInterval = intervals<vectorTime>.Closed VectorTime.zero rightBound
+                let res = mappedZeroInterval.Union(reg'.Map mapTime)
+                res
+        else
+            reg.Map mapTime
+
 [<StructuralEquality;CustomComparison>]
 type heapAddressKey =
     {address : heapAddress}
@@ -36,18 +49,7 @@ type heapAddressKey =
 //            | _ -> false
         override x.Region = MemoryKeyUtils.regionOfHeapAddress x.address
         override x.Map mapTerm _ mapTime reg =
-            let zeroReg = intervals<vectorTime>.Singleton VectorTime.zero
-            let newReg =
-                if (reg :> IRegion<vectorTime intervals>).CompareTo zeroReg = Includes then
-                    let rightBound = mapTime VectorTime.infty |> List.lastAndRest |> snd
-                    if rightBound.IsEmpty then reg
-                    else
-                        let reg' = (reg :> IRegion<vectorTime intervals>).Subtract zeroReg
-                        let mappedZeroInterval = intervals<vectorTime>.Closed VectorTime.zero rightBound
-                        mappedZeroInterval.Union(reg'.Map mapTime)
-                else
-                    reg.Map mapTime
-            newReg, {address = mapTerm x.address}
+            MemoryKeyUtils.mapIntetervals mapTime reg, {address = mapTerm x.address}
         override x.IsUnion = isUnion x.address
         override x.Unguard = Merging.unguard x.address |> List.map (fun (g, addr) -> (g, {address = addr}))
     interface IComparable with
@@ -69,6 +71,7 @@ type heapArrayIndexKey =
             productRegion<vectorTime intervals, int points listProductRegion>.ProductOf (MemoryKeyUtils.regionOfHeapAddress x.address) (MemoryKeyUtils.regionsOfIntegerTerms x.indices)
         override x.Map mapTerm _ mapTime reg =
             reg.Map (fun x -> x.Map mapTime) id, {address = mapTerm x.address; indices = List.map mapTerm x.indices}
+//            reg.Map (MemoryKeyUtils.mapIntetervals mapTime) id, {address = mapTerm x.address; indices = List.map mapTerm x.indices} // TODO: map like heapAddressKey!
         override x.IsUnion = isUnion x.address
         override x.Unguard = Merging.unguard x.address |> List.map (fun (g, addr) -> (g, {address = addr; indices = x.indices}))  // TODO: if x.indices is the union of concrete values, then unguard indices as well
     interface IComparable with
@@ -93,6 +96,7 @@ type heapVectorIndexKey =
             productRegion<vectorTime intervals, int points>.ProductOf (MemoryKeyUtils.regionOfHeapAddress x.address) (MemoryKeyUtils.regionOfIntegerTerm x.index)
         override x.Map mapTerm _ mapTime reg =
             reg.Map (fun x -> x.Map mapTime) id, {address = mapTerm x.address; index = mapTerm x.index}
+//            reg.Map (MemoryKeyUtils.mapIntetervals mapTime) id, {address = mapTerm x.address; index = mapTerm x.index}
         override x.IsUnion = isUnion x.address
         override x.Unguard = Merging.unguard x.address |> List.map (fun (g, addr) -> (g, {address = addr; index = x.index}))  // TODO: if x.index is the union of concrete values, then unguard index as well
     interface IComparable with
@@ -221,7 +225,8 @@ module MemoryRegion =
         {typ=mr.typ; updates=UpdateTree.write key value mr.updates}
 
     let map (mapTerm : term -> term) (mapType : symbolicType -> symbolicType) (mapTime : vectorTime -> vectorTime) mr =
-        {typ=mapType mr.typ; updates = UpdateTree.map (fun reg k -> k.Map mapTerm mapType mapTime reg) mapTerm mr.updates}
+        let upd = UpdateTree.map (fun reg k -> k.Map mapTerm mapType mapTime reg) mapTerm mr.updates
+        {typ=mapType mr.typ; updates = upd}
 
     let deterministicCompose earlier later =
         if earlier.typ = later.typ then
