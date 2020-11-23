@@ -937,9 +937,6 @@ module internal Memory =
             // TODO: is this hack correct? We wish to fillHoles only in *potentially overlapping allocated* in state' addresses
             let state = {state with startingTime = state'.startingTime; currentTime = prefix}
             let pc = List.map (fillHoles state) state'.pc |> List.append state.pc
-//            match pc with
-//            | ls when List.contains False ls -> ()
-//            | _ ->
             let returnRegister = Option.map (fillHoles state) state'.returnRegister
             let exceptionRegister = composeRaisedExceptionsOf state state.exceptionsRegister
             let callSiteResults = composeCallSiteResultsOf state state'.callSiteResults

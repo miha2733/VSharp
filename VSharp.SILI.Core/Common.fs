@@ -53,24 +53,22 @@ module internal Common =
 
 // ---------------------------------------- Branching ---------------------------------------
 
-    let commonStatelessConditionalExecutionPCk pc conditionInvocation thenBranch elseBranch merge merge2 k =
+    let commonStatelessConditionalExecutionPCk pc conditionInvocation thenBranch elseBranch merge2 k =
         let execution condition k =
             thenBranch (fun thenResult ->
             elseBranch (fun elseResult ->
             k <| merge2 condition !!condition thenResult elseResult))
-        let chooseBranch condition k =
-            let thenCondition = condition::pc |> conjunction
-            let elseCondition = (!!condition)::pc |> conjunction
-            match thenCondition, elseCondition with
-            | False, _ -> elseBranch k
-            | _, False -> thenBranch k
-            | _ -> execution condition k
         conditionInvocation (fun condition ->
-        Merging.commonGuardedApplyk chooseBranch condition merge k)
+        let thenCondition = condition::pc |> conjunction
+        let elseCondition = (!!condition)::pc |> conjunction
+        match thenCondition, elseCondition with
+        | False, _ -> elseBranch k
+        | _, False -> thenBranch k
+        | _ -> execution condition k)
 
-    let commonStatelessConditionalExecutionk conditionInvocation thenBranch elseBranch merge merge2 k =
-        commonStatelessConditionalExecutionPCk [] conditionInvocation thenBranch elseBranch merge merge2 k
+    let commonStatelessConditionalExecutionPC pc conditionInvocation thenBranch elseBranch merge2 =
+        commonStatelessConditionalExecutionPCk pc conditionInvocation thenBranch elseBranch merge2 id
 
-    let statelessConditionalExecutionWithMergePCk pc conditionInvocation thenBranch elseBranch k = commonStatelessConditionalExecutionPCk pc conditionInvocation thenBranch elseBranch Merging.merge Merging.merge2Terms k
+    let statelessConditionalExecutionWithMergePCk pc conditionInvocation thenBranch elseBranch k = commonStatelessConditionalExecutionPCk pc conditionInvocation thenBranch elseBranch Merging.merge2Terms k
     let statelessConditionalExecutionWithMergek conditionInvocation thenBranch elseBranch k = statelessConditionalExecutionWithMergePCk [] conditionInvocation thenBranch elseBranch k
     let statelessConditionalExecutionWithMerge conditionInvocation thenBranch elseBranch = statelessConditionalExecutionWithMergek conditionInvocation thenBranch elseBranch id

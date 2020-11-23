@@ -147,33 +147,31 @@ module internal TypeCasting =
             | _ -> typeIsType (typeOf term) targetType
         Merging.guardedApply castCheck term
 
-    let isCast term targetType = // TODO: this is dead code!
-        Common.statelessConditionalExecutionWithMerge
-            (fun k -> Pointers.isNull term |> k)
-            (fun k -> k False)
-            (fun k -> canCast term targetType |> k)
-
-    let rec cast pc term targetType k =
-        let castUnguarded term k =
+    let cast state term targetType =
+        let addPC g (r, s) = (r, Memory.withPathCondition s g)
+        let mergeRS g1 g2 v1 v2 =
+            let rs1 = List.map (addPC g1) v1
+            let rs2 = List.map (addPC g2) v2
+            List.append rs1 rs2
+        let castUnguarded state term =
             match typeOf term with
-            | t when t = targetType -> k term
+            | t when t = targetType -> [term, state]
             | Bool
-            | Numeric _ ->
-                primitiveCast term targetType |> k
+            | Numeric _ -> [primitiveCast term targetType, state]
             | Pointer _
-            | StructType _ -> k <| doCast term targetType
+            | StructType _ -> [doCast term targetType, state]
             | ClassType _
             | InterfaceType _
             | TypeVariable _
             | ArrayType _ ->
-                Common.statelessConditionalExecutionWithMergePCk pc
+                Common.commonStatelessConditionalExecutionPC state.pc
                     (fun k -> k <| Pointers.isNull term)
-                    (fun k -> k <| nullRef)
-                    (fun k -> k <| doCast term targetType)
-                    k
-            | Null -> k <| nullRef
+                    (fun k -> k [nullRef, state])
+                    (fun k -> k [doCast term targetType, state])
+                    mergeRS
+            | Null -> [nullRef, state]
             | _ -> __unreachable__()
-        Merging.guardedApplyk castUnguarded term k
+        Memory.guardedStatedMap castUnguarded state term |> List.concat
 
     let castReferenceToPointer state reference =
         let getType ref =

@@ -318,9 +318,9 @@ module internal Terms =
         | t::ts ->
             let allSame =
                 List.forall ((=) t) ts
-                || List.forall Types.concreteIsReferenceType nonEmptyTypes // TODO: unhack this hack (goes from TryCatch.MakeOdd)
+                || List.forall Types.concreteIsReferenceType nonEmptyTypes // TODO: unhack this hack (goes from TryCatch.MakeOdd) #do
             if allSame then t
-            else internalfailf "evaluating type of unexpected union %O!" gvs
+            else internalfailf "evaluating type of unexpected union %O!" gvs // TODO: fails in TypeCast -- need to filter out Nulls or branch for cast in interpreter! #do
 
     let commonTypeOf getType term =
         match term.term with
