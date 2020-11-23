@@ -91,7 +91,7 @@ module API =
         val RefIsType : term -> symbolicType -> term
         val RefIsRef : term -> term -> term
         val IsCast : symbolicType -> term -> term
-        val Cast : term list -> term -> symbolicType -> term
+        val Cast : state -> term -> symbolicType -> list<term * state>
         val CastConcrete : 'a -> System.Type -> term
         val CastReferenceToPointer : state -> term -> term
 

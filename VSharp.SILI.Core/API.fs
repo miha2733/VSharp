@@ -116,7 +116,7 @@ module API =
         let RefIsRef leftRef rightRef = TypeCasting.refIsRef leftRef rightRef
 
         let IsCast targetType term = TypeCasting.canCast term targetType
-        let Cast pc term targetType = TypeCasting.cast pc term targetType id
+        let Cast state term targetType = TypeCasting.cast state term targetType
         let CastConcrete value typ = castConcrete value typ
         let CastReferenceToPointer state reference = TypeCasting.castReferenceToPointer state reference
 

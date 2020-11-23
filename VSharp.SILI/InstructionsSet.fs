@@ -212,9 +212,9 @@ module internal InstructionsSet =
         if isReference term && Types.IsPointer typ
         then Types.CastReferenceToPointer state term // TODO: casting to pointer is weird
         else term
-    let castUnchecked typ term (state : state) : term =
+    let castUnchecked typ term (state : state) =
         let term = castReferenceToPointerIfNeeded term typ state
-        Types.Cast state.pc term typ
+        Types.Cast state term typ
     let popOperationalStack (cilState : cilState) =
         match cilState.opStack with
         | t :: ts -> Some t, {cilState with opStack = ts}
@@ -260,11 +260,12 @@ module internal InstructionsSet =
         let variableIndex = numberCreator cfg.ilBytes shiftedOffset
         let state = cilState.state
         let left, state, typ = getVarTerm state variableIndex cfg.methodBase
+        let write stack (v, s) =
+            let states = Memory.WriteSafe state left v
+            states |> List.map (fun state -> {cilState with opStack = stack; state = state})
         match cilState.opStack with
          | right :: stack ->
-            let value = castUnchecked typ right state
-            let states = Memory.WriteSafe state left value
-            states |> List.map (fun state -> {cilState with opStack = stack; state = state})
+            castUnchecked typ right state |> List.collect (write stack)
          | _ -> __corruptedStack__()
     let performCILUnaryOperation op isChecked (cilState : cilState) =
         // TODO: why isChecked is unused?
@@ -331,7 +332,7 @@ module internal InstructionsSet =
         | None, Void -> cilState :: []
         | Some t, _ when typ = resultTyp -> { cilState with state = withResult t state } :: [] // TODO: [simplification] remove this heuristics
         | Some t, _ ->
-            let t = castUnchecked resultTyp t state
+            let t = ccastUnchecked resultTyp t state
             {cilState with state = withResult t state } :: []
          | _ -> __unreachable__()
     let Transform2BooleanTerm pc (term : term) =
