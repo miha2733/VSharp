@@ -214,7 +214,7 @@ module internal InstructionsSet =
         else term
     let castUnchecked typ term (state : state) =
         let term = castReferenceToPointerIfNeeded term typ state
-        Types.Cast state term typ
+        Types.Cast term typ
     let popOperationalStack (cilState : cilState) =
         match cilState.opStack with
         | t :: ts -> Some t, {cilState with opStack = ts}
@@ -260,12 +260,11 @@ module internal InstructionsSet =
         let variableIndex = numberCreator cfg.ilBytes shiftedOffset
         let state = cilState.state
         let left, state, typ = getVarTerm state variableIndex cfg.methodBase
-        let write stack (v, s) =
-            let states = Memory.WriteSafe state left v
-            states |> List.map (fun state -> {cilState with opStack = stack; state = state})
         match cilState.opStack with
          | right :: stack ->
-            castUnchecked typ right state |> List.collect (write stack)
+            let value = castUnchecked typ right state
+            let states = Memory.WriteSafe state left value
+            states |> List.map (fun state -> {cilState with opStack = stack; state = state})
          | _ -> __corruptedStack__()
     let performCILUnaryOperation op isChecked (cilState : cilState) =
         // TODO: why isChecked is unused?
@@ -282,18 +281,17 @@ module internal InstructionsSet =
             API.PerformBinaryOperation op arg1 arg2 (fun interimRes ->
             resultTransform interimRes (fun res -> {cilState with opStack = res :: stack } :: []))))
         | _ -> __corruptedStack__()
-    let makeSignedInteger state term k =
+    let makeSignedInteger term k =
         let typ = Terms.TypeOf term
         let signedTyp = TypeUtils.unsigned2signedOrId typ
         if TypeUtils.isIntegerTermType typ && typ <> signedTyp then
             // TODO: check whether term is not pointer
-            k <| Types.Cast state.pc term signedTyp // no specs found about overflows
+            k <| Types.Cast term signedTyp // no specs found about overflows
         else k term
     let standardPerformBinaryOperation op (cilState : cilState) =
-        let mkSigInt = makeSignedInteger cilState.state
-        performCILBinaryOperation op mkSigInt mkSigInt idTransformation cilState
+        performCILBinaryOperation op makeSignedInteger makeSignedInteger idTransformation cilState
     let shiftOperation op (cilState : cilState) =
-        let reinterpret termType term k = k <| Types.Cast cilState.state.pc term termType
+        let reinterpret termType term k = k <| Types.Cast term termType
         match cilState.opStack with
         | _ :: value :: _ ->
             let op1trans, resTrans =
@@ -332,7 +330,7 @@ module internal InstructionsSet =
         | None, Void -> cilState :: []
         | Some t, _ when typ = resultTyp -> { cilState with state = withResult t state } :: [] // TODO: [simplification] remove this heuristics
         | Some t, _ ->
-            let t = ccastUnchecked resultTyp t state
+            let t = castUnchecked resultTyp t state
             {cilState with state = withResult t state } :: []
          | _ -> __unreachable__()
     let Transform2BooleanTerm pc (term : term) =
@@ -436,18 +434,17 @@ module internal InstructionsSet =
         let parameters = Seq.map2 castParameter (List.rev parameters) (methodBase.GetParameters()) |> List.ofSeq
         parameters, {cilState with opStack = opStack}
 
-    let makeUnsignedInteger state term k = // TODO: is it only for integers? then we don't need pc in cast!
+    let makeUnsignedInteger term k = // TODO: is it only for integers? then we don't need pc in cast!
         let typ = Terms.TypeOf term
         let unsignedTyp = TypeUtils.signed2unsignedOrId typ
         if TypeUtils.isIntegerTermType typ && typ <> unsignedTyp then
             // TODO: check whether term is not pointer
-            k <| Types.Cast state.pc term unsignedTyp // no specs found about overflows
+            k <| Types.Cast term unsignedTyp // no specs found about overflows
         else k term
     let performUnsignedIntegerOperation op (cilState : cilState) =
         match cilState.opStack with
         | arg2 :: arg1 :: _ when TypeUtils.isInteger arg1 && TypeUtils.isInteger arg2 ->
-            let mkUnsigInt = makeUnsignedInteger cilState.state
-            performCILBinaryOperation op mkUnsigInt mkUnsigInt idTransformation cilState
+            performCILBinaryOperation op makeUnsignedInteger makeUnsignedInteger idTransformation cilState
         | _ :: _ :: _ -> internalfailf "arguments for %O are not Integers!" op
         | _ -> __corruptedStack__()
     let ldstr (cfg : cfgData) offset (cilState : cilState) =
@@ -523,8 +520,7 @@ module internal InstructionsSet =
     let ldindref = ldind always
     let clt = compare OperationType.Less idTransformation idTransformation
     let cltun (cilState : cilState) =
-        let mkUnsigInt = makeUnsignedInteger cilState.state
-        compare OperationType.Less mkUnsigInt mkUnsigInt cilState
+        compare OperationType.Less makeUnsignedInteger makeUnsignedInteger cilState
     let bgeHelper (cilState : cilState) =
         match cilState.opStack with
         | arg1 :: arg2 :: _ ->
@@ -555,8 +551,7 @@ module internal InstructionsSet =
         | arg2 :: arg1 :: _ when isReference arg2 && isReference arg1 ->
             compare OperationType.NotEqual idTransformation idTransformation cilState
         | _ ->
-            let mkUnsigInt = makeUnsignedInteger cilState.state
-            compare OperationType.Greater mkUnsigInt mkUnsigInt cilState
+            compare OperationType.Greater makeUnsignedInteger makeUnsignedInteger cilState
     let ldobj (cfg : cfgData) offset (cilState : cilState) =
         match cilState.opStack with
         | address :: stack ->

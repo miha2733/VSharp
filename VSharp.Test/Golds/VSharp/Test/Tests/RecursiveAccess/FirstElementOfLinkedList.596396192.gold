@@ -1,0 +1,23 @@
+METHOD: System.Int32 VSharp.Test.Tests.RecursiveAccess.FirstElementOfLinkedList(System.Collections.Generic.LinkedList`1[System.Int32])
+RESULT: Totally 3 states:
+0
+MEMORY DUMP:
+Path condition: 0 == l
+--------------- Initialized types: ---------------
+{ VSharp.Test.Tests.RecursiveAccess }
+
+1
+MEMORY DUMP:
+Path condition: !(0 == l) /\ 0 == l.head
+--------------- Initialized types: ---------------
+{ VSharp.Test.Tests.RecursiveAccess, System.Collections.Generic.LinkedList`1[System.Int32] }
+
+1 + l.head.item
+MEMORY DUMP:
+Path condition: !(0 == l) /\ !(0 == l.head)
+--------------- Fields: ---------------
+item ==> {l.head <- 1 + l.head.item}
+--------------- Stack: ---------------
+key = __loc__0, value = 1 + l.head.item
+--------------- Initialized types: ---------------
+{ System.Collections.Generic.LinkedListNode`1[System.Int32], VSharp.Test.Tests.RecursiveAccess, System.Collections.Generic.LinkedList`1[System.Int32] }

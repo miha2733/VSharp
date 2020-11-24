@@ -8,6 +8,6 @@ Path condition: 0 == f
 
 f._field
 MEMORY DUMP:
-Path condition: !(0 == f) /\ !(0 == f)
+Path condition: !(0 == f)
 --------------- Initialized types: ---------------
 { VSharp.Test.Tests.Generic.Foo`2[System.Int32,VSharp.Test.Tests.Typecast.Piece], VSharp.Test.Tests.Generic.GenericMethod }

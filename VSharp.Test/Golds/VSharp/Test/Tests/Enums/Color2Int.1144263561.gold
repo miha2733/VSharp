@@ -8,7 +8,7 @@ Path condition: Red == c
 
 42
 MEMORY DUMP:
-Path condition: !(Red == c) /\ !(1 == c)
+Path condition: !(1 == c) /\ !(Red == c)
 --------------- Initialized types: ---------------
 { VSharp.Test.Tests.Enums }
 

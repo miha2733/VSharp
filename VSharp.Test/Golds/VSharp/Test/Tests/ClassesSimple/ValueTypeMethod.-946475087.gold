@@ -2,7 +2,7 @@ METHOD: System.Int32 VSharp.Test.Tests.ClassesSimple.ValueTypeMethod(System.Int3
 RESULT: Totally 3 states:
 0
 MEMORY DUMP:
-Path condition: x <= y /\ !(x < y)
+Path condition: !(x < y) /\ x <= y
 --------------- Static fields: ---------------
 MaxValue ==> {System.Int32 <- 2147483647}
 MinValue ==> {System.Int32 <- -2147483648}
@@ -11,7 +11,7 @@ MinValue ==> {System.Int32 <- -2147483648}
 
 1
 MEMORY DUMP:
-Path condition: !(x <= y) /\ !(x < y)
+Path condition: !(x < y) /\ !(x <= y)
 --------------- Static fields: ---------------
 MaxValue ==> {System.Int32 <- 2147483647}
 MinValue ==> {System.Int32 <- -2147483648}

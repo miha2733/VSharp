@@ -116,7 +116,7 @@ module API =
         let RefIsRef leftRef rightRef = TypeCasting.refIsRef leftRef rightRef
 
         let IsCast targetType term = TypeCasting.canCast term targetType
-        let Cast state term targetType = TypeCasting.cast state term targetType
+        let Cast term targetType = TypeCasting.cast term targetType
         let CastConcrete value typ = castConcrete value typ
         let CastReferenceToPointer state reference = TypeCasting.castReferenceToPointer state reference
 
@@ -276,8 +276,8 @@ module API =
         let ComposeStates state state1 k = Memory.composeStates state state1 |> k
 
         let Merge2States (state1 : state) (state2 : state) =
-            let pc1 = List.fold (fun pc cond -> pc &&& cond) Terms.True state1.pc
-            let pc2 = List.fold (fun pc cond -> pc &&& cond) Terms.True state2.pc
+            let pc1 = PC.squashPC state1.pc
+            let pc2 = PC.squashPC state2.pc
             if pc1 = Terms.True && pc2 = Terms.True then __unreachable__()
             __notImplemented__() : state
             //Merging.merge2States pc1 pc2 {state1 with pc = []} {state2 with pc = []}

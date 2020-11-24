@@ -11,7 +11,7 @@ key = __loc__0, value = 0
 
 1
 MEMORY DUMP:
-Path condition: 1 <= x /\ !(2 <= x)
+Path condition: !(2 <= x) /\ 1 <= x
 --------------- Stack: ---------------
 key = __loc__2, value = 2
 key = __loc__1, value = 2
@@ -21,7 +21,7 @@ key = __loc__0, value = 1
 
 4
 MEMORY DUMP:
-Path condition: 1 <= x /\ 2 <= x /\ !(3 <= x)
+Path condition: !(3 <= x) /\ 1 <= x /\ 2 <= x
 --------------- Stack: ---------------
 key = __loc__2, value = 3
 key = __loc__1, value = 3
@@ -31,7 +31,7 @@ key = __loc__0, value = 4
 
 10
 MEMORY DUMP:
-Path condition: 1 <= x /\ 2 <= x /\ 3 <= x /\ !(4 <= x)
+Path condition: !(4 <= x) /\ 1 <= x /\ 2 <= x /\ 3 <= x
 --------------- Stack: ---------------
 key = __loc__2, value = 4
 key = __loc__1, value = 4

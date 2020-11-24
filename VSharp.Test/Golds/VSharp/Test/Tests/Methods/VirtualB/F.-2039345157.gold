@@ -2,7 +2,6 @@ METHOD: System.Int32 VSharp.Test.Tests.Methods.VirtualB.F()
 RESULT: Totally 1 state:
 8
 MEMORY DUMP:
-Path condition: !(0 == this)
 --------------- Stack: ---------------
 key = this, value = (HeapRef this to VSharp.Test.Tests.Methods.VirtualB)
 --------------- Initialized types: ---------------

@@ -8,7 +8,7 @@ Path condition: !f
 
 x + x + x + x
 MEMORY DUMP:
-Path condition: f /\ !flag
+Path condition: !flag /\ f
 --------------- Stack: ---------------
 key = __loc__0, value = x + x
 --------------- Initialized types: ---------------

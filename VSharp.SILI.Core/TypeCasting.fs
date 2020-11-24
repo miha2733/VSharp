@@ -147,31 +147,21 @@ module internal TypeCasting =
             | _ -> typeIsType (typeOf term) targetType
         Merging.guardedApply castCheck term
 
-    let cast state term targetType =
-        let addPC g (r, s) = (r, Memory.withPathCondition s g)
-        let mergeRS g1 g2 v1 v2 =
-            let rs1 = List.map (addPC g1) v1
-            let rs2 = List.map (addPC g2) v2
-            List.append rs1 rs2
-        let castUnguarded state term =
+    let cast term targetType =
+        let castUnguarded term =
             match typeOf term with
-            | t when t = targetType -> [term, state]
+            | t when t = targetType -> term
             | Bool
-            | Numeric _ -> [primitiveCast term targetType, state]
+            | Numeric _ -> primitiveCast term targetType
             | Pointer _
-            | StructType _ -> [doCast term targetType, state]
+            | StructType _
             | ClassType _
             | InterfaceType _
             | TypeVariable _
-            | ArrayType _ ->
-                Common.commonStatelessConditionalExecutionPC state.pc
-                    (fun k -> k <| Pointers.isNull term)
-                    (fun k -> k [nullRef, state])
-                    (fun k -> k [doCast term targetType, state])
-                    mergeRS
-            | Null -> [nullRef, state]
+            | ArrayType _ -> doCast term targetType
+            | Null -> nullRef
             | _ -> __unreachable__()
-        Memory.guardedStatedMap castUnguarded state term |> List.concat
+        Merging.guardedApply castUnguarded term
 
     let castReferenceToPointer state reference =
         let getType ref =

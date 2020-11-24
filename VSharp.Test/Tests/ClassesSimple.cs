@@ -202,8 +202,8 @@ namespace VSharp.Test.Tests
     [TestSvmFixture]
     public static class ClassesSimple
     {
-        [TestSvm]
-        public static bool Test1(int n) // TODO: keys of MemoryCell are equal, but FQLs are not (because of "constructed instance" hack)
+        // [TestSvm]
+        public static bool Test1(int n) // TODO: check #do
         {
             ClassesSimpleA a = new ClassesSimpleA(n);
             a.IncN();
@@ -252,15 +252,17 @@ namespace VSharp.Test.Tests
     [TestSvmFixture]
     public static class ClassesSimpleHierarchy
     {
-        [Ignore("Stuck until the engine becomes more effective")]
-        public static List<string> Test1()
+        [TestSvm]
+        // [Ignore("Stuck until the engine becomes more effective")]
+        public static List<string> Test1() // TODO: check #do
         {
             ClassesSimpleHierarchyA2 a = new ClassesSimpleHierarchyA2(123, 42);
             return ClassesSimpleRegistrator.entries;
         }
 
-        [Ignore("Stuck until the engine becomes more effective")]
-        public static int Test2()
+        // [TestSvm]
+        // [Ignore("Stuck until the engine becomes more effective")]
+        public static int Test2() // TODO: check #do
         {
             ClassesSimpleHierarchyA2 a = new ClassesSimpleHierarchyA2();
             return a.GetNum2();
@@ -274,7 +276,7 @@ namespace VSharp.Test.Tests
         public static int Y;
         public static int Z;
 
-        [TestSvm]
+        [Ignore("Insufficient information")]
         public void Set(int x)
         {
             X = x;
@@ -344,8 +346,8 @@ namespace VSharp.Test.Tests
         }
 
         // [TestSvm]
-        [Ignore("makeSymbolicInstance for Structs is not Implemented for functionResultConstantSource (needed fieldTermExtractor)")]
-        public void TestProperty1() // TODO: keys of MemoryCell are equal, but FQLs are not
+        // [Ignore("makeSymbolicInstance for Structs is not Implemented for functionResultConstantSource (needed fieldTermExtractor)")]
+        public void TestProperty1() // TODO: check #do
         {
             var st = new ClassesSimplePropertyAccess();
             st.StructProperty.Set(42);
@@ -375,8 +377,7 @@ namespace VSharp.Test.Tests
         public SimpleContainer ContainerProperty
         { get; set; }
 
-        // [TestSvm]
-        [Ignore("HeapAddress was increased due to exploration and following composition. Add Statics of Object that were removed for marshalling")]
+        [TestSvm]
         public int TestProperty1(int anyVarName)
         {
             return (new ClassesSimplePropertyAccessModify().ContainerProperty = new SimpleContainer()).X = anyVarName; // anyVarName
@@ -390,7 +391,7 @@ namespace VSharp.Test.Tests
             s.X = 42;
         }
 
-        [TestSvm]
+        [Ignore("Exceptions handling")]
         public static void UnionInReference(SimpleContainer a)
         {
             var obj = (object) a;

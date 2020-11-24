@@ -2,7 +2,6 @@ METHOD: System.Void VSharp.Test.Tests.ClassesSimplePropertyAccess.TestProperty2(
 RESULT: Totally 1 state:
 <VOID>
 MEMORY DUMP:
-Path condition: !(0 == this) /\ !(0 == this) /\ !(0 == this)
 --------------- Stack: ---------------
 key = this, value = (HeapRef this to VSharp.Test.Tests.ClassesSimplePropertyAccess)
 key = __loc__0, value = VSharp.Test.Tests.ClassesSimplePropertyAccess+SimpleStruct STRUCT [
