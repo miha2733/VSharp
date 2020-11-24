@@ -2,7 +2,7 @@ METHOD: System.Boolean VSharp.Test.Tests.Conditional.IsMaxEven(System.Int32, Sys
 RESULT: Totally 4 states:
 True
 MEMORY DUMP:
-Path condition: !(2 * y < z) /\ !(2 * x < 2 * y)
+Path condition: !(2 * x < 2 * y) /\ !(2 * y < z)
 --------------- Array contents: ---------------
 System.Double[] ==> {
         1.1.2[0] <- 1
@@ -68,7 +68,7 @@ roundPower10Double ==> {System.Math <- (HeapRef 1.1.2 to System.Double[])}
 
 True
 MEMORY DUMP:
-Path condition: 2 * y < z /\ !(2 * x < z)
+Path condition: !(2 * x < z) /\ 2 * y < z
 --------------- Array contents: ---------------
 System.Double[] ==> {
         1.1.2[0] <- 1
@@ -101,7 +101,7 @@ roundPower10Double ==> {System.Math <- (HeapRef 1.1.2 to System.Double[])}
 
 0 == z % 2
 MEMORY DUMP:
-Path condition: 2 * y < z /\ 2 * x < z
+Path condition: 2 * x < z /\ 2 * y < z
 --------------- Array contents: ---------------
 System.Double[] ==> {
         1.1.2[0] <- 1

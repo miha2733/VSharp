@@ -17,7 +17,7 @@ module API =
     val StatedConditionalExecutionAppendResults : (state -> (state -> (term * state -> 'a) -> 'b) -> (state -> (state list -> 'a) -> 'a) -> (state -> (state list -> 'a) -> 'a) -> (state list -> 'a) -> 'b)
 
     val GuardedApplyExpression : term -> (term -> term) -> term
-    val GuardedApplyExpressionWithPC : term list -> term -> (term -> term) -> term
+    val GuardedApplyExpressionWithPC : pathCondition -> term -> (term -> term) -> term
     val GuardedStatedApplyStatementK : state -> term -> (state -> term -> (term * state -> 'a) -> 'a) -> ((term * state) list -> 'a) -> 'a
     val GuardedStatedApplyk : (state -> term -> ('item -> 'a) -> 'a) -> state -> term -> ('item list -> 'item list) -> ('item list -> 'a) -> 'a
 
@@ -91,7 +91,7 @@ module API =
         val RefIsType : term -> symbolicType -> term
         val RefIsRef : term -> term -> term
         val IsCast : symbolicType -> term -> term
-        val Cast : state -> term -> symbolicType -> list<term * state>
+        val Cast : term -> symbolicType -> term
         val CastConcrete : 'a -> System.Type -> term
         val CastReferenceToPointer : state -> term -> term
 

@@ -1,10 +1,7 @@
 METHOD: VSharp.Test.Tests.Typecast.IMovable VSharp.Test.Tests.Typecast.Pawn.MakeMove(VSharp.Test.Tests.Typecast.Coord)
 RESULT: Totally 1 state:
-UNION[
-	| !(0 == this) ~> (HeapRef this to VSharp.Test.Tests.Typecast.Pawn)
-	| 0 == this ~> (HeapRef 0 to VSharp.Test.Tests.Typecast.IMovable)]
+(HeapRef this to VSharp.Test.Tests.Typecast.Pawn)
 MEMORY DUMP:
-Path condition: !(0 == this)
 --------------- Fields: ---------------
 _xCoord ==> {this <- X + Y}
 _yCoord ==> {this <- -Y + X}

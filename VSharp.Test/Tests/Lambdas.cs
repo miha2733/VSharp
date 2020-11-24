@@ -27,16 +27,17 @@ namespace VSharp.Test.Tests
         }
 
         // Expecting 18
-        [Ignore("reinterpretation")]
+        [TestSvm]
+        // [Ignore("reinterpretation")]
         public static int Always18()
         {
             return Mult2(9);
         }
 
         // Expecting always true
-        [TestSvm]
+        // [TestSvm]
         // [Ignore("HeapAddresses were increased due to exploration and following composition. Add Statics of Object that were removed for marshalling")]
-        public static bool DoubleValue(int n, bool flag)
+        public static bool DoubleValue(int n, bool flag) // TODO: check #do
         {
             int a = 0, b = 0, c = 0;
             Action<int> assign;

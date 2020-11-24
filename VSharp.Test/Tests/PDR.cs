@@ -78,14 +78,14 @@ namespace VSharp.Test.Tests
 
         private static int ReturnConstant() => 17;
 
-        [TestSvm]
+        [Ignore("Unbounded recursion, need to implement PDR")] // TODO: it is because we start to explore new function in isolation
         public static int CasualFactorial(int x)
         {
             if (x <= 0) return 1;
             return x * CasualFactorial(x - 1);
         }
 
-        [TestSvm]
+        [Ignore("Unbounded recursion, need to implement PDR")]
         public static int CasualFactorial1()
         {
             return CasualFactorial(1);
@@ -220,7 +220,7 @@ namespace VSharp.Test.Tests
             return classWithOneField.x;
         }
 
-        [TestSvm]
+        [Ignore("No states obtained, because exception handling is not implemented")]
         public static void AlwaysNullReferenceException()
         {
             ReadFieldOfCLass(null);
@@ -289,7 +289,8 @@ namespace VSharp.Test.Tests
         }
 
         // expecting 1042
-        [Ignore("Static constructor of ``ClassWithStaticConstructor'' is always called while CFA-construction")]
+        [TestSvm]
+        // [Ignore("Static constructor of ``ClassWithStaticConstructor'' is always called while CFA-construction")]
         public static int StaticConstructorShouldBeCalledOnce(bool f)
         {
             ClassWithStaticConstructor.X = 42;
@@ -445,8 +446,9 @@ namespace VSharp.Test.Tests
         }
 
         // expecting f -> 100, !f -> 20
-        [Ignore("uncomment test when InsInfException handling")]
-        public static int TestLengths_6(bool f)
+        // [TestSvm]
+        // [Ignore("uncomment test when InsInfException handling")]
+        public static int TestLengths_6(bool f) // TODO: check #do
         {
             Array array = new int[4, 5];
             if (f)
@@ -541,7 +543,7 @@ namespace VSharp.Test.Tests
             return res;
         }
 
-        [TestSvm]
+        [Ignore("No states obtained, need to implement exceptions")]
         public static void CheckFinallyOrderForNestedTryBlocks2()
         {
             try
@@ -601,7 +603,7 @@ namespace VSharp.Test.Tests
             return x;
         }
 
-        [TestSvm]
+        [Ignore("Need to implement byref: IO.TextWriter is passed by ref")]
         public static int DivWithHandlers(int x, int y)
         {
             int ans = 0;
@@ -703,7 +705,7 @@ namespace VSharp.Test.Tests
             return new ClassWithClassInside(n);
         }
 
-        [TestSvm]
+        [Ignore("Newobj is not implemented properly for structs: where to allocate struct for ctor call")]
         public static int CreateStructViaNewobj(int n)
         {
             int res1 = new A(n).GetX();

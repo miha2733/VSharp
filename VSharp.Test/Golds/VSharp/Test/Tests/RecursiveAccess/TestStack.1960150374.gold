@@ -8,13 +8,13 @@ Path condition: 0 == b
 
 0
 MEMORY DUMP:
-Path condition: !(0 == b) /\ !(0 == b) /\ 0 == b.b /\ !(0 == b) /\ !(0 == b) /\ !(0 == b) /\ 0 == b.b /\ !(0 == b) /\ !(0 == b)
+Path condition: !(0 == b) /\ 0 == b.b
 --------------- Initialized types: ---------------
 { VSharp.Test.Tests.Second, VSharp.Test.Tests.RecursiveAccess }
 
 1 + b.b.B
 MEMORY DUMP:
-Path condition: !(0 == b) /\ !(0 == b) /\ !(0 == b.b) /\ !(0 == b) /\ !(0 == b) /\ !(0 == b.b) /\ !(0 == b) /\ !(0 == b) /\ !(0 == b.b) /\ !(0 == b) /\ !(0 == b) /\ !(0 == b) /\ !(0 == b.b) /\ !(0 == b)
+Path condition: !(0 == b) /\ !(0 == b.b)
 --------------- Fields: ---------------
 B ==> {b.b <- 1 + b.b.B}
 --------------- Initialized types: ---------------

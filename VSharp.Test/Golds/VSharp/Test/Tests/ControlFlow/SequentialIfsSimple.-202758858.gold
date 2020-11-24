@@ -10,7 +10,7 @@ key = __loc__0, value = 0
 
 1
 MEMORY DUMP:
-Path condition: !(2 * x == 50) /\ !(5 == x % 7) /\ !(-12 + x < 0)
+Path condition: !(-12 + x < 0) /\ !(2 * x == 50) /\ !(5 == x % 7)
 --------------- Stack: ---------------
 key = __loc__0, value = 1
 --------------- Initialized types: ---------------
@@ -18,7 +18,7 @@ key = __loc__0, value = 1
 
 0
 MEMORY DUMP:
-Path condition: !(2 * x == 50) /\ 5 == x % 7 /\ -12 + x < 0
+Path condition: !(2 * x == 50) /\ -12 + x < 0 /\ 5 == x % 7
 --------------- Stack: ---------------
 key = __loc__0, value = 0
 --------------- Initialized types: ---------------
@@ -26,7 +26,7 @@ key = __loc__0, value = 0
 
 100
 MEMORY DUMP:
-Path condition: 2 * x == 50 /\ !(5 == x % 7) /\ -12 + x < 0
+Path condition: !(5 == x % 7) /\ -12 + x < 0 /\ 2 * x == 50
 --------------- Stack: ---------------
 key = __loc__0, value = 100
 --------------- Initialized types: ---------------
@@ -34,7 +34,7 @@ key = __loc__0, value = 100
 
 1
 MEMORY DUMP:
-Path condition: !(2 * x == 50) /\ 5 == x % 7 /\ !(-12 + x < 0)
+Path condition: !(-12 + x < 0) /\ !(2 * x == 50) /\ 5 == x % 7
 --------------- Stack: ---------------
 key = __loc__0, value = 1
 --------------- Initialized types: ---------------
@@ -42,7 +42,7 @@ key = __loc__0, value = 1
 
 101
 MEMORY DUMP:
-Path condition: 2 * x == 50 /\ !(5 == x % 7) /\ !(-12 + x < 0)
+Path condition: !(-12 + x < 0) /\ !(5 == x % 7) /\ 2 * x == 50
 --------------- Stack: ---------------
 key = __loc__0, value = 101
 --------------- Initialized types: ---------------
@@ -50,7 +50,7 @@ key = __loc__0, value = 101
 
 200
 MEMORY DUMP:
-Path condition: 2 * x == 50 /\ 5 == x % 7 /\ -12 + x < 0
+Path condition: -12 + x < 0 /\ 2 * x == 50 /\ 5 == x % 7
 --------------- Stack: ---------------
 key = __loc__0, value = 200
 --------------- Initialized types: ---------------
@@ -58,7 +58,7 @@ key = __loc__0, value = 200
 
 201
 MEMORY DUMP:
-Path condition: 2 * x == 50 /\ 5 == x % 7 /\ !(-12 + x < 0)
+Path condition: !(-12 + x < 0) /\ 2 * x == 50 /\ 5 == x % 7
 --------------- Stack: ---------------
 key = __loc__0, value = 201
 --------------- Initialized types: ---------------

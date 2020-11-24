@@ -2,7 +2,6 @@ METHOD: System.Int32 VSharp.Test.Tests.Lists.LowerBoundTest()
 RESULT: Totally 1 state:
 0
 MEMORY DUMP:
-Path condition: !(0 == this) /\ !(0 == this) /\ !(0 == this) /\ !(0 == this) /\ !(0 == this) /\ !(0 == this) /\ !(0 == this)
 --------------- Array contents: ---------------
 System.Int32[,] ==> {
         2[0, 0] <- 1

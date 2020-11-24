@@ -8,6 +8,6 @@ Path condition: 0 == piece
 
 33
 MEMORY DUMP:
-Path condition: !(0 == piece) /\ !(0 == piece)
+Path condition: !(0 == piece)
 --------------- Initialized types: ---------------
 { VSharp.Test.Tests.Typecast.Typecast }

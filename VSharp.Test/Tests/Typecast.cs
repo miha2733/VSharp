@@ -83,8 +83,7 @@ namespace VSharp.Test.Tests.Typecast
             return a ? 5 : 6;
         }
 
-        // [TestSvm]
-        [Ignore("guards are complicated")]
+        [TestSvm]
         public static int DownCastObject2(object obj1, object obj2)
         {
             bool a = obj1 is Piece & obj2 is Pawn;
@@ -124,14 +123,15 @@ namespace VSharp.Test.Tests.Typecast
             return b is Object ? 33 : 38;
         }
 
-        [Ignore("Cast produces term with Error in Union")]
-        public static Pawn TypeCast(Object obj)
+        [TestSvm]
+        public static Pawn TypeCast(Object obj) // TODO: talk about this with Dma
         {
             Pawn pawn = (Pawn)obj;
             return pawn;
         }
 
-        [Ignore("Cast produces term with Error in Union")]
+        [TestSvm]
+        // [Ignore("Cast produces term with Error in Union")]
         public static Pawn TypeCastConcreteNull()
         {
             return TypeCast(null);
@@ -312,15 +312,14 @@ namespace VSharp.Test.Tests.Typecast
             return true;
         }
 
-        // [TestSvm]
-        [Ignore("GetType() is not implemented")]
+        [Ignore("Calling virtual method is not implemented")]
         public static bool ReferenceIdentity()
         {
             var knight = new Knight();
             return knight.Equals(knight);
         }
 
-        // [TestSvm]
+
         [Ignore("GetType() is not implemented")]
         public static bool KnightIsKnight()
         {
@@ -404,14 +403,14 @@ namespace VSharp.Test.Tests.Typecast
     [TestSvmFixture]
     public static class Helper
     {
-        [Ignore("substitute: Application - not implemented")]
+        [Ignore("Calling virtual method is not implemented")]
         public static double CastStructToInterface(Coord arg)
         {
             INormalize tmp = arg;
             return tmp.Norm();
         }
 
-        [TestSvm]
+        [Ignore("Calling virtual method is not implemented")]
         public static int CastStructToInterfaceAndWriteInBoxed(Coord2 arg)
         {
             INormalize tmp = arg;

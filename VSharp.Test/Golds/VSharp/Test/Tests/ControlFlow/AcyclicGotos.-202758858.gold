@@ -2,7 +2,7 @@ METHOD: System.Int32 VSharp.Test.Tests.ControlFlow.AcyclicGotos(System.Int32)
 RESULT: Totally 4 states:
 x / 1000
 MEMORY DUMP:
-Path condition: !(x <= 100) /\ !(x < 1000)
+Path condition: !(x < 1000) /\ !(x <= 100)
 --------------- Stack: ---------------
 key = x, value = x / 1000
 --------------- Initialized types: ---------------
@@ -10,7 +10,7 @@ key = x, value = x / 1000
 
 100 + x
 MEMORY DUMP:
-Path condition: x <= 100 /\ !(x < 42)
+Path condition: !(x < 42) /\ x <= 100
 --------------- Stack: ---------------
 key = x, value = 100 + x
 --------------- Initialized types: ---------------
@@ -18,7 +18,7 @@ key = x, value = 100 + x
 
 10 * x
 MEMORY DUMP:
-Path condition: x <= 100 /\ x < 42
+Path condition: x < 42 /\ x <= 100
 --------------- Stack: ---------------
 key = x, value = 10 * x
 --------------- Initialized types: ---------------

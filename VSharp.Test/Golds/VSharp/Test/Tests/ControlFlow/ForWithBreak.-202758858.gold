@@ -11,7 +11,7 @@ key = __loc__1, value = 0
 
 1
 MEMORY DUMP:
-Path condition: 0 < x /\ !(1 < x)
+Path condition: !(1 < x) /\ 0 < x
 --------------- Stack: ---------------
 key = __loc__0, value = 1
 key = __loc__1, value = 1
@@ -20,7 +20,7 @@ key = __loc__1, value = 1
 
 2
 MEMORY DUMP:
-Path condition: 0 < x /\ 1 < x /\ !(2 < x)
+Path condition: !(2 < x) /\ 0 < x /\ 1 < x
 --------------- Stack: ---------------
 key = __loc__0, value = 2
 key = __loc__1, value = 2
@@ -29,7 +29,7 @@ key = __loc__1, value = 2
 
 3
 MEMORY DUMP:
-Path condition: 0 < x /\ 1 < x /\ 2 < x /\ !(3 < x)
+Path condition: !(3 < x) /\ 0 < x /\ 1 < x /\ 2 < x
 --------------- Stack: ---------------
 key = __loc__0, value = 3
 key = __loc__1, value = 3
@@ -38,7 +38,7 @@ key = __loc__1, value = 3
 
 4
 MEMORY DUMP:
-Path condition: 0 < x /\ 1 < x /\ 2 < x /\ 3 < x /\ !(4 < x)
+Path condition: !(4 < x) /\ 0 < x /\ 1 < x /\ 2 < x /\ 3 < x
 --------------- Stack: ---------------
 key = __loc__0, value = 4
 key = __loc__1, value = 4
@@ -47,7 +47,7 @@ key = __loc__1, value = 4
 
 5
 MEMORY DUMP:
-Path condition: 0 < x /\ 1 < x /\ 2 < x /\ 3 < x /\ 4 < x /\ !(5 < x)
+Path condition: !(5 < x) /\ 0 < x /\ 1 < x /\ 2 < x /\ 3 < x /\ 4 < x
 --------------- Stack: ---------------
 key = __loc__0, value = 5
 key = __loc__1, value = 5
@@ -56,7 +56,7 @@ key = __loc__1, value = 5
 
 6
 MEMORY DUMP:
-Path condition: 0 < x /\ 1 < x /\ 2 < x /\ 3 < x /\ 4 < x /\ 5 < x /\ !(6 < x)
+Path condition: !(6 < x) /\ 0 < x /\ 1 < x /\ 2 < x /\ 3 < x /\ 4 < x /\ 5 < x
 --------------- Stack: ---------------
 key = __loc__0, value = 6
 key = __loc__1, value = 6
@@ -65,7 +65,7 @@ key = __loc__1, value = 6
 
 7
 MEMORY DUMP:
-Path condition: 0 < x /\ 1 < x /\ 2 < x /\ 3 < x /\ 4 < x /\ 5 < x /\ 6 < x /\ !(7 < x)
+Path condition: !(7 < x) /\ 0 < x /\ 1 < x /\ 2 < x /\ 3 < x /\ 4 < x /\ 5 < x /\ 6 < x
 --------------- Stack: ---------------
 key = __loc__0, value = 7
 key = __loc__1, value = 7
@@ -74,7 +74,7 @@ key = __loc__1, value = 7
 
 8
 MEMORY DUMP:
-Path condition: 0 < x /\ 1 < x /\ 2 < x /\ 3 < x /\ 4 < x /\ 5 < x /\ 6 < x /\ 7 < x /\ !(8 < x)
+Path condition: !(8 < x) /\ 0 < x /\ 1 < x /\ 2 < x /\ 3 < x /\ 4 < x /\ 5 < x /\ 6 < x /\ 7 < x
 --------------- Stack: ---------------
 key = __loc__0, value = 8
 key = __loc__1, value = 8

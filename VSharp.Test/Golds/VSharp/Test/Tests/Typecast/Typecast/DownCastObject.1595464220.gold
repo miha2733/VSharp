@@ -8,12 +8,12 @@ Path condition: 0 == obj
 
 6
 MEMORY DUMP:
-Path condition: !(obj <: VSharp.Test.Tests.Typecast.Piece) /\ !(0 == obj)
+Path condition: !(0 == obj) /\ !(obj <: VSharp.Test.Tests.Typecast.Piece)
 --------------- Initialized types: ---------------
 { VSharp.Test.Tests.Typecast.Typecast }
 
 5
 MEMORY DUMP:
-Path condition: (obj <: VSharp.Test.Tests.Typecast.Piece) /\ !(0 == obj) /\ !(0 == obj)
+Path condition: !(0 == obj) /\ (obj <: VSharp.Test.Tests.Typecast.Piece)
 --------------- Initialized types: ---------------
 { VSharp.Test.Tests.Typecast.Typecast }
