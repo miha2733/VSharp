@@ -28,64 +28,45 @@ module public CFA =
         with
         member x.Foo() = ()
 
-    // TODO: use vertexLabel instead of offset
-//    [<AllowNullLiteral;CustomEquality;CustomComparison>]
-//    [<CustomEquality;CustomComparison>]
-    type Vertex private(id, m : MethodBase, offset, opStack : operationalStack) =
+    type Vertex private(id, m : MethodBase, ip : ip, opStack : operationalStack) =
         static let ids : Dictionary<MethodBase, int> = Dictionary<_,_>()
-        let lemmas = Lemmas(m, offset)
-        let paths = Paths(m, offset)
-//        let paths : Paths persistent = let r = new persistent<_>(always (Paths(m, offset)), id) in r.Reset(); r
-        let queries = Queries(m, offset)
+        let lemmas = Lemmas(m, ip)
+        let paths = Paths(m, ip)
+        let queries = Queries(m, ip)
         let solver = null //Solver.SolverPool.mkSolver()
         let errors = List<cilState>()
         let incomingEdges: List<Edge> = List<_>()
         let outgoingEdges: List<Edge> = List<_>()
 
-        override x.GetHashCode() = (m, offset).GetHashCode()
-        override x.Equals(o : obj) =
-            match o with
-            | :? Vertex as other -> x.Method = other.Method && x.Offset = other.Offset
-            | _ -> false
-        interface System.IComparable with
-            override x.CompareTo(other) =
-                match other with
-                | :? Vertex as other when x.Method.Equals(other.Method) -> x.Offset.CompareTo(other.Offset)
-                | :? Vertex as other -> x.Method.MetadataToken.CompareTo(other.Method.MetadataToken)
-                | _ -> -1
         member x.AddErroredStates (newErrors : cilState list) =
             errors.AddRange(newErrors)
 
         member x.Id with get() = id
         member x.Lemmas = lemmas
-//        member x.Reset () = paths.Reset()
-//        member x.Restore () = paths.Restore()
         member x.Paths with get () = paths
-//        member x.Paths with get() =
-//            paths.Value
         member x.Queries = queries
         member x.Solver = solver
         member x.IncomingEdges = incomingEdges
         member x.OutgoingEdges = outgoingEdges
-        member x.Offset with get() = offset
+        member x.Ip with get() = ip
         member x.OpStack with get() = opStack
         member x.Method with get() = m
-        member x.IsMethodStartVertex with get() = offset = 0
-        member x.IsMethodExitVertex with get() = offset = -1
+        member x.IsMethodStartVertex with get() = ip = Instruction 0
+        member x.IsMethodExitVertex with get() = ip = ExitPointer
         override x.ToString() =
-            sprintf "(Method = %O, Offset = %x, id = %d)\n" m offset id +
+            sprintf "(Method = %s, IP = %O, id = %d)\n" (Reflection.GetFullMethodName m) ip id +
             sprintf "Edges count = %d\n" x.OutgoingEdges.Count +
             "Edges: \n" + Seq.fold (fun acc edge -> acc + edge.ToString() + "\n") "" x.OutgoingEdges
-        static member CreateVertex method offset opStack =
+        static member CreateVertex method ip opStack =
             let id = Dict.getValueOrUpdate ids method (always 0)
             ids.[method] <- id + 1
-            Vertex(id, method, offset, opStack)
+            Vertex(id, method, ip, opStack)
     and
         [<AbstractClass>]
         Edge(src : Vertex, dst : Vertex) =
         abstract member Type : string
         abstract member PropagatePath : path -> bool
-        member x.PrintLog msg obj = Logger.printLog Logger.Trace "[%s]\n%s %O" (x.commonToString()) msg obj
+        member x.PrintLog msg obj = Logger.printLog Logger.Trace "[%s]\n%s: %O" (x.commonToString()) msg obj
         member x.Src = src
         member x.Dst = dst
         member x.Method = x.Src.Method
@@ -98,8 +79,8 @@ module public CFA =
             else false
         override x.ToString() = x.commonToString()
         member x.commonToString() =
-            sprintf "%s ID:[%d --> %d] Offset:[%x --> %x] Method:%s"
-                x.Type x.Src.Id x.Dst.Id x.Src.Offset x.Dst.Offset (Reflection.GetFullMethodName x.Method)
+            sprintf "%s ID:[%d --> %d] IP:[%O --> %O] Method:%s"
+                x.Type x.Src.Id x.Dst.Id x.Src.Ip x.Dst.Ip (Reflection.GetFullMethodName x.Method)
 
 
     type 'a unitBlock =
@@ -117,9 +98,9 @@ module public CFA =
         member x.WithExitVertex v = {x with exitVertex = v}
         member x.FindCallVertex id = x.vertices.[id]
 
-        static member private CreateEmpty entity method entryOffset exitOffset =
-            let entry = Vertex.CreateVertex method entryOffset []
-            let exit = Vertex.CreateVertex method exitOffset []
+        static member private CreateEmpty entity method entryIp exitIp =
+            let entry = Vertex.CreateVertex method entryIp []
+            let exit = Vertex.CreateVertex method exitIp []
             let vertices = Dictionary<int, Vertex>()
             vertices.Add(entry.Id, entry)
             vertices.Add(exit.Id, exit)
@@ -130,12 +111,12 @@ module public CFA =
                 vertices = vertices
             }
         static member CreateEmptyForMethod (method : MethodBase) =
-            unitBlock<'a>.CreateEmpty method method Properties.initialVertexOffset Properties.exitVertexOffset
+            unitBlock<'a>.CreateEmpty method method (Instruction Properties.initialVertexOffset) ExitPointer
         static member CreateEmptyForFinallyClause (m : MethodBase) (ehc : ExceptionHandlingClause) =
             let entryOffset = ehc.HandlerOffset
             // TODO: check if this formula is forever true
             let exitOffset = ehc.HandlerOffset + ehc.HandlerLength - 1
-            unitBlock<'a>.CreateEmpty ehc m entryOffset exitOffset
+            unitBlock<'a>.CreateEmpty ehc m (Instruction entryOffset) (Instruction exitOffset)
         override x.ToString() =
             Seq.fold (fun acc vertex -> acc + "\n" + vertex.ToString()) "" x.vertices.Values
 
@@ -166,6 +147,20 @@ module public CFA =
                 Seq.fold (fun acc block -> acc + block.ToString() + separator) "" (x.finallyHandlers.Values)
 
 
+
+    type InsufficientInformationEdge(startingOffset, interpreter : ILInterpreter, cfg : cfg, src : Vertex, dst : Vertex) =
+        inherit Edge(src, dst)
+        override x.Type = "InsufficientInformationEdge"
+        override x.PropagatePath (path : path) =
+            let canBePropagated (ip : ip) = ip <> dst.Ip
+            let cilState = cilState.MakeEmpty (Instruction startingOffset) ip.ExitPointer path.state
+            let iieWasThrownAgain, resultStates = interpreter.ExecuteInstructionsWhile canBePropagated cfg startingOffset cilState
+            if Option.isSome iieWasThrownAgain then raise <| Option.get iieWasThrownAgain
+            resultStates
+            |> List.map (fun (cilState : cilState) ->
+                assert(List.length cilState.opStack = 0)
+                x.CommonPropagatePath (path.lvl + 1u) cilState.state)
+            |> List.fold (||) false
 
     type StepEdge(src : Vertex, dst : Vertex, effect : state) =
         inherit Edge(src, dst)
@@ -202,10 +197,10 @@ module public CFA =
                 else callSiteResults
             let k states =
                 let propagateStateAfterCall acc state =
-                    if not (path.state.frames = state.frames) then () // TODO: assert fails in ClassesSimple.UnionInReference
-                    x.PrintLog "propagation through callEdge:\n" callSite
-                    x.PrintLog "call edge: composition left:\n" (Memory.Dump path.state)
-                    x.PrintLog "call edge: composition result:\n" (Memory.Dump state)
+                    assert(path.state.frames = state.frames)
+                    x.PrintLog "propagation through callEdge" callSite
+                    x.PrintLog "call edge: composition left" (Memory.Dump path.state)
+                    x.PrintLog "call edge: composition result" (Memory.Dump state)
                     let result' = x.CommonPropagatePath (path.lvl + 1u) {state with callSiteResults = addCallSiteResult path.state.callSiteResults callSite state.returnRegister
                                                                                     returnRegister = None}
                     acc || result'
@@ -233,7 +228,17 @@ module public CFA =
     module cfaBuilder =
         let private alreadyComputedCFAs = Dictionary<MethodBase, cfa>()
 
-        type usedType = operationalStack * pdict<concreteHeapAddress, symbolicType> * pdict<arrayType, vectorRegion> * pdict<arrayType, vectorRegion>
+        type bypassData =
+            { ip : ip
+              opStack : operationalStack
+              allocatedTypes : pdict<concreteHeapAddress, symbolicType>
+              lengths : pdict<arrayType, vectorRegion>
+              lowerBounds : pdict<arrayType, vectorRegion> }
+
+        let createData ip opStack allocatedTypes lengths lowerBounds =
+            {
+                ip = ip; opStack = opStack; allocatedTypes = allocatedTypes; lengths = lengths; lowerBounds = lowerBounds
+            }
 
         let private createEmptyCFA cfg method =
             {
@@ -246,36 +251,25 @@ module public CFA =
             edge.Src.OutgoingEdges.Add edge
             edge.Dst.IncomingEdges.Add edge
 
-        let private executeInstructions (ilintpr : ILInterpreter) cfg cilState =
+        let private executeInstructions (stepInterpreter : ILInterpreter) cfg (cilState : cilState) =
             assert (cilState.ip.CanBeExpanded())
-            let startingOffset = cilState.ip.Vertex ()
+            let startingOffset = cilState.ip.Offset
             let endOffset =
-                let lastOffset = Seq.last cfg.sortedOffsets
-                if startingOffset = lastOffset then cfg.ilBytes.Length
-                else
-                    let index = cfg.sortedOffsets.BinarySearch startingOffset
-                    cfg.sortedOffsets.[index + 1]
-            let isOffsetOfCurrentVertex (offset : ip) = startingOffset <= offset.Vertex() && offset.Vertex() < endOffset
-            let rec executeAllInstructions erroredStates (offset : ip) cilState : cilState list=
-                let allStates = ilintpr.ExecuteInstruction cfg (offset.Vertex()) cilState
-                let newErrors, goodStates = allStates |> List.partition (fun (_, cilState) -> cilState.HasException)
-                let allErrors = erroredStates @ List.map (fun (erroredOffset, cilState) -> {cilState with ip = erroredOffset}) newErrors
+                 let lastOffset = Seq.last cfg.sortedOffsets
+                 if startingOffset = lastOffset then cfg.ilBytes.Length
+                 else
+                     let index = cfg.sortedOffsets.BinarySearch startingOffset
+                     cfg.sortedOffsets.[index + 1]
+            let isOffsetOfCurrentVertex (ip : ip) = ip <> ExitPointer && startingOffset <= ip.Offset && ip.Offset < endOffset
+            stepInterpreter.ExecuteInstructionsWhile isOffsetOfCurrentVertex cfg startingOffset cilState
 
-                match goodStates with
-                | list when List.forall (fst >> (=) ip.Exit) list -> List.map (fun (_, state) -> { state with ip = ip.Exit}) list @ allErrors
-                | (nextOffset, _)::xs as list when isOffsetOfCurrentVertex nextOffset
-                                                   && List.forall (fun (offset, _) -> offset = nextOffset && isOffsetOfCurrentVertex offset) xs ->
-                    List.collect ((<||) (executeAllInstructions allErrors)) list
-                | list -> allErrors @ (list |> List.map (fun (offset, cilState) -> {cilState with ip = offset}))
-            executeAllInstructions [] (Instruction startingOffset) cilState
-
-        let computeCFAForMethod (ilintptr : ILInterpreter) (initialState : state) (cfa : cfa) (used : Dictionary<offset * usedType, int>) (block : MethodBase unitBlock) =
+        let computeCFAForMethod (ilintptr : ILInterpreter) (initialState : state) (cfa : cfa) (used : Dictionary<bypassData, int>) (block : MethodBase unitBlock) =
             let cfg = cfa.cfg
             let mutable currentTime = initialState.currentTime
             let executeSeparatedOpCode offset (opCode : System.Reflection.Emit.OpCode) (cilStateWithArgs : cilState) =
                 let calledMethod = InstructionsSet.resolveMethodFromMetadata cfg (offset + opCode.Size)
                 let callSite = { sourceMethod = cfg.methodBase; offset = offset; calledMethod = calledMethod; opCode = opCode }
-                let pushFunctionResultOnOpStackIfNeeded cilState (methodInfo : System.Reflection.MethodInfo) =
+                let pushFunctionResultOnOpStackIfNeeded (cilState : cilState) (methodInfo : System.Reflection.MethodInfo) =
                     if methodInfo.ReturnType = typeof<System.Void> then cilState
                     else {cilState with opStack = Terms.MakeFunctionResultConstant cilState.state callSite :: cilState.opStack}
 
@@ -283,8 +277,7 @@ module public CFA =
                 let this, cilState =
                     match calledMethod with
                     | _ when opCode = OpCodes.Newobj ->
-                        let states = ilintptr.CommonNewObj false (calledMethod :?> ConstructorInfo) cilStateWithoutArgs.state args id // TODO: what if newobj returns a lot of references and states?
-                        let state = List.head states
+                        let state = ilintptr.CommonNewObj false (calledMethod :?> ConstructorInfo) cilStateWithoutArgs.state args id |> List.head // TODO: what if newobj returns a lot of references and states?
                         assert(Option.isSome state.returnRegister)
                         let reference = Option.get state.returnRegister
                         Some reference, {cilStateWithoutArgs with state = {state with returnRegister = None}; opStack = reference :: cilStateWithoutArgs.opStack}
@@ -304,39 +297,43 @@ module public CFA =
                 nextOffset, this, args, cilState
 
             let rec computeCFAForBlock (block : unitBlock<'a>) =
-                let createOrGetVertex = function
-                    | Instruction offset, rest when used.ContainsKey(offset, rest) ->
-                        block.vertices.[used.[offset, rest]]
-                    | Instruction offset, (opStack, _, _, _) ->
-                        let vertex = Vertex.CreateVertex cfg.methodBase offset opStack
+                let createOrGetVertex (bypassData : bypassData) =
+                    match bypassData.ip with
+                    | ExitPointer when bypassData.opStack = [] -> block.exitVertex
+                    | _ when used.ContainsKey(bypassData) -> block.vertices.[used.[bypassData]]
+                    | ip ->
+                        let vertex = Vertex.CreateVertex cfg.methodBase ip bypassData.opStack
                         block.AddVertex vertex
                         vertex
-                    | Exit, ([], _, _, _) -> block.exitVertex
-                    | _ -> __unreachable__()
+                let isIpDemandingCall = function
+                    | Instruction offset -> if cfg.offsetsDemandingCall.ContainsKey offset then Some offset else None
+                    | _                  -> None
 
                 let isInsideCycle opStack (src : offset) (dst : ip) =
                     match dst with
                     | Instruction dst ->
                         if cfg.topologicalTimes.[src] >= cfg.topologicalTimes.[dst] then
-                            Seq.tryFind (fun (offset', (opStack',_,_,_)) -> offset' = dst && opStack = opStack') used.Keys
-                            |> Option.map (fun (offset, rest) -> block.vertices.[used.[offset, rest]])
+                            Seq.tryFind (fun (bypassData : bypassData) -> bypassData.ip = Instruction dst && bypassData.opStack = opStack) used.Keys
+                            |> Option.map (fun bypassData -> block.vertices.[used.[bypassData]])
                         else None
                     | _ -> None
 
                 // note: entry point and exit vertex must be added to unit block
                 let rec bypass (vertex : Vertex) allocatedTypes lengths lowerBounds =
-                    let id, offset, opStack = vertex.Id, vertex.Offset, vertex.OpStack
-                    if used.ContainsKey (offset, (opStack, allocatedTypes, lengths, lowerBounds)) || vertex = block.exitVertex then
-                        Logger.printLog Logger.Trace "Again went to offset = %x\nnopStack = %O" offset opStack
+                    let id, ip, opStack = vertex.Id, vertex.Ip, vertex.OpStack
+                    let bypassData = createData ip opStack allocatedTypes lengths lowerBounds
+                    if used.ContainsKey bypassData || vertex = block.exitVertex then
+                        Logger.printLog Logger.Trace "Again went to ip = %O\nnopStack = %O" ip opStack
                     else
-                    let wasAdded = used.TryAdd((offset, (opStack, allocatedTypes, lengths, lowerBounds)), id)
+                    let wasAdded = used.TryAdd(bypassData, id)
                     Prelude.releaseAssert(wasAdded)
                     let srcVertex = block.vertices.[id]
-                    Logger.printLog Logger.Trace "[Starting computing cfa for offset = %x]\nopStack = %O" offset opStack
+                    Logger.printLog Logger.Trace "[Starting computing cfa for ip = %O]\nopStack = %O" ip opStack
                     System.Console.WriteLine("Making initial CFA state with STARTING TIME = {0}", currentTime)
                     let modifiedState = {initialState with allocatedTypes = allocatedTypes; lengths = lengths; lowerBounds = lowerBounds
                                                            currentTime = currentTime; startingTime = currentTime}
                     let initialCilState = {cilState.Empty with state = modifiedState}
+                    let offset = ip.Offset
                     match cfg.offsetsDemandingCall.ContainsKey offset with
                     | true ->
                         let opCode, calledMethod = cfg.offsetsDemandingCall.[offset]
@@ -344,14 +341,25 @@ module public CFA =
                         let nextOffset, this, args, cilState' = executeSeparatedOpCode offset opCode {initialCilState with ip = Instruction offset; opStack = opStack}
                         let dstVertex =
                             let s = cilState'.state
-                            createOrGetVertex (Instruction nextOffset, (cilState'.opStack, s.allocatedTypes, s.lengths, s.lowerBounds))
+                            createOrGetVertex (createData (Instruction nextOffset) cilState'.opStack s.allocatedTypes s.lengths s.lowerBounds)
                         block.AddVertex dstVertex
                         let stateWithArgsOnFrame = ilintptr.ReduceFunctionSignature cilState'.state calledMethod this (Specified args) false (fun x -> x)
                         currentTime <- VectorTime.max currentTime stateWithArgsOnFrame.currentTime
                         addEdge <| CallEdge(srcVertex, dstVertex, callSite, stateWithArgsOnFrame)
                         bypass dstVertex stateWithArgsOnFrame.allocatedTypes stateWithArgsOnFrame.lengths stateWithArgsOnFrame.lowerBounds
                     | _ ->
-                        let newStates = executeInstructions ilintptr cfg {initialCilState with ip = Instruction offset; opStack = opStack}
+                        let offset = ip.Offset
+                        let insufficientExceptionThrown, newStates = executeInstructions ilintptr cfg {initialCilState with ip = ip; opStack = opStack}
+                        if Option.isSome insufficientExceptionThrown then
+                            Prelude.releaseAssert(cfg.graph.[offset].Count <= 1)
+                            let dstVertex =
+                                let ip =
+                                    if cfg.graph.[offset].Count = 0 then ExitPointer
+                                    else Instruction cfg.graph.[offset].[0]
+                                let opStack = [] // this is a hack!
+                                createOrGetVertex (createData ip opStack allocatedTypes lengths lowerBounds)
+                            addEdge <| InsufficientInformationEdge(ip.Offset, ILInterpreter(), cfg, srcVertex, dstVertex)
+
                         newStates |> List.iter (fun state -> currentTime <- VectorTime.max currentTime state.state.currentTime)
                         let goodStates = List.filter (fun (cilState : cilState) -> not cilState.HasException) newStates
                         let erroredStates = List.filter (fun (cilState : cilState) -> cilState.HasException) newStates
@@ -362,7 +370,7 @@ module public CFA =
                                 addEdge <| StepEdge(srcVertex, vertex, cilState'.state)
                             | None ->
                                 let s = cilState'.state
-                                let dstVertex = createOrGetVertex (cilState'.ip, (cilState'.opStack, s.allocatedTypes, s.lengths, s.lowerBounds))
+                                let dstVertex = createOrGetVertex (createData cilState'.ip cilState'.opStack s.allocatedTypes s.lengths s.lowerBounds)
                                 if not cilState'.leaveInstructionExecuted then addEdge <| StepEdge(srcVertex, dstVertex, cilState'.state)
                                 else
                                     Prelude.releaseAssert(List.isEmpty cilState'.opStack)
@@ -374,7 +382,7 @@ module public CFA =
                 let method = cfg.methodBase
                 let ehcs = method.GetMethodBody().ExceptionHandlingClauses
                            |> Seq.filter Instruction.isFinallyClause
-                           |> Seq.filter (Instruction.shouldExecuteFinallyClause srcVertex.Offset dstVertex.Offset)
+                           |> Seq.filter (Instruction.shouldExecuteFinallyClause srcVertex.Ip dstVertex.Ip)
                            |> Seq.sortWith (fun ehc1 ehc2 -> ehc1.HandlerOffset - ehc2.HandlerOffset)
                 let chainSequentialFinallyBlocks prevVertex (ehc : ExceptionHandlingClause) =
                     let finallyBlock = cfa.FindOrCreateFinallyHandler ehc
@@ -397,7 +405,7 @@ module public CFA =
                 let cfg = CFG.build methodBase
                 let cfa = createEmptyCFA cfg methodBase
 
-                let used = Dictionary<offset * usedType, int>()
+                let used = Dictionary<bypassData, int>()
                 computeCFAForMethod ilintptr initialState cfa used cfa.body
                 alreadyComputedCFAs.[methodBase] <- cfa
                 Logger.printLog Logger.Trace "Computed cfa: %O" cfa
@@ -405,8 +413,12 @@ module public CFA =
 
 type StepInterpreter() =
     inherit ILInterpreter()
-    let visitedVertices : persistent<Map<CFA.Vertex, uint32>> =
-        let r = new persistent<_>(always Map.empty, id) in r.Reset(); r
+    let visitedVertices : persistent<Dictionary<CFA.Vertex, uint32>> =
+        let r = new persistent<_>(always (Dictionary<_,_>()), id) in r.Reset(); r
+    let incrementCounter vertex =
+        if not <| visitedVertices.Value.ContainsKey vertex then
+            visitedVertices.Value.[vertex] <- 1u
+        else visitedVertices.Value.[vertex] <- 1u + visitedVertices.Value.[vertex]
     override x.ReproduceEffect codeLoc state k = x.ExploreAndCompose codeLoc state k
     override x.CreateInstance exceptionType arguments state : state list =
         let error = Nop
@@ -422,22 +434,14 @@ type StepInterpreter() =
             if vertex.IsMethodExitVertex then true
             elif visitedVertices.Value.ContainsKey vertex then
                 visitedVertices.Value.[vertex] >= maxBorder
-            else visitedVertices.Mutate (Map.add vertex 1u visitedVertices.Value)
-                 false
+            else false
 
-        let visit vertex =
-            match visitedVertices.Value.ContainsKey vertex with
-            | true ->
-                let cnt = Map.find vertex visitedVertices.Value
-                visitedVertices.Mutate (Map.add vertex (cnt + 1u) visitedVertices.Value)
-            | _ -> visitedVertices.Mutate (Map.add vertex 1u visitedVertices.Value)
         let rec dfs lvl (vertex : CFA.Vertex) =
             if used vertex then ()
             else
-                visit vertex
+                incrementCounter vertex
                 let edges = vertex.OutgoingEdges
-                let shouldGetAllPaths = false // TODO: resolve this problem: when set to ``true'' recursion works too long, when set to ``false'' recursion doesn't work at all
-                let paths : path list = vertex.Paths.OfLevel shouldGetAllPaths lvl
+                let paths : path list = vertex.Paths.OfLevel lvl
                 let newDsts = edges |> Seq.fold (fun acc (edge : CFA.Edge) ->
                     let propagated = Seq.map edge.PropagatePath paths |> Seq.fold (||) false
                     if propagated then (edge.Dst :: acc) else acc) []
@@ -445,8 +449,7 @@ type StepInterpreter() =
         cfa.body.entryPoint.Paths.Add {lvl = 0u; state = initialState}
         Logger.trace "Starting Forward exploration for %O" codeLoc
         dfs 0u cfa.body.entryPoint
-        let resultStates1 = List.init (maxBorder |> int) (fun lvl -> cfa.body.exitVertex.Paths.OfLevel false (lvl |> uint32) |> List.ofSeq)
-        let resultStates = resultStates1
+        let resultStates = List.init (maxBorder |> int) (fun lvl -> cfa.body.exitVertex.Paths.OfLevel (lvl |> uint32) |> List.ofSeq)
                          |> List.concat
                          |> List.map (fun (path : path) ->
                              let state = path.state

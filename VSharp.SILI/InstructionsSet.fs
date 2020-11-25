@@ -10,7 +10,7 @@ open CFG
 
 type public ILMethodMetadata =
     { methodBase : MethodBase }
-    override x.ToString () = VSharp.Reflection.GetFullMethodName x.methodBase
+    override x.ToString () = Reflection.GetFullMethodName x.methodBase
     interface IMethodIdentifier with
         member x.IsStatic = x.methodBase.IsStatic
         member x.IsConstructor = x.methodBase.IsConstructor
@@ -186,7 +186,18 @@ module internal InstructionsSet =
 // TODO: this should be now broken!
 //            | 6 -> [| s.stack; s.heap; s.statics; s.frames; s.pc; argsAndThis |]
             | _ -> __notImplemented__()
-        let result = methodInfo.Invoke(null, parameters)
+        let result =
+            try
+                methodInfo.Invoke(null, parameters)
+            with
+            | :? TargetInvocationException as targetException ->
+                Logger.trace "InternalCall got TargetInvocationException %s" targetException.Message
+                let actualException = targetException.GetBaseException()
+                Logger.trace "TargetInvocationException.GetBaseException %s" actualException.Message
+                raise <| actualException
+            | e ->
+                Logger.trace "InternalCall got exception %s" e.Message
+                raise e
         let appendResultToState (term : term, state : state) =
             match term.term with
             | Nop -> {state with returnRegister = None}
@@ -212,7 +223,7 @@ module internal InstructionsSet =
         if isReference term && Types.IsPointer typ
         then Types.CastReferenceToPointer state term // TODO: casting to pointer is weird
         else term
-    let castUnchecked typ term (state : state) =
+    let castUnchecked typ term (state : state) : term =
         let term = castReferenceToPointerIfNeeded term typ state
         Types.Cast term typ
     let popOperationalStack (cilState : cilState) =
@@ -228,8 +239,7 @@ module internal InstructionsSet =
         let index = numberCreator cfg.ilBytes shiftedOffset
         let reference, state, _ = getVarTerm cilState.state index cfg.methodBase
         let term = Memory.ReadSafe state reference
-        let res = pushResultOnStack cilState (term, state) :: []
-        res
+        pushResultOnStack cilState (term, state) :: []
 
     let ldarg numberCreator (cfg : cfgData) shiftedOffset (cilState : cilState) =
         let argumentIndex = numberCreator cfg.ilBytes shiftedOffset
@@ -288,8 +298,8 @@ module internal InstructionsSet =
             // TODO: check whether term is not pointer
             k <| Types.Cast term signedTyp // no specs found about overflows
         else k term
-    let standardPerformBinaryOperation op (cilState : cilState) =
-        performCILBinaryOperation op makeSignedInteger makeSignedInteger idTransformation cilState
+    let standardPerformBinaryOperation op =
+        performCILBinaryOperation op makeSignedInteger makeSignedInteger idTransformation
     let shiftOperation op (cilState : cilState) =
         let reinterpret termType term k = k <| Types.Cast term termType
         match cilState.opStack with
@@ -519,8 +529,7 @@ module internal InstructionsSet =
         | _ -> __corruptedStack__()
     let ldindref = ldind always
     let clt = compare OperationType.Less idTransformation idTransformation
-    let cltun (cilState : cilState) =
-        compare OperationType.Less makeUnsignedInteger makeUnsignedInteger cilState
+    let cltun = compare OperationType.Less makeUnsignedInteger makeUnsignedInteger
     let bgeHelper (cilState : cilState) =
         match cilState.opStack with
         | arg1 :: arg2 :: _ ->
@@ -579,7 +588,7 @@ module internal InstructionsSet =
         let typ = resolveTermTypeFromMetadata cilState.state cfg (offset + OpCodes.Sizeof.Size)
         let size = Types.SizeOf typ
         { cilState with opStack = MakeNumber size :: cilState.opStack } :: []
-    let throw _ _ (cilState : cilState) =
+    let throw cfg offset (cilState : cilState) =
         match cilState.opStack with
         | error :: _ ->
             { cilState with state = {cilState.state with exceptionsRegister = Unhandled error}; opStack = [] } :: []

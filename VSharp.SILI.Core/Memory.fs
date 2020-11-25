@@ -122,7 +122,7 @@ module internal Memory =
 // ------------------------------- Primitives -------------------------------
 
     let empty = {
-        pc = PC.empty
+        pc = List.empty
         returnRegister = None
         exceptionsRegister = NoException
         callSiteResults = Map.empty

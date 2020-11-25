@@ -144,6 +144,18 @@ namespace VSharp.Test.Tests
             return array[0];
         }
 
+        private static int Return100()
+        {
+            int x;
+            return 100;
+        }
+
+        [TestSvm]
+        public static int TestPopStackWithReservedVariable()
+        {
+            return Return100();
+        }
+
         [TestSvm]
         public static void NewObj1()
         {
@@ -386,19 +398,6 @@ namespace VSharp.Test.Tests
 
             return result;
         }
-
-        private static int Return100()
-        {
-            int x;
-            return 100;
-        }
-
-        [TestSvm]
-        public static int TestPopStackWithReservedVariable()
-        {
-            return Return100();
-        }
-
 
         // expecting 20
         [TestSvm]
@@ -678,6 +677,43 @@ namespace VSharp.Test.Tests
         public class ClassWithClassInside
         {
             private ClassWithOneField _classWithOneField;
+            public int x;
+            public A(int value)
+            {
+                x = value;
+            }
+
+            public int GetX()
+            {
+                return x;
+            }
+
+            public void SetX(int newX)
+            {
+                x = newX;
+            }
+        }
+
+        public class ClassWithStructInside
+        {
+            private A _a;
+
+            public ClassWithStructInside(int n)
+            {
+                A localA;
+                localA = new A(n);
+                _a = localA;
+            }
+
+            public int GetN()
+            {
+                return _a.x;
+            }
+        }
+
+        public class ClassWithClassInside
+        {
+            private ClassWithOneField _classWithOneField;
 
             public ClassWithClassInside(int n)
             {
@@ -744,8 +780,29 @@ namespace VSharp.Test.Tests
             return checked(x + y);
         }
 
+        public class ClassWithCCtor
+        {
+            public static object _f = new PDR.ClassWithOneField();
+        }
 
+        // [Ignore("Can't execute static cctor of System.Type, because of MemoryRegion.write's __notImplemented__()")]
+        [TestSvm]
+        public static object CallStaticCtor()
+        {
+            return ClassWithCCtor._f;
+        }
 
+        [Ignore("internalfail \"byref type is not implemented!\"")]
+        public static NullReferenceException CreateNullReferenceException()
+        {
+            return new NullReferenceException();
+        }
+
+        [Ignore("internalfail \"byref type is not implemented!\"")]
+        public static OverflowException CreateOverflowException()
+        {
+            return new OverflowException();
+        }
 
 
         // [TestSvm]
