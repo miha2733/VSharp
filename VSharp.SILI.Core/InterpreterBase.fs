@@ -10,7 +10,7 @@ open System
 
 [<AbstractClass>]
 type public ExplorerBase() =
-    static let CurrentlyBeingExploredLocations = HashSet<ICodeLocation>()
+//    static let CurrentlyBeingExploredLocations = HashSet<ICodeLocation>()
 
     static let DetectUnboundRecursion (codeLoc : ICodeLocation) (s : state) =
         match codeLoc with
@@ -41,7 +41,7 @@ type public ExplorerBase() =
 
     member x.Explore (codeLoc : ICodeLocation) (k : codeLocationSummary seq -> 'a) =
         let k = API.Reset(); fun x -> API.Restore(); k x
-        CurrentlyBeingExploredLocations.Add codeLoc |> ignore
+//        CurrentlyBeingExploredLocations.Add codeLoc |> ignore
         let initClosure frames =
             let state = List.foldBack (fun frame state ->
                 let fr = frame.entries |> List.map (fun e -> e.key, Unspecified, e.typ)
@@ -59,12 +59,12 @@ type public ExplorerBase() =
                 |> List.concat
                 |> List.map (fun (result, state) -> {result = result; state = state})
 //                    let state = if isMethodOfStruct then Memory.popStack state else state
-            CurrentlyBeingExploredLocations.Remove funcId |> ignore
+//            CurrentlyBeingExploredLocations.Remove funcId |> ignore
             k resultsAndStates
         | :? ILCodePortion as ilcode ->
             let state = initClosure ilcode.Frames
             x.Invoke ilcode state (fun resultsAndStates ->
-                CurrentlyBeingExploredLocations.Remove ilcode |> ignore
+//                CurrentlyBeingExploredLocations.Remove ilcode |> ignore
                 resultsAndStates |> List.map (fun (result, state) -> {result = result; state = state}) |> k)
         | _ -> __notImplemented__()
 
@@ -78,14 +78,14 @@ type public ExplorerBase() =
 
 
     member private x.ReproduceEffectOrUnroll areWeStuck body (id : IFunctionIdentifier) state k =
-        if areWeStuck then
-            try
-                x.ReproduceEffect id state k
-            with
-            | :? InsufficientInformationException ->
-                body state (List.map (fun (rs, s : state) -> rs, {s with currentTime = state.currentTime}) >> k)
-        else
-            /// explicitly unrolling
+//        if areWeStuck then
+//            try
+//                x.ReproduceEffect id state k
+//            with
+//            | :? InsufficientInformationException ->
+//                body state (List.map (fun (rs, s : state) -> rs, {s with currentTime = state.currentTime}) >> k)
+//        else
+//            /// explicitly unrolling
             body state k
 
     member x.EnterRecursiveRegion (codeLoc : IFunctionIdentifier) state body k =
@@ -295,10 +295,10 @@ type public ExplorerBase() =
 
     abstract member ReproduceEffect : ICodeLocation -> state -> ((term * state) list -> 'a) -> 'a
     default x.ReproduceEffect codeLoc state k =
-        if CurrentlyBeingExploredLocations.Contains codeLoc then
-            __notImplemented__()
+//        if CurrentlyBeingExploredLocations.Contains codeLoc then
+//            __notImplemented__()
 //            Explorer.recursionApplication codeLoc state addr k
-        else
+//        else
             x.ExploreAndCompose codeLoc state k
 
 

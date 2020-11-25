@@ -61,7 +61,7 @@ type public CodePortionInterpreter(ilInterpreter : ILInterpreter, codeLoc : ICod
             else cfg.sortedOffsets.[u + 1]
         let isOffsetOfCurrentVertex (ip : ip) = ip <> ExitPointer && startingOffset <= ip.Offset && ip.Offset < endOffset
         let iieThrown, cilStates = ilInterpreter.ExecuteInstructionsWhile isOffsetOfCurrentVertex cfg startingOffset cilState
-        if Option.isSome iieThrown then __notImplemented__()
+        if Option.isSome iieThrown then raise <| Option.get iieThrown
         cilStates |> List.filter (fun st -> st.IsFinished || not (st.ip.CanBeExpanded() && List.contains st.ip.Offset st.recursiveVertices))
 
     override x.IsRecursiveState cilState =
@@ -190,8 +190,10 @@ and public ILInterpreter() as this =
 
     member private x.Raise createException (state : state) k =
         //TODO: exception handling
-        let statesWithCreatedExceptions : state list = createException state
-        k statesWithCreatedExceptions
+        {state with exceptionsRegister = Unhandled Nop} |> List.singleton |> k
+
+//        let statesWithCreatedExceptions : state list = createException state
+//        k statesWithCreatedExceptions
 
     member private x.AccessArray accessor (state : state) upperBound index k =
         let checkArrayBounds upperBound x =

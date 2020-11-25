@@ -163,8 +163,8 @@ namespace VSharp.Test.Tests
             return default;
         }
 
-        // [Ignore("Can't execute static cctor of System.Type, because of MemoryRegion.write's __notImplemented__()")]
         [TestSvm]
+        // [Ignore("Cast |> structMerge |> fieldsOf FunctionResult |> internalFail")]
         public static PDR.A MakeDefault_1()
         {
             return MakeObj<PDR.A>();
