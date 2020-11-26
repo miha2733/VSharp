@@ -5,5 +5,4 @@ MEMORY DUMP:
 --------------- Types tokens: ---------------
 2 ==> System.Object
 3 ==> System.Object
---------------- Initialized types: ---------------
-{ VSharp.Test.Tests.PDR, System.Object }
+Initialized types = { VSharp.Test.Tests.PDR, System.Object }

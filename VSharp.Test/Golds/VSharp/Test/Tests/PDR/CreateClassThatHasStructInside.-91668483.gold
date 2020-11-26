@@ -3,9 +3,7 @@ RESULT: Totally 1 state:
 (HeapRef 2 to VSharp.Test.Tests.PDR+ClassWithStructInside)
 MEMORY DUMP:
 --------------- Fields: ---------------
-_a ==> {2 <- VSharp.Test.Tests.PDR+A STRUCT [
-	| x ~> n]}
+_a ==> {}
 --------------- Types tokens: ---------------
 2 ==> VSharp.Test.Tests.PDR+ClassWithStructInside
---------------- Initialized types: ---------------
-{ VSharp.Test.Tests.PDR+A, VSharp.Test.Tests.PDR, System.Object, VSharp.Test.Tests.PDR+ClassWithStructInside }
+Initialized types = { VSharp.Test.Tests.PDR+A, VSharp.Test.Tests.PDR, System.Object, VSharp.Test.Tests.PDR+ClassWithStructInside }

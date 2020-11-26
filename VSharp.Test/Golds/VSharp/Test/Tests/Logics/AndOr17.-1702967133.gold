@@ -2,5 +2,4 @@ METHOD: System.Boolean VSharp.Test.Tests.Logics.AndOr17(System.Boolean, System.B
 RESULT: Totally 1 state:
 !b & a | !b & a & c | (!b | !c) & a | a & c
 MEMORY DUMP:
---------------- Initialized types: ---------------
-{ VSharp.Test.Tests.Logics }
+Initialized types = { VSharp.Test.Tests.Logics }

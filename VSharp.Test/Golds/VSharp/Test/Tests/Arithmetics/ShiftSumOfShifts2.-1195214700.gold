@@ -2,5 +2,4 @@ METHOD: System.Int64 VSharp.Test.Tests.Arithmetics.ShiftSumOfShifts2(System.Int6
 RESULT: Totally 1 state:
 a << 34
 MEMORY DUMP:
---------------- Initialized types: ---------------
-{ VSharp.Test.Tests.Arithmetics }
+Initialized types = { VSharp.Test.Tests.Arithmetics }

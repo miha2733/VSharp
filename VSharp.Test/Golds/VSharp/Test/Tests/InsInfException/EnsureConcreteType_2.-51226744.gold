@@ -1,0 +1,13 @@
+METHOD: System.Void VSharp.Test.Tests.InsInfException.EnsureConcreteType_2()
+RESULT: Totally 1 state:
+<VOID>
+MEMORY DUMP:
+--------------- Fields: ---------------
+_field ==> {3 <- 42}
+_field ==> {
+        2 <- (HeapRef 3 to VSharp.Test.Tests.InsInfException+GenericClass`1[System.Int32])
+    }
+--------------- Types tokens: ---------------
+2 ==> VSharp.Test.Tests.InsInfException+GenericClass`1[VSharp.Test.Tests.InsInfException+GenericClass`1[System.Int32]]
+3 ==> VSharp.Test.Tests.InsInfException+GenericClass`1[System.Int32]
+Initialized types = { VSharp.Test.Tests.InsInfException, System.Object, VSharp.Test.Tests.InsInfException+GenericClass`1[VSharp.Test.Tests.InsInfException+GenericClass`1[System.Int32]], VSharp.Test.Tests.InsInfException+GenericClass`1[System.Int32] }

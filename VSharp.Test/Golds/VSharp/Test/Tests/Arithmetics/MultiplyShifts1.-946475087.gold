@@ -2,5 +2,4 @@ METHOD: System.Int32 VSharp.Test.Tests.Arithmetics.MultiplyShifts1(System.Int32,
 RESULT: Totally 1 state:
 0
 MEMORY DUMP:
---------------- Initialized types: ---------------
-{ VSharp.Test.Tests.Arithmetics }
+Initialized types = { VSharp.Test.Tests.Arithmetics }

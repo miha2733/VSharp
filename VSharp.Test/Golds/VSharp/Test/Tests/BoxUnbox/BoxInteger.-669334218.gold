@@ -6,5 +6,4 @@ MEMORY DUMP:
 2 ==> x
 --------------- Types tokens: ---------------
 2 ==> System.Int32
---------------- Initialized types: ---------------
-{ VSharp.Test.Tests.BoxUnbox }
+Initialized types = { VSharp.Test.Tests.BoxUnbox }

@@ -6,5 +6,4 @@ MEMORY DUMP:
 x ==> {
         VSharp.Test.Tests.PDR+WithStaticMembersUsedInCFA <- 101
     }
---------------- Initialized types: ---------------
-{ VSharp.Test.Tests.PDR+WithStaticMembersUsedInCFA, VSharp.Test.Tests.PDR }
+Initialized types = { VSharp.Test.Tests.PDR+WithStaticMembersUsedInCFA, VSharp.Test.Tests.PDR }

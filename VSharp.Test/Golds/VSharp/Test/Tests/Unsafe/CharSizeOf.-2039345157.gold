@@ -2,5 +2,4 @@ METHOD: System.Int32 VSharp.Test.Tests.Unsafe.CharSizeOf()
 RESULT: Totally 1 state:
 2
 MEMORY DUMP:
---------------- Initialized types: ---------------
-{ VSharp.Test.Tests.Unsafe }
+Initialized types = { VSharp.Test.Tests.Unsafe }

@@ -2,5 +2,4 @@ METHOD: System.Boolean VSharp.Test.Tests.Logics.Or4(System.Boolean, System.Boole
 RESULT: Totally 1 state:
 True
 MEMORY DUMP:
---------------- Initialized types: ---------------
-{ VSharp.Test.Tests.Logics }
+Initialized types = { VSharp.Test.Tests.Logics }

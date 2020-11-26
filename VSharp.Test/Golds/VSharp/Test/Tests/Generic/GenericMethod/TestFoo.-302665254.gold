@@ -3,11 +3,9 @@ RESULT: Totally 2 states:
 0
 MEMORY DUMP:
 Path condition: 0 == f
---------------- Initialized types: ---------------
-{ VSharp.Test.Tests.Generic.GenericMethod }
+Initialized types = { VSharp.Test.Tests.Generic.GenericMethod }
 
 f._field
 MEMORY DUMP:
 Path condition: !(0 == f)
---------------- Initialized types: ---------------
-{ VSharp.Test.Tests.Generic.Foo`2[System.Int32,VSharp.Test.Tests.Typecast.Piece], VSharp.Test.Tests.Generic.GenericMethod }
+Initialized types = { VSharp.Test.Tests.Generic.Foo`2[System.Int32,VSharp.Test.Tests.Typecast.Piece], VSharp.Test.Tests.Generic.GenericMethod }

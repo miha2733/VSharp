@@ -3,17 +3,14 @@ RESULT: Totally 3 states:
 20
 MEMORY DUMP:
 Path condition: 0 == piece
---------------- Initialized types: ---------------
-{ VSharp.Test.Tests.Typecast.Typecast }
+Initialized types = { VSharp.Test.Tests.Typecast.Typecast }
 
 20
 MEMORY DUMP:
 Path condition: !(0 == piece) /\ !(piece <: VSharp.Test.Tests.Typecast.Pawn)
---------------- Initialized types: ---------------
-{ VSharp.Test.Tests.Typecast.Typecast }
+Initialized types = { VSharp.Test.Tests.Typecast.Typecast }
 
 10
 MEMORY DUMP:
 Path condition: !(0 == piece) /\ (piece <: VSharp.Test.Tests.Typecast.Pawn)
---------------- Initialized types: ---------------
-{ VSharp.Test.Tests.Typecast.Typecast }
+Initialized types = { VSharp.Test.Tests.Typecast.Typecast }

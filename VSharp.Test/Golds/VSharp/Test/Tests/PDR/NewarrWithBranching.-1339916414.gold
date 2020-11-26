@@ -9,10 +9,7 @@ System.Int32[] ==> {2[0] <- 456}
 System.Int32[] ==> {2[0] <- 10}
 --------------- Types tokens: ---------------
 2 ==> System.Int32[]
---------------- Stack: ---------------
-key = __loc__0, value = (HeapRef 2 to System.Int32[])
---------------- Initialized types: ---------------
-{ VSharp.Test.Tests.PDR }
+Initialized types = { VSharp.Test.Tests.PDR }
 
 42
 MEMORY DUMP:
@@ -23,7 +20,4 @@ System.Int32[] ==> {2[0] <- 42}
 System.Int32[] ==> {2[0] <- 10}
 --------------- Types tokens: ---------------
 2 ==> System.Int32[]
---------------- Stack: ---------------
-key = __loc__0, value = (HeapRef 2 to System.Int32[])
---------------- Initialized types: ---------------
-{ VSharp.Test.Tests.PDR }
+Initialized types = { VSharp.Test.Tests.PDR }

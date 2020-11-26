@@ -29,7 +29,7 @@ namespace VSharp.Test.Tests
         // Expecting 18
         [TestSvm]
         // [Ignore("reinterpretation")]
-        public static int Always18()
+        public static int Always18() // TODO: check #do
         {
             return Mult2(9);
         }

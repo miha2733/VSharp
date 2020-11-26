@@ -7,8 +7,7 @@ Path condition: !f
 X ==> {
         VSharp.Test.Tests.PDR+ClassWithStaticConstructor <- 100
     }
---------------- Initialized types: ---------------
-{ VSharp.Test.Tests.PDR, VSharp.Test.Tests.PDR+ClassWithStaticConstructor }
+Initialized types = { VSharp.Test.Tests.PDR, VSharp.Test.Tests.PDR+ClassWithStaticConstructor }
 
 100
 MEMORY DUMP:
@@ -17,5 +16,4 @@ Path condition: f
 X ==> {
         VSharp.Test.Tests.PDR+ClassWithStaticConstructor <- 100
     }
---------------- Initialized types: ---------------
-{ VSharp.Test.Tests.PDR, VSharp.Test.Tests.PDR+ClassWithStaticConstructor }
+Initialized types = { VSharp.Test.Tests.PDR, VSharp.Test.Tests.PDR+ClassWithStaticConstructor }

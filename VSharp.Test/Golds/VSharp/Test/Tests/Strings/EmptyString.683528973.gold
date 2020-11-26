@@ -12,5 +12,4 @@ System.Char[] ==> {2[0] <- 1}
 2 ==> System.Char[]
 --------------- Static fields: ---------------
 Empty ==> {System.String <- (HeapRef 2 to System.String)}
---------------- Initialized types: ---------------
-{ System.String, VSharp.Test.Tests.Strings }
+Initialized types = { System.String, VSharp.Test.Tests.Strings }

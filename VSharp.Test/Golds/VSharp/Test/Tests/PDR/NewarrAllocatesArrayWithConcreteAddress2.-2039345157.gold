@@ -8,5 +8,4 @@ System.Int32[] ==> {2[5] <- 42}
 System.Int32[] ==> {2[0] <- 10}
 --------------- Types tokens: ---------------
 2 ==> System.Int32[]
---------------- Initialized types: ---------------
-{ VSharp.Test.Tests.PDR }
+Initialized types = { VSharp.Test.Tests.PDR }

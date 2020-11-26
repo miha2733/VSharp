@@ -1,0 +1,10 @@
+METHOD: System.Object VSharp.Test.Tests.InsInfException.BoxStructType_1()
+RESULT: Totally 1 state:
+(HeapRef 2 to VSharp.Test.Tests.PDR+A)
+MEMORY DUMP:
+--------------- Boxed items: ---------------
+2 ==> VSharp.Test.Tests.PDR+A STRUCT [
+	| x ~> 123]
+--------------- Types tokens: ---------------
+2 ==> VSharp.Test.Tests.PDR+A
+Initialized types = { VSharp.Test.Tests.InsInfException, VSharp.Test.Tests.PDR+A }

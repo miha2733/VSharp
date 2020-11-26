@@ -2,5 +2,4 @@ METHOD: System.Int32 VSharp.Test.Tests.PDR.FunctionsComposition(System.Int32)
 RESULT: Totally 1 state:
 36 * x
 MEMORY DUMP:
---------------- Initialized types: ---------------
-{ VSharp.Test.Tests.PDR }
+Initialized types = { VSharp.Test.Tests.PDR }

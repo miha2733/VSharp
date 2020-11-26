@@ -2,8 +2,4 @@ METHOD: System.Int32 VSharp.Test.Tests.ClassesSimple.SimpleStructureAccess(Syste
 RESULT: Totally 1 state:
 newMyValue
 MEMORY DUMP:
---------------- Stack: ---------------
-key = __loc__0, value = VSharp.Test.Tests.ClassesSimple+MyStruct STRUCT [
-	| MyValue ~> newMyValue]
---------------- Initialized types: ---------------
-{ VSharp.Test.Tests.ClassesSimple }
+Initialized types = { VSharp.Test.Tests.ClassesSimple }

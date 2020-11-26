@@ -6,7 +6,4 @@ MEMORY DUMP:
 2 ==> 42
 --------------- Types tokens: ---------------
 2 ==> System.Int32
---------------- Stack: ---------------
-key = __loc__0, value = 42
---------------- Initialized types: ---------------
-{ VSharp.Test.Tests.BoxUnbox }
+Initialized types = { VSharp.Test.Tests.BoxUnbox }

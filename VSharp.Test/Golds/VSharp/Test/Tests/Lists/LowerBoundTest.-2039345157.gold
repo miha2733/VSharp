@@ -17,7 +17,4 @@ System.Int32[,] ==> {
 System.Int32[,] ==> {2[0] <- 4; 2[1] <- 2}
 --------------- Types tokens: ---------------
 2 ==> System.Int32[,]
---------------- Stack: ---------------
-key = this, value = (HeapRef this to VSharp.Test.Tests.Lists)
---------------- Initialized types: ---------------
-{ System.Array, System.Runtime.CompilerServices.RuntimeHelpers, VSharp.Test.Tests.Lists, System.Int32[,] }
+Initialized types = { System.Array, System.Runtime.CompilerServices.RuntimeHelpers, VSharp.Test.Tests.Lists, System.Int32[,] }

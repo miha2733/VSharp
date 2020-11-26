@@ -2,5 +2,4 @@ METHOD: System.Boolean VSharp.Test.Tests.Logics.Negation4(System.Boolean)
 RESULT: Totally 1 state:
 b
 MEMORY DUMP:
---------------- Initialized types: ---------------
-{ VSharp.Test.Tests.Logics }
+Initialized types = { VSharp.Test.Tests.Logics }

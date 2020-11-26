@@ -4,7 +4,4 @@ RESULT: Totally 1 state:
 MEMORY DUMP:
 --------------- Fields: ---------------
 _newField ==> {this <- field}
---------------- Stack: ---------------
-key = this, value = (HeapRef this to VSharp.Test.Tests.Typecast.Pawn)
---------------- Initialized types: ---------------
-{ VSharp.Test.Tests.Typecast.Pawn }
+Initialized types = { VSharp.Test.Tests.Typecast.Pawn }

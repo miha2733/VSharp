@@ -4,5 +4,4 @@ RESULT: Totally 1 state:
 MEMORY DUMP:
 --------------- Types tokens: ---------------
 2 ==> System.Object
---------------- Initialized types: ---------------
-{ System.Object, VSharp.Test.Tests.Generic.GenericClass`2[System.Object,System.Int32], VSharp.Test.Tests.Generic.SpecializeGenerics }
+Initialized types = { System.Object, VSharp.Test.Tests.Generic.GenericClass`2[System.Object,System.Int32], VSharp.Test.Tests.Generic.SpecializeGenerics }

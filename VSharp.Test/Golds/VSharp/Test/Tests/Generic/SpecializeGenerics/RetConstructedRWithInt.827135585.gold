@@ -6,5 +6,4 @@ MEMORY DUMP:
 2 ==> 0
 --------------- Types tokens: ---------------
 2 ==> System.Int32
---------------- Initialized types: ---------------
-{ VSharp.Test.Tests.Generic.GenericClass`2[System.Object,System.Int32], VSharp.Test.Tests.Generic.SpecializeGenerics }
+Initialized types = { VSharp.Test.Tests.Generic.GenericClass`2[System.Object,System.Int32], VSharp.Test.Tests.Generic.SpecializeGenerics }

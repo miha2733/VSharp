@@ -6,5 +6,4 @@ MEMORY DUMP:
 System.Int32[,] ==> {2[0] <- 4; 2[1] <- 5}
 --------------- Types tokens: ---------------
 2 ==> System.Int32[,]
---------------- Initialized types: ---------------
-{ System.Array, VSharp.Test.Tests.PDR, System.Int32[,] }
+Initialized types = { System.Array, VSharp.Test.Tests.PDR, System.Int32[,] }

@@ -7,8 +7,7 @@ Path condition: !(5 == x)
 2 ==> 42
 --------------- Types tokens: ---------------
 2 ==> System.Int32
---------------- Initialized types: ---------------
-{ VSharp.Test.Tests.BoxUnbox }
+Initialized types = { VSharp.Test.Tests.BoxUnbox }
 
 (HeapRef 2 to System.Int32)
 MEMORY DUMP:
@@ -17,5 +16,4 @@ Path condition: 5 == x
 2 ==> x
 --------------- Types tokens: ---------------
 2 ==> System.Int32
---------------- Initialized types: ---------------
-{ VSharp.Test.Tests.BoxUnbox }
+Initialized types = { VSharp.Test.Tests.BoxUnbox }

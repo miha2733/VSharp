@@ -3,5 +3,4 @@ RESULT: Totally 1 state:
 (HeapRef obj to VSharp.Test.Tests.Typecast.Pawn)
 MEMORY DUMP:
 Path condition: (obj <: VSharp.Test.Tests.Typecast.Pawn) | 0 == obj
---------------- Initialized types: ---------------
-{ VSharp.Test.Tests.Typecast.Typecast }
+Initialized types = { VSharp.Test.Tests.Typecast.Typecast }

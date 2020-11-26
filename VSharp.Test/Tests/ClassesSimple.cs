@@ -252,8 +252,8 @@ namespace VSharp.Test.Tests
     [TestSvmFixture]
     public static class ClassesSimpleHierarchy
     {
-        [TestSvm]
-        // [Ignore("Stuck until the engine becomes more effective")]
+        // [TestSvm]
+        [Ignore("Array.Copy is not implemented")]
         public static List<string> Test1() // TODO: check #do
         {
             ClassesSimpleHierarchyA2 a = new ClassesSimpleHierarchyA2(123, 42);

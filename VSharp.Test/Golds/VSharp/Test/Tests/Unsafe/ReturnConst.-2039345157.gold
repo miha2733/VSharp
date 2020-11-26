@@ -2,7 +2,4 @@ METHOD: System.Int32 VSharp.Test.Tests.Unsafe.ReturnConst()
 RESULT: Totally 1 state:
 421234123
 MEMORY DUMP:
---------------- Stack: ---------------
-key = __loc__0, value = 421234123
---------------- Initialized types: ---------------
-{ VSharp.Test.Tests.Unsafe }
+Initialized types = { VSharp.Test.Tests.Unsafe }

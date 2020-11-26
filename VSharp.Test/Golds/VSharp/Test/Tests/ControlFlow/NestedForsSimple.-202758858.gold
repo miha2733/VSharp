@@ -3,18 +3,9 @@ RESULT: Totally 2 states:
 0
 MEMORY DUMP:
 Path condition: !(0 < x)
---------------- Stack: ---------------
-key = __loc__0, value = 0
-key = __loc__1, value = 0
---------------- Initialized types: ---------------
-{ VSharp.Test.Tests.ControlFlow }
+Initialized types = { VSharp.Test.Tests.ControlFlow }
 
 1
 MEMORY DUMP:
 Path condition: !(1 < x) /\ 0 < x
---------------- Stack: ---------------
-key = __loc__2, value = 1
-key = __loc__0, value = 1
-key = __loc__1, value = 1
---------------- Initialized types: ---------------
-{ VSharp.Test.Tests.ControlFlow }
+Initialized types = { VSharp.Test.Tests.ControlFlow }

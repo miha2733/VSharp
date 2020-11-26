@@ -11,9 +11,4 @@ System.Int32[] ==> {3[0] <- 32; 3.3[0] <- 32}
 3.3 ==> System.Int32[]
 3.3.3 ==> System.Double[]
 3.3.4 ==> System.Double[]
---------------- CurrentTime: ---------------
-3.3
---------------- Stack: ---------------
-key = __loc__0, value = 2
---------------- Initialized types: ---------------
-{ VSharp.Test.Tests.PDR, System.Object, VSharp.Test.Tests.PDR+ClassWithOneField }
+Initialized types = { VSharp.Test.Tests.PDR, System.Object, VSharp.Test.Tests.PDR+ClassWithOneField }

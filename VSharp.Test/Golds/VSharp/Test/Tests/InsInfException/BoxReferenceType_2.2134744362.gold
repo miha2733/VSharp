@@ -1,0 +1,13 @@
+METHOD: System.Object VSharp.Test.Tests.InsInfException.BoxReferenceType_2(System.Boolean)
+RESULT: Totally 2 states:
+(HeapRef 2 to VSharp.Test.Tests.PDR+ClassWithOneField)
+MEMORY DUMP:
+Path condition: !f
+--------------- Types tokens: ---------------
+2 ==> VSharp.Test.Tests.PDR+ClassWithOneField
+Initialized types = { VSharp.Test.Tests.InsInfException, System.Object, VSharp.Test.Tests.PDR+ClassWithOneField }
+
+NullRef
+MEMORY DUMP:
+Path condition: f
+Initialized types = { VSharp.Test.Tests.InsInfException }

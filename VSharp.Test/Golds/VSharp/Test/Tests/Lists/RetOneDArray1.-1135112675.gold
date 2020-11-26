@@ -7,10 +7,7 @@ Path condition: !flag1 /\ !flag2
 System.Int32[] ==> {2[0] <- 5}
 --------------- Types tokens: ---------------
 2 ==> System.Int32[]
---------------- Stack: ---------------
-key = __loc__0, value = (HeapRef 2 to System.Int32[])
---------------- Initialized types: ---------------
-{ VSharp.Test.Tests.Lists }
+Initialized types = { VSharp.Test.Tests.Lists }
 
 (HeapRef 2 to System.Int32[])
 MEMORY DUMP:
@@ -21,10 +18,7 @@ System.Int32[] ==> {2[1] <- 42}
 System.Int32[] ==> {2[0] <- 5}
 --------------- Types tokens: ---------------
 2 ==> System.Int32[]
---------------- Stack: ---------------
-key = __loc__0, value = (HeapRef 2 to System.Int32[])
---------------- Initialized types: ---------------
-{ VSharp.Test.Tests.Lists }
+Initialized types = { VSharp.Test.Tests.Lists }
 
 (HeapRef 2 to System.Int32[])
 MEMORY DUMP:
@@ -35,7 +29,4 @@ System.Int32[] ==> {2[1] <- 89}
 System.Int32[] ==> {2[0] <- 5}
 --------------- Types tokens: ---------------
 2 ==> System.Int32[]
---------------- Stack: ---------------
-key = __loc__0, value = (HeapRef 2 to System.Int32[])
---------------- Initialized types: ---------------
-{ VSharp.Test.Tests.Lists }
+Initialized types = { VSharp.Test.Tests.Lists }

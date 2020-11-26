@@ -5,7 +5,4 @@ MEMORY DUMP:
 --------------- Fields: ---------------
 _xCoord ==> {this <- X}
 _yCoord ==> {this <- Y}
---------------- Stack: ---------------
-key = this, value = (HeapRef this to VSharp.Test.Tests.Typecast.Piece)
---------------- Initialized types: ---------------
-{ VSharp.Test.Tests.Typecast.Piece }
+Initialized types = { VSharp.Test.Tests.Typecast.Piece }

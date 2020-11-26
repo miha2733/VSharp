@@ -20,11 +20,7 @@ System.Int32[] ==> {
 System.Int32[] ==> {4[0] <- 10}
 --------------- Types tokens: ---------------
 4 ==> System.Int32[]
---------------- Stack: ---------------
-key = this, value = (HeapRef this to VSharp.Test.Tests.Lists)
-key = __loc__0, value = (HeapRef 4 to System.Int32[])
---------------- Initialized types: ---------------
-{ System.Runtime.CompilerServices.RuntimeHelpers, VSharp.Test.Tests.Lists }
+Initialized types = { System.Runtime.CompilerServices.RuntimeHelpers, VSharp.Test.Tests.Lists }
 
 1 + f
 MEMORY DUMP:
@@ -33,11 +29,7 @@ Path condition: !(0 == f) /\ !(1 + f < 0) /\ !(1 == f)
 System.Int32[] ==> {2[0] <- 1 + f}
 --------------- Types tokens: ---------------
 2 ==> System.Int32[]
---------------- Stack: ---------------
-key = this, value = (HeapRef this to VSharp.Test.Tests.Lists)
-key = __loc__0, value = (HeapRef 2 to System.Int32[])
---------------- Initialized types: ---------------
-{ VSharp.Test.Tests.Lists }
+Initialized types = { VSharp.Test.Tests.Lists }
 
 3
 MEMORY DUMP:
@@ -48,8 +40,4 @@ System.Int32[] ==> {3[0] <- 1; 3[1] <- 2; 3[2] <- 3}
 System.Int32[] ==> {3[0] <- 3}
 --------------- Types tokens: ---------------
 3 ==> System.Int32[]
---------------- Stack: ---------------
-key = this, value = (HeapRef this to VSharp.Test.Tests.Lists)
-key = __loc__0, value = (HeapRef 3 to System.Int32[])
---------------- Initialized types: ---------------
-{ System.Runtime.CompilerServices.RuntimeHelpers, VSharp.Test.Tests.Lists }
+Initialized types = { System.Runtime.CompilerServices.RuntimeHelpers, VSharp.Test.Tests.Lists }

@@ -6,8 +6,7 @@ Path condition: !(x < y) /\ x <= y
 --------------- Static fields: ---------------
 MaxValue ==> {System.Int32 <- 2147483647}
 MinValue ==> {System.Int32 <- -2147483648}
---------------- Initialized types: ---------------
-{ System.Int32, VSharp.Test.Tests.ClassesSimple }
+Initialized types = { System.Int32, VSharp.Test.Tests.ClassesSimple }
 
 1
 MEMORY DUMP:
@@ -15,8 +14,7 @@ Path condition: !(x < y) /\ !(x <= y)
 --------------- Static fields: ---------------
 MaxValue ==> {System.Int32 <- 2147483647}
 MinValue ==> {System.Int32 <- -2147483648}
---------------- Initialized types: ---------------
-{ System.Int32, VSharp.Test.Tests.ClassesSimple }
+Initialized types = { System.Int32, VSharp.Test.Tests.ClassesSimple }
 
 -1
 MEMORY DUMP:
@@ -24,5 +22,4 @@ Path condition: x < y
 --------------- Static fields: ---------------
 MaxValue ==> {System.Int32 <- 2147483647}
 MinValue ==> {System.Int32 <- -2147483648}
---------------- Initialized types: ---------------
-{ System.Int32, VSharp.Test.Tests.ClassesSimple }
+Initialized types = { System.Int32, VSharp.Test.Tests.ClassesSimple }

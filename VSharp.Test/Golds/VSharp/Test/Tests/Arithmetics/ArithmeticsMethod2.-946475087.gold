@@ -2,5 +2,4 @@ METHOD: System.Int32 VSharp.Test.Tests.Arithmetics.ArithmeticsMethod2(System.Int
 RESULT: Totally 1 state:
 0
 MEMORY DUMP:
---------------- Initialized types: ---------------
-{ VSharp.Test.Tests.Arithmetics }
+Initialized types = { VSharp.Test.Tests.Arithmetics }

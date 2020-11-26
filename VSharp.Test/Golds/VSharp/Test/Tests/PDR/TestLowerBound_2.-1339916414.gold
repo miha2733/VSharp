@@ -7,10 +7,7 @@ Path condition: !f
 System.Int32[] ==> {2[0] <- 100}
 --------------- Types tokens: ---------------
 2 ==> System.Int32[]
---------------- Stack: ---------------
-key = __loc__0, value = 0
---------------- Initialized types: ---------------
-{ System.Array, VSharp.Test.Tests.PDR }
+Initialized types = { System.Array, VSharp.Test.Tests.PDR }
 
 0
 MEMORY DUMP:
@@ -21,7 +18,4 @@ System.Int32[,] ==> {3[0] <- 4; 3[1] <- 5}
 --------------- Types tokens: ---------------
 2 ==> System.Int32[]
 3 ==> System.Int32[,]
---------------- Stack: ---------------
-key = __loc__0, value = 0
---------------- Initialized types: ---------------
-{ System.Array, VSharp.Test.Tests.PDR, System.Int32[,] }
+Initialized types = { System.Array, VSharp.Test.Tests.PDR, System.Int32[,] }

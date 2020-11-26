@@ -2,7 +2,4 @@ METHOD: System.Int32 VSharp.Test.Tests.Typecast.Piece.GetRate()
 RESULT: Totally 1 state:
 this.Rate
 MEMORY DUMP:
---------------- Stack: ---------------
-key = this, value = (HeapRef this to VSharp.Test.Tests.Typecast.Piece)
---------------- Initialized types: ---------------
-{ VSharp.Test.Tests.Typecast.Piece }
+Initialized types = { VSharp.Test.Tests.Typecast.Piece }
