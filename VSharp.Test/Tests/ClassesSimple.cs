@@ -252,7 +252,7 @@ namespace VSharp.Test.Tests
     [TestSvmFixture]
     public static class ClassesSimpleHierarchy
     {
-        [TestSvm]
+        // [TestSvm]
         // [Ignore("Stuck until the engine becomes more effective")]
         public static List<string> Test1() // TODO: check #do
         {
