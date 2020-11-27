@@ -249,8 +249,7 @@ namespace VSharp.Test.Tests
             return (T)a;
         }
 
-        // [TestSvm]
-        [Ignore("Cast should use PC: problem executions branches resulting in StructMerge")]
+        [TestSvm]
         public static object UnBoxStruct1()
         {
             PDR.A a = new PDR.A(42);
