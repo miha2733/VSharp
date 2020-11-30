@@ -260,7 +260,7 @@ namespace VSharp.Test.Tests
         // TESTS THAT SHOULD NOT HANDLE IIE
 
         // expecting IIE
-        [Ignore("Insufficient information is correct result")]
+        [TestSvm]
         public static int CallVirtualMethod_IIE_1(VirtualC virtualC)
         {
             if (virtualC == null) return 0;
@@ -269,7 +269,7 @@ namespace VSharp.Test.Tests
 
 
         // expecting IIE
-        [Ignore("Insufficient information is correct result")]
+        [TestSvm]
         public static int ArrayRank_IIE_1(Array array)
         {
             if (array == null) return 42;
@@ -296,7 +296,5 @@ namespace VSharp.Test.Tests
             int[,,] a = new int[2,3,5];
             return ArrayRank_IIE_1(a);
         }
-
-
     }
 }
