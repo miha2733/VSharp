@@ -592,9 +592,9 @@ module internal Terms =
 
     let isIdempotent = term >> function
         | Concrete _
-        | ConcreteHeapAddress _
         | Ref _ -> true
         | Ptr _ as v when isConcretePtr v -> true
+        | HeapRef(heapAddress, _) when isConcreteHeapAddress heapAddress -> true
         | _ -> false
 
     let rec timeOf (address : heapAddress) =

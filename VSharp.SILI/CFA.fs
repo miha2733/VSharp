@@ -408,7 +408,7 @@ module public CFA =
                         block.AddVertex dstVertex
                         let stateWithArgsOnFrame = ilintptr.ReduceFunctionSignature cilState'.state calledMethod this (Specified args) false (fun x -> x)
                         currentTime <- VectorTime.max currentTime stateWithArgsOnFrame.currentTime
-                        let numberToDrop = List.length args + if Option.isNone this then 0 else 1
+                        let numberToDrop = List.length args + if Option.isNone this || opCode = OpCodes.Newobj then 0 else 1
                         addEdge <| CallEdge(srcVertex, dstVertex, callSite, stateWithArgsOnFrame, numberToDrop)
                         bypass dstVertex stateWithArgsOnFrame.allocatedTypes stateWithArgsOnFrame.lengths stateWithArgsOnFrame.lowerBounds
                     | _ ->
