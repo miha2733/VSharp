@@ -592,7 +592,8 @@ module internal Terms =
 
     let isIdempotent = term >> function
         | Concrete _
-        | ConcreteHeapAddress _ -> true
+        | ConcreteHeapAddress _
+        | Ref _ -> true
         | Ptr _ as v when isConcretePtr v -> true
         | _ -> false
 
