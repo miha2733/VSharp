@@ -128,8 +128,8 @@ namespace VSharp.Test.Tests
             return default;
         }
 
-        // [TestSvm]
-        [Ignore("Barrier: no static cctor initialization during CFA-construction and assumptions-Engine")]
+        [TestSvm]
+        // [Ignore("Barrier: no static cctor initialization during CFA-construction and assumptions-Engine")]
         public static PDR.A MakeDefault_1()
         {
             return MakeObj<PDR.A>();

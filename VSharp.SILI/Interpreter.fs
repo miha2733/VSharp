@@ -648,15 +648,12 @@ and public ILInterpreter() as this =
                 hasValueCase
                 (fun state k -> k [{state with returnRegister = Some NullRef}])
                 k
-
         x.ReduceFunctionSignature cilState.state hasValueMethodInfo (Some v) (Specified []) false (fun state ->
         x.ReduceMethodBaseCall hasValueMethodInfo state (fun hasValueResults ->
         let hasValueResults = hasValueResults |> List.map (fun (state : state) -> Option.get state.returnRegister, state)
         Cps.List.mapk boxNullable hasValueResults (List.concat >> pushResultFromStateToCilState cilState)))
 
-
     member x.Box (cfg : cfg) offset (cilState : cilState) =
-
         let t = resolveTypeFromMetadata cfg (offset + OpCodes.Box.Size)
         let termType = Types.FromDotNetType cilState.state t
         match cilState.opStack with
@@ -667,6 +664,7 @@ and public ILInterpreter() as this =
                 else allocateValueTypeInHeap v cilState
             else [cilState]
         | _ -> __corruptedStack__()
+
     member private x.UnboxCommon (state : state) (obj : term) (t : System.Type) (handleRestResults : term * state -> term * state) (k : state list -> 'a) =
         let termType = Types.FromDotNetType state t
         assert(isReference obj)

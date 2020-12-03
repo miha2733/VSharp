@@ -628,8 +628,8 @@ namespace VSharp.Test.Tests
             return Math.Sqrt(4);
         }
 
-        // [TestSvm]
-        [Ignore("states are only merged for result vertex due to forward exploration design, so System.Math.cctor is called twice and then merged resulting in double allocation of array")]
+        [TestSvm]
+        // [Ignore("states are only merged for result vertex due to forward exploration design, so System.Math.cctor is called twice and then merged resulting in double allocation of array")]
         public static double SqrtMethod3(double x)
         {
             double y;
