@@ -36,6 +36,8 @@ module API =
         val HeapRef : heapAddress -> symbolicType -> term
         val Union : (term * term) list -> term
 
+        val getAddressTermFromRefOrPtr : (address -> term) -> term -> term
+
         val True : term
         val False : term
         val NullRef : term
@@ -56,6 +58,9 @@ module API =
 
         val IsIdempotent : term -> bool
 
+        val IsConcrete : term -> bool
+        val IsConcreteHeapAddress : term -> bool
+
         val (|True|_|) : term -> unit option
         val (|False|_|) : term -> unit option
         val (|Conjunction|_|) : term -> term list option
@@ -70,6 +75,7 @@ module API =
     module Types =
         val Numeric : System.Type -> symbolicType
         val ObjectType : symbolicType
+        val IndexType : symbolicType
 
         val FromDotNetType : state -> System.Type -> symbolicType
         val ToDotNetType : symbolicType -> System.Type
