@@ -44,6 +44,16 @@ module API =
         let HeapRef address baseType = HeapRef address baseType
         let Union gvs = Union gvs
 
+        let getAddressTermFromRefOrPtr getTerm refOrPtr =
+            let rec getLastAddress = function
+                | StructField(addr, _) -> getLastAddress addr
+                | addr -> addr
+            let getAddressTerm = term >> function
+                | Ptr(Some addr, _, _)
+                | Ref addr -> getLastAddress addr |> getTerm
+                | _ -> __unreachable__()
+            Merging.guardedApply getAddressTerm refOrPtr
+
         let True = True
         let False = False
         let NullRef = nullRef
@@ -76,6 +86,9 @@ module API =
 
         let IsIdempotent term = isIdempotent term
 
+        let IsConcrete term = isConcrete term
+        let IsConcreteHeapAddress addr = isConcreteHeapAddress addr
+
         let (|True|_|) t = (|True|_|) t
         let (|False|_|) t = (|False|_|) t
         let (|Conjunction|_|) term = Terms.(|Conjunction|_|) term.term
@@ -95,6 +108,7 @@ module API =
     module Types =
         let Numeric t = Types.Numeric t
         let ObjectType = Types.objectType
+        let IndexType = Types.indexType
 
         let FromDotNetType (state : state) t = t |> Types.Constructor.fromDotNetType |> Memory.substituteTypeVariables state
         let ToDotNetType t = Types.toDotNetType t
