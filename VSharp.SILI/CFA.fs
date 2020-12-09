@@ -595,12 +595,12 @@ module public CFA =
         let addStepEdge (d : bypassDataForEdges) createVertex (data, reachable : reachableConcreteInfo, currentTime, vertices : pdict<ip * operationalStack, int>) (cilState' : cilState) =
             assert(cilState'.ip = d.v)
             let s' = cilState'.state
-            let symbolicOpStack = makeSymbolicOpStack currentTime s'.opStack
-            let dstVertex, vertices = createVertex symbolicOpStack d vertices
+//            let symbolicOpStack = makeSymbolicOpStack currentTime s'.opStack
+            let dstVertex, vertices = createVertex s'.opStack d vertices
             addEdge <| StepEdge(d.srcVertex, dstVertex, cilState'.state)
 
             // TODO: handle cilState'.leaveInstructionExecuted
-            let bypassData = {d with u = d.v; srcVertex = dstVertex; uOut = d.vOut; opStack = symbolicOpStack}
+            let bypassData = {d with u = d.v; srcVertex = dstVertex; uOut = d.vOut; opStack = s'.opStack}
 
             let newReachable =
                 match d.v with
@@ -635,10 +635,11 @@ module public CFA =
                 assert(d.u <> Exit)
                 let offset = d.u.Offset()
 
-
+                let currentTime = VectorTime.advance currentTime
+                let symbolicOpStack = makeSymbolicOpStack currentTime d.opStack // TODO: ask misha whether this is right
                 let bci : bypassConcreteInfo = getConcreteInfo cfg reachable offset
                 Logger.trace "CFA.Bypass: %O; currentTime = %O;\nconcreteInfo = %O" d currentTime bci
-                let modifiedState = {initialState with currentTime = currentTime; startingTime = currentTime; opStack = d.opStack
+                let modifiedState = {initialState with currentTime = currentTime; startingTime = currentTime; opStack = symbolicOpStack
                                                        allocatedTypes = bci.allocatedTypes; lengths = bci.lengths; lowerBounds = bci.lowerBounds}
 
                 let initialCilState = cilState.MakeEmpty d.u modifiedState
