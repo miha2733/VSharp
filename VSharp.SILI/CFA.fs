@@ -582,12 +582,13 @@ module public CFA =
                     let wasAdded = used.TryAdd(bypassData, id)
                     Prelude.releaseAssert(wasAdded)
                     let srcVertex = block.vertices.[id]
+                    currentTime <- VectorTime.advance currentTime
                     Logger.printLog Logger.Trace "[Starting computing cfa for ip = %O]\nopStack = %O" ip opStack
                     System.Console.WriteLine("Making initial CFA state with STARTING TIME = {0}", currentTime)
                     let modifiedState = {initialState with allocatedTypes = allocatedTypes; lengths = lengths; lowerBounds = lowerBounds
                                                            currentTime = currentTime; startingTime = currentTime}
                     let initialCilState = {cilState.Empty with state = modifiedState}
-                    let modifiedOpStack = makeSymbolicOpStack initialState.startingTime opStack
+                    let modifiedOpStack = makeSymbolicOpStack modifiedState.startingTime opStack
                     let offset = ip.Offset()
                     match cfg.offsetsDemandingCall.ContainsKey offset with
                     | true ->
