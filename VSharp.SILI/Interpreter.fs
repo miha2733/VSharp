@@ -19,7 +19,7 @@ type public CodePortionInterpreter(ilInterpreter : ILInterpreter, codeLoc : ICod
 
     override x.MakeRecursiveState cilState =
         let methodId = ilInterpreter.MakeMethodIdentifier cfg.methodBase
-        let ilCodePortion = ILCodePortion(cilState.ip.Offset(), cilState.recursiveVertices, methodId, cilState.state)
+        let ilCodePortion = ILCodePortion(cilState.ip.Offset(), methodId, cilState.state)
         ilInterpreter.ReproduceEffect ilCodePortion cilState.state (List.map (fun (_, state) -> {cilState with state = state}))
 
     member x.Invoke state k =
@@ -28,18 +28,13 @@ type public CodePortionInterpreter(ilInterpreter : ILInterpreter, codeLoc : ICod
             | cilStates -> List.map (fun (st : cilState) -> st.state.returnRegister |?? Nop, st.state) cilStates
 
         let interpret state curV targetV rvs =
-            { cilState.MakeEmpty curV targetV state with recursiveVertices = rvs}
+            cilState.MakeEmpty curV state
             |> x.Interpret
             |> getResultsAndStates
         match codeLoc with
         | :? ILMethodMetadata ->
             ilInterpreter.InitializeStatics state cfg.methodBase.DeclaringType (List.map (fun state ->
             interpret state (Instruction 0) ip.Exit []) >> List.concat >> k)
-
-        | :? ILCodePortion as ilcode ->
-            let u = Instruction ilcode.VertexNumber
-            let rvs = ilcode.RecursiveVertices
-            interpret state u u rvs |> k
         | _ -> __notImplemented__()
     override x.MakeEpsilonState (ist : cilState) =
         let state = ist.state
@@ -49,7 +44,7 @@ type public CodePortionInterpreter(ilInterpreter : ILInterpreter, codeLoc : ICod
                         frames = state.frames
                         stack = (fst Memory.EmptyState.stack, snd state.stack)
                     }
-        cilState.MakeEmpty ist.ip ist.ip state
+        cilState.MakeEmpty ist.ip state
     override x.EvaluateOneStep cilState =
         assert (cilState.ip.CanBeExpanded())
         let lastOffset = Seq.last cfg.sortedOffsets
@@ -72,7 +67,7 @@ type public CodePortionInterpreter(ilInterpreter : ILInterpreter, codeLoc : ICod
                 List.collect ((<||) executeAllInstructions) list
             | list -> list |> List.map (fun (offset, cilSt) -> {cilSt with ip = offset})
         executeAllInstructions (Instruction startingOffset) cilState
-        |> List.filter (fun st -> st.IsFinished || not (st.ip.CanBeExpanded() && List.contains (st.ip.Offset()) st.recursiveVertices))
+        |> List.filter (fun st -> st.isCompleted || not (st.ip.CanBeExpanded()))
     override x.IsRecursiveState cilState =
         let isHeadOfLoop (cfg : cfg) v =
             let tv = cfg.dfsOut.[v]
@@ -80,39 +75,37 @@ type public CodePortionInterpreter(ilInterpreter : ILInterpreter, codeLoc : ICod
         match cilState.ip with
         | Instruction v ->
             isHeadOfLoop cfg v &&
-            let rv = cilState.recursiveVertices
             let methodId = ilInterpreter.MakeMethodIdentifier cfg.methodBase
-            let ilCodePortion = ILCodePortion(v, v :: rv, methodId, cilState.state)
+            let ilCodePortion = ILCodePortion(v, methodId, cilState.state)
             ilInterpreter.ShouldStopUnrolling ilCodePortion cilState.state
         | _ -> false
     override x.Add cilState = if cilState.ip <> ip.Exit then workingSet.Add cilState
     override x.ExploreInIsolation cilState =
         let u = cilState.ip.Offset()
-        let rv = cilState.recursiveVertices
         let methodId = ilInterpreter.MakeMethodIdentifier cfg.methodBase
-        let ilCodePortion = ILCodePortion(u, u :: rv, methodId, cilState.state)
+        let ilCodePortion = ILCodePortion(u, methodId, cilState.state)
         ilInterpreter.ReproduceEffect ilCodePortion cilState.state (List.map (fun (_, state) ->
-        {cilState with state = state; recursiveVertices = u :: rv}))
+        {cilState with state = state}))
     override x.HasNextState () = workingSet.Count <> 0
     override x.FindSimilar cilState =
         let areCapableForMerge (st1 : cilState) (st2 : cilState) =
-            st2.IsFinished
-         || st1.IsFinished
-         || st1.recursiveVertices = st2.recursiveVertices && st1.state.opStack = st2.state.opStack && st1.ip = st2.ip && st1.isFinished st1.ip && st2.isFinished st2.ip
+            st2.isCompleted
+         || st1.isCompleted
+         ||  st1.state.opStack = st2.state.opStack && st1.ip = st2.ip
         match Seq.tryFindIndex (areCapableForMerge cilState) workingSet with
         | None -> None
         | Some i -> let res = Some workingSet.[i]
                     workingSet.RemoveAt i
                     res
-    override x.GetResultStates () = results |> List.map (fun result -> { result with recursiveVertices = rv})
+    override x.GetResultStates () = results |> List.map id
 //        match results with
 //        | [] -> None
 //        | Some result -> Some ({ result with recursiveVertices = rv})
     override x.SetResultState newRes = results <- newRes :: results
     override x.IsResultState cilState =
         match results with
-        | [] -> cilState.IsFinished
-        | result :: _ -> cilState.IsFinished && result.ip = cilState.ip && result.state.opStack = cilState.state.opStack
+        | [] -> cilState.isCompleted
+        | result :: _ -> cilState.isCompleted && result.ip = cilState.ip && result.state.opStack = cilState.state.opStack
     override x.PickNext () =
         let st = workingSet.[0]
         workingSet.RemoveAt 0
@@ -1067,7 +1060,7 @@ and public ILInterpreter() as this =
             interpreter.Invoke
         | :? ILCodePortion as ilcode ->
             let ilmm = ilcode.FuncId :?> ILMethodMetadata
-            let interpreter = CodePortionInterpreter(x, ilcode, findCfg ilmm, ilcode.RecursiveVertices)
+            let interpreter = CodePortionInterpreter(x, ilcode, findCfg ilmm, [])
             interpreter.Invoke
         | _ -> internalfail "unhandled ICodeLocation instance"
     override x.MakeMethodIdentifier m = { methodBase = m } :> IMethodIdentifier
