@@ -229,7 +229,7 @@ namespace VSharp.Test.Tests
             return classWithOneField.x;
         }
 
-        [Ignore("No states obtained, because exception handling is not implemented")]
+        [Ignore("Exceptions handling")]
         public static void AlwaysNullReferenceException()
         {
             ReadFieldOfCLass(null);
@@ -562,7 +562,7 @@ namespace VSharp.Test.Tests
             return res;
         }
 
-        [Ignore("No states obtained, need to implement exceptions")]
+        [Ignore("Exceptions handling")]
         public static void CheckFinallyOrderForNestedTryBlocks2()
         {
             try
@@ -825,7 +825,7 @@ namespace VSharp.Test.Tests
             return new ClassWithClassInside(n);
         }
 
-        [Ignore("Newobj is not implemented properly for structs: where to allocate struct for ctor call")]
+        [TestSvm]
         public static int CreateStructViaNewobj(int n)
         {
             int res1 = new A(n).GetX();
@@ -935,7 +935,7 @@ namespace VSharp.Test.Tests
         }
 
         // expecting 87
-        [Ignore("fromDotNetType: internalfail \"byref type is not implemented!\"")]
+        [Ignore("Byref type is not implemented!")]
         public static int MutateStackValueFromPreviousFrame()
         {
             int x = 0;
