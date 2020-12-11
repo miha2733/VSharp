@@ -307,31 +307,6 @@ module public CFA =
             edge.Src.OutgoingEdges.Add edge
             edge.Dst.IncomingEdges.Add edge
 
-        let private executeInstructions (ilintpr : ILInterpreter) cfg (cilState : cilState) =
-            assert (cilState.ip.CanBeExpanded())
-            let startingOffset = cilState.ip.Offset ()
-            let endOffset =
-                let lastOffset = Seq.last cfg.sortedOffsets
-                if startingOffset = lastOffset then cfg.ilBytes.Length
-                else
-                    let index = cfg.sortedOffsets.BinarySearch startingOffset
-                    cfg.sortedOffsets.[index + 1]
-            let isIpOfCurrentBasicBlock = function
-                | Instruction offset -> startingOffset <= offset && offset < endOffset
-                | _ -> false
-
-            let rec executeAllInstructions erroredStates (offset : ip) cilState : cilState list=
-                let allStates = ilintpr.ExecuteInstruction cfg (offset.Offset()) cilState
-                let newErrors, goodStates = allStates |> List.partition (fun (_, cilState) -> cilState.HasException)
-                let allErrors = erroredStates @ List.map (fun (erroredOffset, (cilState : cilState)) -> {cilState with ip = erroredOffset}) newErrors
-
-                match goodStates with
-                | list when List.forall (fst >> (=) ip.Exit) list -> List.map (fun (_, state) -> {state with ip = ip.Exit; isCompleted = true}) list @ allErrors
-                | (nextIp, _)::xs as list when isIpOfCurrentBasicBlock nextIp && List.forall (fst >> (=) nextIp) xs ->
-                    List.collect ((<||) (executeAllInstructions allErrors)) list
-                | list -> allErrors @ (list |> List.map (fun (ip, cilState) -> {cilState with ip = ip; isCompleted = not <| isIpOfCurrentBasicBlock ip}))
-            executeAllInstructions [] (Instruction startingOffset) cilState
-
         let makeSymbolicOpStack time (opStack : term list) : term list=
             let mkSource (index : int) typ =
                 {shift = uint32 index; typ = typ; time = time}
@@ -455,7 +430,7 @@ module public CFA =
                     let q, used = renewQ cfg d.v [newD] (q, used)
                     if not <| PriorityQueue.isEmpty q then bypass q used newVertices newCurrentTime
                 else
-                    let newStates = executeInstructions ilintptr cfg initialCilState
+                    let newStates = ilintptr.ExecuteAllInstructions cfg initialCilState
                     let goodStates = newStates |> List.filter (fun (cilState : cilState) -> cilState.isCompleted && not cilState.HasException && cilState.ip = d.v)
                     let erroredStates = newStates |> List.filter (fun (cilState : cilState) -> cilState.HasException)
                     srcVertex.AddErroredStates erroredStates
