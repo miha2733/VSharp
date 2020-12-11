@@ -26,7 +26,6 @@ type public CodePortionInterpreter(ilInterpreter : ILInterpreter, codeLoc : ICod
         let getResultsAndStates = function
             | [] -> internalfail "Exception handling is not implemented!" // TODO: __unreachable__()
             | cilStates -> List.map (fun (st : cilState) -> st.state.returnRegister |?? Nop, st.state) cilStates
-
         let interpret state curV targetV rvs =
             cilState.MakeEmpty curV state
             |> x.Interpret
@@ -46,7 +45,7 @@ type public CodePortionInterpreter(ilInterpreter : ILInterpreter, codeLoc : ICod
                     }
         cilState.MakeEmpty ist.ip state
     override x.EvaluateOneStep cilState =
-        assert (cilState.ip.CanBeExpanded())
+        assert(cilState.ip.CanBeExpanded())
         let lastOffset = Seq.last cfg.sortedOffsets
         let startingOffset = cilState.ip.Offset ()
         let endOffset =
@@ -61,13 +60,15 @@ type public CodePortionInterpreter(ilInterpreter : ILInterpreter, codeLoc : ICod
             exceptionsSet.AddRange(List.map snd exceptions)
             match nonErroredStates with
             | [] -> []
-            | list when List.forall (fst >> (=) ip.Exit) list -> List.map (fun (_, state) -> { state with ip = ip.Exit}) list
+            | list when List.forall (fst >> (=) ip.Exit) list -> List.map (fun (_, state) -> { state with ip = ip.Exit; isCompleted = true }) list
             | (nextOffset, _)::xs as list when isOffsetOfCurrentVertex nextOffset
                                                && List.forall (fun (offset, _) -> offset = nextOffset && isOffsetOfCurrentVertex offset) xs ->
                 List.collect ((<||) executeAllInstructions) list
             | list -> list |> List.map (fun (offset, cilSt) -> {cilSt with ip = offset})
-        executeAllInstructions (Instruction startingOffset) cilState
-        |> List.filter (fun st -> st.isCompleted || not (st.ip.CanBeExpanded()))
+        let states = executeAllInstructions (Instruction startingOffset) cilState
+//        List.filter (fun st -> st.isCompleted || not (st.ip.CanBeExpanded())) states // TODO: need this?
+        states
+
     override x.IsRecursiveState cilState =
         let isHeadOfLoop (cfg : cfg) v =
             let tv = cfg.dfsOut.[v]

@@ -164,15 +164,13 @@ module public CFG =
             let vertices, tOut = cfg.graph.[u] |> Seq.fold (fun acc v -> if used.Contains v then acc else bypass acc v) acc
             cfg.dfsOut.[u] <- tOut
             u::vertices, tOut + 1
-
-        let vertices, _ = bypass ([], 1) 0 // TODO: what about final handlers (they are separated from main) ?
-
         let propagateMaxTOutForSCC (used : HashSet<offset>) max v =
             let rec helper v =
                 used.Add v |> ignore
                 cfg.sccOut.[v] <- max
                 cfg.reverseGraph.[v] |> Seq.iter (fun u -> if not <| used.Contains u then helper u)
             helper v
+        let vertices, _ = bypass ([], 1) 0 // TODO: what about final handlers (they are separated from main) ?
         let used = HashSet<offset>()
         vertices |> List.iter (fun v -> if not <| used.Contains v then propagateMaxTOutForSCC used cfg.dfsOut.[v] v)
 
