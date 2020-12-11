@@ -35,55 +35,27 @@ type public CodePortionInterpreter(ilInterpreter : ILInterpreter, codeLoc : ICod
             ilInterpreter.InitializeStatics state cfg.methodBase.DeclaringType (List.map (fun state ->
             interpret state (Instruction 0) ip.Exit []) >> List.concat >> k)
         | _ -> __notImplemented__()
-    override x.MakeEpsilonState (ist : cilState) =
-        let state = ist.state
-        let pcForEpsilon = !! (PC.squashPC state.pc)
-        let state = { Memory.EmptyState with
-                        pc = PC.add PC.empty pcForEpsilon
-                        frames = state.frames
-                        stack = (fst Memory.EmptyState.stack, snd state.stack)
-                    }
-        cilState.MakeEmpty ist.ip state
+    override x.MakeEpsilonState (ist : cilState) = internalfail "Explore in isolation is irrelevant"
+
     override x.EvaluateOneStep cilState =
-        let allStates = ilInterpreter.ExecuteAllInstructions cfg cilState
+        let allStates = ilInterpreter.ExecuteAllInstructions cfg {cilState with isCompleted = false}
         let errors = allStates |> List.filter (fun (cilState : cilState) -> cilState.HasException)
         exceptionsSet.AddRange( errors)
         let completedStates = allStates |> List.filter (fun (cilState : cilState) -> cilState.isCompleted && not <| cilState.HasException)
         completedStates
 
-    override x.IsRecursiveState cilState =
-        let isHeadOfLoop (cfg : cfg) v =
-            let tv = cfg.dfsOut.[v]
-            cfg.reverseGraph.[v] |> Seq.exists (fun u -> cfg.dfsOut.[u] < tv)
-        match cilState.ip with
-        | Instruction v ->
-            isHeadOfLoop cfg v &&
-            let methodId = ilInterpreter.MakeMethodIdentifier cfg.methodBase
-            let ilCodePortion = ILCodePortion(v, methodId, cilState.state)
-            ilInterpreter.ShouldStopUnrolling ilCodePortion cilState.state
-        | _ -> false
+    override x.IsRecursiveState cilState = false
     override x.Add cilState = if cilState.ip <> ip.Exit then workingSet.Add cilState
-    override x.ExploreInIsolation cilState =
-        let u = cilState.ip.Offset()
-        let methodId = ilInterpreter.MakeMethodIdentifier cfg.methodBase
-        let ilCodePortion = ILCodePortion(u, methodId, cilState.state)
-        ilInterpreter.ReproduceEffect ilCodePortion cilState.state (List.map (fun (_, state) ->
-        {cilState with state = state}))
+    override x.ExploreInIsolation cilState = internalfail "Explore in isolation is irrelevant"
     override x.HasNextState () = workingSet.Count <> 0
     override x.FindSimilar cilState =
-        let areCapableForMerge (st1 : cilState) (st2 : cilState) =
-            st2.isCompleted
-         || st1.isCompleted
-         ||  st1.state.opStack = st2.state.opStack && st1.ip = st2.ip
+        let areCapableForMerge (st1 : cilState) (st2 : cilState) =  st1.state.opStack = st2.state.opStack && st1.ip = st2.ip
         match Seq.tryFindIndex (areCapableForMerge cilState) workingSet with
         | None -> None
         | Some i -> let res = Some workingSet.[i]
                     workingSet.RemoveAt i
                     res
-    override x.GetResultStates () = results |> List.map id
-//        match results with
-//        | [] -> None
-//        | Some result -> Some ({ result with recursiveVertices = rv})
+    override x.GetResultStates () = results
     override x.SetResultState newRes = results <- newRes :: results
     override x.IsResultState cilState =
         match results with
@@ -1074,6 +1046,7 @@ and public ILInterpreter() as this =
         executeAllInstructions [] (Instruction startingOffset) cilState
 
     member x.ExecuteInstruction (cfg : cfg) (offset : int) (cilState : cilState) =
+        assert(not cilState.isCompleted)
         let opCode = Instruction.parseInstruction cfg.ilBytes offset
 //        Logger.printLog Logger.Trace "Executing instruction %O of %O [%O]" opCode cfg.methodBase cfg.methodBase.DeclaringType
         let nextTargets = Instruction.findNextInstructionOffsetAndEdges opCode cfg.ilBytes offset
