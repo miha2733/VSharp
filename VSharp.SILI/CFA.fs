@@ -415,7 +415,7 @@ module public CFA =
             let bypassData = {d with u = d.v; srcVertex = dstVertex; uOut = d.vOut; opStack = symbolicOpStack
                                      allocatedTypes = s'.allocatedTypes; lengths = s'.lengths; lowerBounds = s'.lowerBounds}
             let data = if d.v <> Exit then bypassData :: data else data
-            data, VectorTime.advance currentTime, vertices
+            data, VectorTime.max currentTime cilState'.state.currentTime, vertices
 
         let private computeCFAForBlock (ilintptr : ILInterpreter) (initialState : state) (cfa : cfa) (block : unitBlock<'a>) =
             let cfg = cfa.cfg
