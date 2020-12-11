@@ -278,6 +278,9 @@ module public CFA =
               allocatedTypes : pdict<concreteHeapAddress, symbolicType>
               lengths : pdict<arrayType, vectorRegion>
               lowerBounds : pdict<arrayType, vectorRegion> }
+            override x.ToString() =
+                let emptyState = {API.Memory.EmptyState with opStack = x.opStack; allocatedTypes = x.allocatedTypes; lengths = x.lengths; lowerBounds = x.lowerBounds}
+                sprintf "u = %O, id = %d; v = %O; state = %s" x.u x.srcVertex.Id x.v (Memory.Dump emptyState)
             override x.GetHashCode() = (x.u, x.v, x.srcVertex).GetHashCode()
             override x.Equals y =
                 match y with
@@ -404,6 +407,7 @@ module public CFA =
             // note: entry point and exit vertex must be added to unit block
             let rec bypass (q : IPriorityQueue<bypassDataForEdges>) (used : pset<bypassDataForEdges>) (vertices : PersistentHashMap<ip * operationalStack, int>) currentTime =
                 let d, q = PriorityQueue.pop q
+                Logger.trace "CFA.Bypass: %O; currentTime = %O" d currentTime
                 assert(PersistentSet.contains d used)
                 let srcVertex = d.srcVertex
                 assert(d.u <> Exit)
