@@ -5,6 +5,7 @@ open System.Collections.Generic
 
 open System.Reflection.Emit
 open System.Runtime.InteropServices
+open FSharpx.Collections
 open VSharp
 
 module public CFG =
@@ -18,6 +19,7 @@ module public CFG =
         sccOut : Dictionary<offset, int>               // maximum tOut of SCC-vertices
         graph : graph
         reverseGraph : graph
+        idoms : PersistentHashMap<offset, offset>
         clauses : ExceptionHandlingClause list
         offsetsDemandingCall : Dictionary<offset, OpCode * MethodBase>
     }
@@ -60,6 +62,7 @@ module public CFG =
             sccOut = Dictionary<_,_>()
             graph = Dictionary<_, _>()
             reverseGraph = Dictionary<_,_>()
+            idoms = PersistentHashMap.empty
             clauses = List.ofSeq mb.ExceptionHandlingClauses
             offsetsDemandingCall = Dictionary<_,_>()
         }
@@ -174,6 +177,39 @@ module public CFG =
         let used = HashSet<offset>()
         vertices |> List.iter (fun v -> if not <| used.Contains v then propagateMaxTOutForSCC used cfg.dfsOut.[v] v)
 
+    let private calculateDominators (cfg : cfgData) =
+        let allVertices = cfg.sortedOffsets |> Seq.fold (fun (set : pset<offset>) offset -> PersistentSet.add set offset) PersistentSet.empty
+        let doms = Seq.fold (fun map offset ->
+            if offset = 0 then PersistentHashMap.add offset (PersistentSet.add PersistentSet.empty offset) map
+            else PersistentHashMap.add offset allVertices map) PersistentHashMap.empty cfg.sortedOffsets
+
+        let findIntersection doms offset =
+            cfg.reverseGraph.[offset] |> Seq.fold (fun set u -> PersistentSet.intersect set <| PersistentHashMap.find offset doms) allVertices
+
+        let rec findFixPoint initialDoms =
+            let somethingChanged, doms = cfg.sortedOffsets |> Seq.fold (fun (somethingChanged, doms) offset ->
+                let s = PersistentHashMap.find offset doms
+                let s' = PersistentSet.add (findIntersection doms offset) offset
+                if s <> s' then true, PersistentHashMap.add offset s' doms
+                else somethingChanged, doms) (false, initialDoms)
+            if somethingChanged then findFixPoint doms else doms
+
+        let doms  = findFixPoint doms
+        let idoms = Seq.fold (fun idoms offset ->
+                if offset = 0 then PersistentHashMap.add offset offset idoms
+                else
+                     let domsWithoutOffset = PersistentSet.remove (PersistentHashMap.find offset doms) offset
+                     let number, _ = PersistentSet.fold (fun (index0, set0) (index1 : offset) ->
+                            if Option.isNone index0 then (Some index1), PersistentHashMap.find index1 doms
+                            else
+                                let set1 = PersistentHashMap.find index1 doms
+                                if PersistentSet.cardinality set1 < PersistentSet.cardinality set0 then (Some index1), set1
+                                else index0, set0) (None, PersistentSet.empty) domsWithoutOffset
+                     PersistentHashMap.add offset (Option.get number) idoms
+                    ) PersistentHashMap.empty (cfg.sortedOffsets)
+        idoms
+
+
     let build (methodBase : MethodBase) =
         let interimData, cfgData = createData methodBase
         let methodBody = methodBase.GetMethodBody()
@@ -183,4 +219,4 @@ module public CFG =
         Seq.iter (dfsExceptionHandlingClause methodBase interimData used ilBytes) methodBody.ExceptionHandlingClauses
         let cfg = addVerticesAndEdges cfgData interimData
         orderEdges (HashSet<offset>()) cfg
-        cfg
+        { cfg with idoms = calculateDominators cfg }
