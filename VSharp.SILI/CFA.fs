@@ -274,6 +274,7 @@ module public CFA =
             }
             with
             static member fromState (s : state) = {allocatedTypes = s.allocatedTypes; lengths = s.lengths; lowerBounds = s.lowerBounds}
+            override x.ToString() = Memory.Dump <| {Memory.EmptyState with allocatedTypes = x.allocatedTypes; lengths = x.lengths; lowerBounds = x.lowerBounds}
         type reachableConcreteInfo = {map : pdict<offset, pset<bypassConcreteInfo>> }
             with
             static member find offset (reachable : reachableConcreteInfo) =
@@ -441,7 +442,6 @@ module public CFA =
             // note: entry point and exit vertex must be added to unit block
             let rec bypass (q : IPriorityQueue<bypassDataForEdges>) (used : pset<bypassDataForEdges>) (reachable : reachableConcreteInfo) (vertices : pdict<ip * operationalStack, int>) currentTime =
                 let d, q = PriorityQueue.pop q
-                Logger.trace "CFA.Bypass: %O; currentTime = %O" d currentTime
                 assert(PersistentSet.contains d used)
                 let srcVertex = d.srcVertex
                 assert(d.u <> Exit)
@@ -449,6 +449,7 @@ module public CFA =
 
 
                 let bci : bypassConcreteInfo = getConcreteInfo cfg reachable offset
+                Logger.trace "CFA.Bypass: %O; currentTime = %O;\nconcreteInfo = %O" d currentTime bci
                 let modifiedState = {initialState with currentTime = currentTime; startingTime = currentTime; opStack = d.opStack
                                                        allocatedTypes = bci.allocatedTypes; lengths = bci.lengths; lowerBounds = bci.lowerBounds}
 

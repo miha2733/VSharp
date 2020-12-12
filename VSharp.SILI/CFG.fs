@@ -184,7 +184,8 @@ module public CFG =
             else PersistentHashMap.add offset allVertices map) PersistentHashMap.empty cfg.sortedOffsets
 
         let findIntersection doms offset =
-            cfg.reverseGraph.[offset] |> Seq.fold (fun set u -> PersistentSet.intersect set <| PersistentHashMap.find offset doms) allVertices
+            if Seq.isEmpty <| cfg.reverseGraph.[offset] then PersistentSet.empty
+            else cfg.reverseGraph.[offset] |> Seq.fold (fun set u -> PersistentSet.intersect set <| PersistentHashMap.find u doms) allVertices
 
         let rec findFixPoint initialDoms =
             let somethingChanged, doms = cfg.sortedOffsets |> Seq.fold (fun (somethingChanged, doms) offset ->
@@ -203,12 +204,15 @@ module public CFG =
                             if Option.isNone index0 then (Some index1), PersistentHashMap.find index1 doms
                             else
                                 let set1 = PersistentHashMap.find index1 doms
-                                if PersistentSet.cardinality set1 < PersistentSet.cardinality set0 then (Some index1), set1
+                                if PersistentSet.cardinality set1 > PersistentSet.cardinality set0 then (Some index1), set1
                                 else index0, set0) (None, PersistentSet.empty) domsWithoutOffset
                      PersistentHashMap.add offset (Option.get number) idoms
                     ) PersistentHashMap.empty (cfg.sortedOffsets)
         idoms
 
+    let private dumpDominators (idoms : PersistentHashMap<offset, offset>) =
+        Logger.trace "CFG.IDominators:\n"
+        idoms |> PersistentHashMap.toSeq |> Seq.iter (fun (k, v) -> Logger.trace "offset = %d, idom = %d\n" k v)
 
     let build (methodBase : MethodBase) =
         let interimData, cfgData = createData methodBase
@@ -219,4 +223,6 @@ module public CFG =
         Seq.iter (dfsExceptionHandlingClause methodBase interimData used ilBytes) methodBody.ExceptionHandlingClauses
         let cfg = addVerticesAndEdges cfgData interimData
         orderEdges (HashSet<offset>()) cfg
-        { cfg with idoms = calculateDominators cfg }
+        let idoms = calculateDominators cfg
+        dumpDominators idoms
+        { cfg with idoms = idoms}
