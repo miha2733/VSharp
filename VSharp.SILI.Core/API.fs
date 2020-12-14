@@ -89,6 +89,8 @@ module API =
         let IsConcrete term = isConcrete term
         let IsConcreteHeapAddress addr = isConcreteHeapAddress addr
 
+        let GetConcreteHeapAddress addr = getConcreteHeapAddress addr
+
         let (|True|_|) t = (|True|_|) t
         let (|False|_|) t = (|False|_|) t
         let (|Conjunction|_|) term = Terms.(|Conjunction|_|) term.term
@@ -122,6 +124,9 @@ module API =
         let IsReal t = Types.isReal t
         let IsPointer t = Types.isPointer t
         let IsValueType t = Types.isValueType t
+
+        let IsArrayType t = Types.isArray t
+
 
         let String = Types.String
         let (|StringType|_|) t = Types.(|StringType|_|) t
