@@ -616,7 +616,10 @@ module public CFA =
                 assert (PersistentSet.cardinality set = 1)
                 set |> PersistentSet.toSeq |> Seq.head
             else
-                getConcreteInfo cfg reachable (PersistentHashMap.find offset cfg.idoms)
+                let idoms : seq<int*int> = PersistentHashMap.toSeq cfg.idoms
+                if not <| Seq.exists (fun (x, y) -> x = offset) idoms then ()
+                let x = PersistentHashMap.find offset cfg.idoms
+                getConcreteInfo cfg reachable x
 
         let private computeCFAForBlock (ilintptr : ILInterpreter) (initialState : state) (cfa : cfa) (block : unitBlock<'a>) =
             let cfg = cfa.cfg

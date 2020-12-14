@@ -196,18 +196,21 @@ module public CFG =
             if somethingChanged then findFixPoint doms else doms
 
         let doms  = findFixPoint doms
-        let idoms = Seq.fold (fun idoms offset ->
-                if offset = 0 then PersistentHashMap.add offset offset idoms
-                else
-                     let domsWithoutOffset = PersistentSet.remove (PersistentHashMap.find offset doms) offset
-                     let number, _ = PersistentSet.fold (fun (index0, set0) (index1 : offset) ->
-                            if Option.isNone index0 then (Some index1), PersistentHashMap.find index1 doms
-                            else
-                                let set1 = PersistentHashMap.find index1 doms
-                                if PersistentSet.cardinality set1 > PersistentSet.cardinality set0 then (Some index1), set1
-                                else index0, set0) (None, PersistentSet.empty) domsWithoutOffset
-                     PersistentHashMap.add offset (Option.get number) idoms
-                    ) PersistentHashMap.empty (cfg.sortedOffsets)
+        let f idoms offset =
+            if offset = 0 then PersistentHashMap.add offset offset idoms
+            else
+                 let domsWithoutOffset = PersistentSet.remove (PersistentHashMap.find offset doms) offset
+                 let g (index0, set0) (index1 : offset) =
+                    if Option.isNone index0 then (Some index1), PersistentHashMap.find index1 doms
+                    else
+                        let set1 = PersistentHashMap.find index1 doms
+                        if PersistentSet.cardinality set1 > PersistentSet.cardinality set0 then (Some index1), set1
+                        else index0, set0
+                 let number, _ = PersistentSet.fold g (None, PersistentSet.empty) domsWithoutOffset
+                 match number with
+                 | Some number -> PersistentHashMap.add offset number idoms
+                 | None -> PersistentHashMap.empty
+        let idoms = Seq.fold f PersistentHashMap.empty (cfg.sortedOffsets)
         idoms
 
     let private dumpDominators (idoms : PersistentHashMap<offset, offset>) =
