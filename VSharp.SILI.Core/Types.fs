@@ -281,7 +281,7 @@ module internal Types =
         | t -> (toDotNetType t).IsValueType
 
     let isConcreteSubtype t1 t2 =
-        (toDotNetType t2).IsAssignableFrom (toDotNetType t1)
+        t1 = Null && (not <| isValueType t2) || (toDotNetType t2).IsAssignableFrom (toDotNetType t1) // do not reorder operands of "OR"!
 
 type symbolicType with
     interface IAtomicRegion<symbolicType> with

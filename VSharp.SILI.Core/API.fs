@@ -82,8 +82,6 @@ module API =
         let IsReference term = isReference term
         let IsNullReference term = Pointers.isNull term
 
-        let CanWrite value cellType = MemoryRegion.canWrite value cellType
-
         let IsIdempotent term = isIdempotent term
 
         let IsConcrete term = isConcrete term

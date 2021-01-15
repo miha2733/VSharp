@@ -18,8 +18,7 @@ type opStackSource =
         override x.Time = x.time
         override x.TypeOfLocation = x.typ
         override x.Compose state =
-            let result = List.item (int x.shift) state.opStack
-            assert(CanWrite result x.typ) // TODO: what if (0:int) is assigned to reference?
+            let result = List.item (int x.shift) state.opStack // TODO: we need this assert? Can it fail? #Kostya
             result
 
 [<StructuralEquality;NoComparison>]
