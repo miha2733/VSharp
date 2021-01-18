@@ -28,11 +28,6 @@ type public ExplorerBase() =
     member x.Explore (funcId : IFunctionIdentifier) (k : codeLocationSummary seq -> 'a) =
             let k = API.Reset(); fun x -> API.Restore(); k x
             CurrentlyBeingExploredLocations.Add funcId |> ignore
-            let initClosure frames =
-                let state = List.foldBack (fun frame state ->
-                    let fr = frame.entries |> List.map (fun e -> e.key, Unspecified, e.typ)
-                    Memory.NewStackFrame state frame.func fr true) frames Memory.empty
-                { state with pc = PC.empty; frames = frames}
             let initialStates = x.FormInitialState funcId
             let removePCs this thisIsNotNull =
                 List.map (fun (res, state) -> res, if Option.isSome this && thisIsNotNull <> True then Memory.removePathCondition state thisIsNotNull else state)
@@ -42,26 +37,6 @@ type public ExplorerBase() =
                 |> List.map (fun (result, state) -> {result = result; state = state})
             CurrentlyBeingExploredLocations.Remove funcId |> ignore
             k resultsAndStates
-
-//            match codeLoc with
-//            | :? IFunctionIdentifier as funcId ->
-////                let state, this, thisIsNotNull(*, isMethodOfStruct*) = x.FormInitialState funcId
-//                let initialStates = x.FormInitialState funcId
-//                let removePCs this thisIsNotNull =
-//                    List.map (fun (res, state) -> res, if Option.isSome this && thisIsNotNull <> True then Memory.removePathCondition state thisIsNotNull else state)
-//                let invoke (state, this, thisIsNotNull) = x.Invoke funcId state (removePCs this thisIsNotNull)
-//                let resultsAndStates =
-//                    initialStates |> List.map invoke |> List.concat
-//                    |> List.map (fun (result, state) -> {result = result; state = state})
-//                CurrentlyBeingExploredLocations.Remove funcId |> ignore
-//                k resultsAndStates
-////                    let state = if isMethodOfStruct then Memory.popStack state else state
-//            | :? ILCodePortion as ilcode ->
-//                let state = initClosure ilcode.Frames
-//                x.Invoke ilcode state (fun resultsAndStates ->
-//                    CurrentlyBeingExploredLocations.Remove ilcode |> ignore
-//                    resultsAndStates |> List.map (fun (result, state) -> {result = result; state = state}) |> k)
-//            | _ -> __notImplemented__()
 
     member private x.ReproduceEffectOrUnroll areWeStuck body (id : IFunctionIdentifier) state k =
         if areWeStuck then
@@ -210,7 +185,7 @@ type public ExplorerBase() =
         let methodId = x.MakeMethodIdentifier ctor
         assert (not <| exceptionType.IsValueType)
         let reference, state = Memory.AllocateDefaultClass state (Types.FromDotNetType state exceptionType)
-        let invoke= x.Invoke methodId
+        let invoke = x.Invoke methodId
         let withResult result (state : state) = {state with returnRegister = Some result}
         x.ReduceFunctionSignature state ctor (Some reference) (Specified arguments) false (fun state ->
         x.ReduceFunction state methodId invoke (fun resultsAndStates ->
@@ -249,7 +224,7 @@ type public ExplorerBase() =
             let result = Memory.fillHoles state summary.result
             List.map (withFst result) newStates) >> List.ofSeq >> List.concat >> k)
 
-    abstract member Invoke : IFunctionIdentifier -> (state -> ((term * state) list -> 'a) -> 'a)
+    abstract member Invoke : IFunctionIdentifier -> state -> ((term * state) list -> 'a) -> 'a
 
     abstract member MakeMethodIdentifier : MethodBase -> IMethodIdentifier
 
