@@ -62,7 +62,6 @@ type public MethodInterpreter((*ilInterpreter : ILInterpreter, funcId : IFunctio
             | Some newSt -> interpret' newSt
             | None -> ()
         if not <| x.Used cfg start.ip then interpret' start
-        else ()
 
     override x.Invoke funcId state k =
         workingSet.TryAdd(funcId, List<cilState>())    |> ignore
@@ -338,7 +337,7 @@ and public ILInterpreter(methodInterpreter : MethodInterpreter) as this =
                 x.CallMethodFromTermType state typ ancestorMethod k
             let tryToCallForBaseType (state : state) (k : state list -> 'a) =
                 StatedConditionalExecutionAppendResults state
-                    (fun state k -> k (API.Types.TypeIsRef baseType this, state))
+                    (fun state k -> k (API.Types.TypeIsRef state baseType this, state))
                     (callForConcreteType baseType)
                     (x.CallAbstract methodId)
                     k
@@ -425,7 +424,7 @@ and public ILInterpreter(methodInterpreter : MethodInterpreter) as this =
     member private x.CommonCastClass (state : state) (term : term) (typ : symbolicType) k =
         let term = castReferenceToPointerIfNeeded term typ state
         StatedConditionalExecutionAppendResults state
-            (fun state k -> k (IsNullReference term ||| Types.IsCast typ term, state))
+            (fun state k -> k (IsNullReference term ||| Types.IsCast state typ term, state))
             (fun state k -> k [{state with returnRegister = Some <| Types.Cast term typ}])
             (x.Raise x.InvalidCastException)
             k
@@ -618,7 +617,7 @@ and public ILInterpreter(methodInterpreter : MethodInterpreter) as this =
                     if Types.IsValueType typeOfValue then
                         checkTypeMismatchBasedOnTypeOfValue (Types.TypeIsType typeOfValue baseType) state k
                     else
-                        checkTypeMismatchBasedOnTypeOfValue (Types.RefIsType value baseType) state k
+                        checkTypeMismatchBasedOnTypeOfValue (Types.RefIsType state value baseType) state k
                 let length = Memory.ArrayLengthByDimension state arrayRef (MakeNumber 0)
                 x.AccessArray checkTypeMismatch state length index k
             x.NpeOrInvokeStatement cilState.state arrayRef checkedStElem (List.map (fun state -> cilState |> withState state |> withOpStack stack))
@@ -705,7 +704,7 @@ and public ILInterpreter(methodInterpreter : MethodInterpreter) as this =
         let canCastValueTypeToNullableTargetCase (state : state) =
             let underlyingTypeOfNullableT = System.Nullable.GetUnderlyingType t
             StatedConditionalExecutionAppendResults state
-                (fun state k -> k (Types.RefIsType obj (Types.FromDotNetType state underlyingTypeOfNullableT), state))
+                (fun state k -> k (Types.RefIsType state obj (Types.FromDotNetType state underlyingTypeOfNullableT), state))
                 (fun state k ->
                     let value = Memory.ReadSafe state obj
                     let nullableTerm = Memory.DefaultOf termType
@@ -721,7 +720,7 @@ and public ILInterpreter(methodInterpreter : MethodInterpreter) as this =
                 canCastValueTypeToNullableTargetCase state
             else
                 StatedConditionalExecutionAppendResults state
-                    (fun state k -> k (Types.IsCast termType obj, state)) // TODO: Why not Types.RefIsType method?
+                    (fun state k -> k (Types.IsCast state termType obj, state)) // TODO: Why not Types.RefIsType method?
                     (fun state k ->
                         let res, state = handleRestResults(Types.Cast obj termType |> HeapReferenceToBoxReference, state)
                         k [{state with returnRegister = Some res}])
@@ -751,13 +750,14 @@ and public ILInterpreter(methodInterpreter : MethodInterpreter) as this =
         | _ :: _ when t.IsGenericParameter -> __insufficientInformation__ "Can't introduce generic type X for equation: T = Nullable<X>"  // TODO: Nullable.GetUnderlyingType for generics; use meta-information of generic type parameter
         | obj :: stack ->
             let state = {state with opStack = stack}
-            StatedConditionalExecutionAppendResults state
-                (fun state k -> k (Types.TypeIsType termType valueType, state))
-                (fun state k ->
-                    let handleRestResults (address, state : state) = Memory.ReadSafe state address, state
-                    x.UnboxCommon state obj t handleRestResults k)
-                (fun state k -> x.CommonCastClass state obj termType k)
-                (pushResultFromStateToCilState cilState)
+            let res = StatedConditionalExecutionAppendResults state
+                        (fun state k -> k (Types.TypeIsType termType valueType, state))
+                        (fun state k ->
+                            let handleRestResults (address, state : state) = Memory.ReadSafe state address, state
+                            x.UnboxCommon state obj t handleRestResults k)
+                        (fun state k -> x.CommonCastClass state obj termType k)
+                        (pushResultFromStateToCilState cilState)
+            res
         | _ -> __corruptedStack__()
 
     member private this.CommonDivRem performAction (cilState : cilState) =
