@@ -788,7 +788,8 @@ module internal Memory =
         | _ -> term
 
     and fillHoles state term =
-        Substitution.substitute (fillHole state) (substituteTypeVariables state) (composeTime state) term
+        let res = Substitution.substitute (fillHole state) (substituteTypeVariables state) (composeTime state) term
+        res
 
     type heapReading<'key, 'reg when 'key : equality and 'key :> IMemoryKey<'key, 'reg> and 'reg : equality and 'reg :> IRegion<'reg>> with
         interface IMemoryAccessConstantSource with

@@ -701,7 +701,7 @@ and public ILInterpreter() as this =
                     let nullableTerm = Memory.WriteStructField nullableTerm valueField value
                     let nullableTerm = Memory.WriteStructField nullableTerm hasValueField (MakeBool true)
                     let address, state = Memory.BoxValueType state nullableTerm
-                    let res, state = handleRestResults(address, state)
+                    let res, state = handleRestResults (address, state)
                     k [{state with returnRegister = Some res}])
 //                        let nullableConstructor = t.GetConstructor([| underlyingTypeOfNullableT |])
 //                        let modifyResults results = Cps.List.map (fun (_, cilState) -> handleRestResults (address, cilState)) results k
@@ -718,7 +718,7 @@ and public ILInterpreter() as this =
                 StatedConditionalExecutionAppendResults state
                     (fun state k -> k (Types.IsCast termType obj, state)) // TODO: Why not Types.RefIsType method?
                     (fun state k ->
-                        let res, state = handleRestResults(Types.Cast obj termType |> HeapReferenceToBoxReference, state)
+                        let res, state = handleRestResults (Types.Cast obj termType |> HeapReferenceToBoxReference, state)
                         k [{state with returnRegister = Some res}])
                     (fun (state : state) k -> x.Raise x.InvalidCastException state k)
 
