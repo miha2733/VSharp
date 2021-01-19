@@ -158,8 +158,7 @@ module internal InstructionsSet =
             (fun state k -> elseBranch {cilState with state = state} k)
             (fun x y -> List.append x y |> List.singleton)
             (List.head >> k)
-//    let GuardedApply (cilState : cilState) term f k =
-    let GuardedApply (cilState : cilState) term (f : cilState -> term -> ('a list -> 'b) -> 'b) (k : 'a list -> 'b) =
+    let GuardedApply (cilState : cilState) term f k =
         GuardedStatedApplyk
             (fun state term k -> f {cilState with state = state} term k)
             cilState.state term id (List.concat >> k)

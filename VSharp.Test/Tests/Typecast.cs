@@ -47,10 +47,9 @@ namespace VSharp.Test.Tests.Typecast
             Y = y;
         }
 
-        [TestSvm]
         public double Norm()
         {
-            //TODO: Incorrect printed string of elements in the array
+            // TODO: Incorrect printed string of elements in the array
             return Math.Sqrt(X * X + Y * Y);
         }
     }

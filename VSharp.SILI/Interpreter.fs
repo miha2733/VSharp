@@ -260,21 +260,19 @@ and public ILInterpreter() as this =
             else
                 x.ReduceMethodBaseCall targetMethod state k
 
-    member x.CallVirtualMethod (_ : MethodInfo) (_ : state) (_ : state list -> 'a) =
-        __notImplemented__()
-
+    member x.CallVirtualMethod (ancestorMethod : MethodInfo) (state : state) (k : state list -> 'a) = __notImplemented__()
 //        let methodId = x.MakeMethodIdentifier ancestorMethod
 //        let this = Memory.ReadLocalVariable state (ThisKey ancestorMethod)
-//        let callVirtual cilState this k =
+//        let callVirtual state this k =
 //            let baseType = BaseTypeOfHeapRef state this
-////            let sightType = SightTypeOfRef this
-//            let callForConcreteType typ state k =
-//                x.CallMethodFromTermType state typ ancestorMethod k
+//            let sightType = TypeOf this
+//            let callForConcreteType typ (сilState : cilState) k =
+//                x.CallMethodFromTermType сilState.state typ ancestorMethod k
 //            let tryToCallForBaseType cilState =
 //                StatedConditionalExecutionCIL cilState
 //                    (fun state k -> k (API.Types.TypeIsRef baseType this &&& API.Types.TypeIsType baseType sightType, state))
 //                    (callForConcreteType baseType)
-//                    (x.CallAbstract funcId)
+//                    (x.CallAbstract methodId)
 //            let tryToCallForSightType cilState =
 //                StatedConditionalExecutionCIL cilState
 //                    (fun state k -> k (API.Types.TypeIsRef sightType this, state))
@@ -283,9 +281,9 @@ and public ILInterpreter() as this =
 //            let sightDotNetType = Types.ToDotNetType sightType
 //            let baseDotNetType = Types.ToDotNetType baseType
 //            if sightDotNetType.IsInterface && baseDotNetType.IsInterface
-//                then x.CallAbstract funcId cilState k
-//                else tryToCallForSightType cilState k
-//        GuardedApply cilState this callVirtual k
+//                then x.CallAbstract methodId state k
+//                else tryToCallForSightType state k
+//        GuardedApplyForState state this callVirtual k
 
     member x.CallAbstract funcId state k =
         x.CallAbstractMethod funcId state (fun (result, state) ->
@@ -391,7 +389,7 @@ and public ILInterpreter() as this =
         let this, cilState = if not calledMethodBase.IsStatic then popOperationalStack cilState else None, cilState
         x.ReduceFunctionSignature cilState.state calledMethodBase this (Specified args) false (fun state ->
         x.CommonCall calledMethodBase state (pushResultFromStateToCilState cilState))
-     member x.CommonCallVirt (ancestorMethodBase : MethodBase) stateWithArgsOnFrame k =
+    member x.CommonCallVirt (ancestorMethodBase : MethodBase) stateWithArgsOnFrame k =
         let this = Memory.ReadThis stateWithArgsOnFrame ancestorMethodBase
         let call (state : state) k =
             x.InitializeStatics state ancestorMethodBase.DeclaringType (List.map (fun state ->

@@ -69,13 +69,6 @@ type IFunctionIdentifier =
     abstract IsConstructor : bool
     abstract Method : System.Reflection.MethodBase
 
-type EmptyIdentifier() =
-    interface IFunctionIdentifier with
-        override x.Location = null
-        override x.ReturnType = typeof<Void>
-        override x.IsConstructor = false
-        override x.Method = null
-
 [<StructuralEquality;NoComparison>]
 type operation =
     | Operator of OperationType
@@ -276,8 +269,7 @@ module internal Terms =
 
     let castReferenceToPointer targetType = term >> function
         | Ref address -> Ptr (Some address) targetType None
-        | Ptr(address, _, None) -> Ptr address targetType None
-        | Ptr(address, _, (Some _ as indent)) -> Ptr address targetType indent
+        | Ptr(address, _, indent) -> Ptr address targetType indent
         | t -> internalfailf "Expected reference or pointer, got %O" t
 
     let isVoid = term >> function
@@ -320,9 +312,7 @@ module internal Terms =
         match nonEmptyTypes with
         | [] -> Null
         | t::ts ->
-            let allSame =
-                List.forall ((=) t) ts
-            if allSame then t
+            if List.forall ((=) t) ts then t
             else internalfailf "evaluating type of unexpected union %O!" gvs
 
     let commonTypeOf getType term =
@@ -334,7 +324,7 @@ module internal Terms =
     let typeOfAddress = function
         | ClassField(_, field)
         | StructField(_, field)
-        | StaticField(_, field) -> field.typ |> Types.Constructor.fromDotNetType
+        | StaticField(_, field) -> field.typ |> fromDotNetType
         | ArrayIndex(_, _, (elementType, _, _)) -> elementType
         | BoxedLocation(_, typ) -> typ
         | ArrayLength _

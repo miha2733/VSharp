@@ -366,11 +366,10 @@ module public CFA =
             match states with
             | [state] ->
                 match callSite.opCode with
-                | Instruction.NewObj   when Reflection.IsDelegateConstructor callSite.calledMethod -> k [Memory.PopStack state]
-                | Instruction.NewObj   when Reflection.IsArrayConstructor callSite.calledMethod -> k [Memory.PopStack state]
+                | Instruction.NewObj when Reflection.IsDelegateConstructor callSite.calledMethod -> k [Memory.PopStack state]
+                | Instruction.NewObj when Reflection.IsArrayConstructor callSite.calledMethod -> k [Memory.PopStack state]
                 | Instruction.Call
-                | Instruction.NewObj   ->
-                    interpreter.CommonCall callSite.calledMethod state k
+                | Instruction.NewObj -> interpreter.CommonCall callSite.calledMethod state k
                 | Instruction.CallVirt -> interpreter.CommonCallVirt callSite.calledMethod state k
                 | _ ->  __notImplemented__()
             | _ -> internalfailf "Calling %s: composition with frames unexpectedly forked!" callSite.calledMethod.Name

@@ -1,10 +1,7 @@
 ﻿namespace VSharp.Core
 
-open Types
-
 #nowarn "69"
 
-open VSharp
 open System.Reflection
 
 type IMethodIdentifier =

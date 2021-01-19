@@ -223,7 +223,7 @@ type public ExplorerBase() =
         let methodId = x.MakeMethodIdentifier ctor
         assert (not <| exceptionType.IsValueType)
         let reference, state = Memory.AllocateDefaultClass state (Types.FromDotNetType state exceptionType)
-        let invoke= x.Invoke methodId
+        let invoke = x.Invoke methodId
         let withResult result (state : state) = {state with returnRegister = Some result}
         x.ReduceFunctionSignature state ctor (Some reference) (Specified arguments) false (fun state ->
         x.ReduceFunction state methodId invoke (fun resultsAndStates ->

@@ -62,17 +62,12 @@ module API =
         let MakeNumber n = makeNumber n
 
         let TypeOf term = typeOf term
-        let rec BaseTypeOfHeapRef state ref =
-            match ref.term with
-            | HeapRef(addr, _) -> Memory.typeOfHeapLocation state addr
-            | Union gvs ->
-                let ts = List.map (fun (_, v) -> BaseTypeOfHeapRef state v) gvs
-                match ts with
-                | [] -> __unreachable__()
-                | t::ts ->
-                    assert(List.forall ((=)t) ts)
-                    t
-            | _ -> internalfailf "reading type token: expected heap reference, but got %O" ref
+        let BaseTypeOfHeapRef state ref =
+            let getHeapRefType ref =
+                match ref.term with
+                | HeapRef(addr, _) -> Memory.typeOfHeapLocation state addr
+                | _ -> internalfailf "reading type token: expected heap reference, but got %O" ref
+            commonTypeOf getHeapRefType ref
 
         // TODO: maybe transfer time from interpreter?
         let MakeFunctionResultConstant state (callSite : callSite) =
@@ -132,7 +127,7 @@ module API =
 
         let TypeIsType leftType rightType = TypeCasting.typeIsType leftType rightType
         let TypeIsNullable typ = TypeCasting.isNullable typ
-        let rec TypeIsRef typ ref = TypeCasting.typeIsRef typ ref
+        let TypeIsRef typ ref = TypeCasting.typeIsRef typ ref
         let RefIsType ref typ = TypeCasting.refIsType ref typ
         let RefIsRef leftRef rightRef = TypeCasting.refIsRef leftRef rightRef
 

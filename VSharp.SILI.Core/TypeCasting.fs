@@ -128,7 +128,7 @@ module internal TypeCasting =
 
     let private doCast term targetType =
         match term.term with
-        | Ptr(_, _, _) ->
+        | Ptr _ ->
             match targetType with
             | Pointer typ' -> castReferenceToPointer typ' term
             | _ -> internalfailf "Can't cast pointer %O to type %O" term targetType
@@ -146,7 +146,6 @@ module internal TypeCasting =
             | HeapRef(address, baseType) -> addressIsType address baseType targetType
             | _ -> typeIsType (typeOf term) targetType
         Merging.guardedApply castCheck term
-
 
     let cast term targetType =
         let castUnguarded term =
