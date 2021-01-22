@@ -52,8 +52,15 @@ type public MethodInterpreter((*ilInterpreter : ILInterpreter, funcId : IFunctio
 
         let rec interpret' (current : cilState) : unit =
             x.Visit (cfg, current.ip)
+            if current.ip = Instruction 13 then ()
+            if current.ip = Instruction 34 then ()
+            if current.ip = Instruction 29 then ()
             let states = x.EvaluateOneStep (funcId, current)
+            if states = [] then ()
             states |> List.iter (fun state ->
+                if PC.isFalse state.state.pc then
+                    let a = current
+                    ()
                 if x.IsResultState funcId state then results.[funcId].Add(state)
                 match x.FindSimilar funcId state with
                 | None -> x.Add funcId state
@@ -104,6 +111,7 @@ type public MethodInterpreter((*ilInterpreter : ILInterpreter, funcId : IFunctio
         let cfg = findCfg funcId
         let ilInterpreter = ILInterpreter(x)
         let goodStates, incompleteStates, errors = ilInterpreter.ExecuteAllInstructions cfg cilState // TODO: what about incompleteStates?
+        let incompleteStates = List.filter (fun (newState : cilState) -> newState.ip <> cilState.ip) incompleteStates
         incompleteStatesSet.[funcId].AddRange(incompleteStates)
         exceptionsSet.[funcId].AddRange(errors)
         goodStates
@@ -750,14 +758,13 @@ and public ILInterpreter(methodInterpreter : MethodInterpreter) as this =
         | _ :: _ when t.IsGenericParameter -> __insufficientInformation__ "Can't introduce generic type X for equation: T = Nullable<X>"  // TODO: Nullable.GetUnderlyingType for generics; use meta-information of generic type parameter
         | obj :: stack ->
             let state = {state with opStack = stack}
-            let res = StatedConditionalExecutionAppendResults state
-                        (fun state k -> k (Types.TypeIsType termType valueType, state))
-                        (fun state k ->
-                            let handleRestResults (address, state : state) = Memory.ReadSafe state address, state
-                            x.UnboxCommon state obj t handleRestResults k)
-                        (fun state k -> x.CommonCastClass state obj termType k)
-                        (pushResultFromStateToCilState cilState)
-            res
+            StatedConditionalExecutionAppendResults state
+                (fun state k -> k (Types.TypeIsType termType valueType, state))
+                (fun state k ->
+                    let handleRestResults (address, state : state) = Memory.ReadSafe state address, state
+                    x.UnboxCommon state obj t handleRestResults k)
+                (fun state k -> x.CommonCastClass state obj termType k)
+                (pushResultFromStateToCilState cilState)
         | _ -> __corruptedStack__()
 
     member private this.CommonDivRem performAction (cilState : cilState) =
@@ -1077,10 +1084,11 @@ and public ILInterpreter(methodInterpreter : MethodInterpreter) as this =
                 let errors = errors @ List.map (fun (erroredOffset, (cilState : cilState)) -> {cilState with ip = erroredOffset}) newErrors
 
                 match goodStates with
+//                | list when List.exists (fun (_, (state:cilState)) -> PC.isFalse state.state.pc) list -> __notImplemented__()
                 | list when List.forall (fst >> (=) ip.Exit) list ->
                     (List.map (fun (_, cilState : cilState) -> {cilState with ip = ip.Exit})) list @ finishedStates, incompleteStates, errors
                 | (Instruction nextOffset as nextIp, _)::xs as list when isIpOfCurrentBasicBlock nextOffset && List.forall (fst >> (=) nextIp) xs ->
-                    List.fold (fun acc (_, cilState)-> executeAllInstructions acc nextOffset cilState) (finishedStates, incompleteStates, errors) list
+                    List.fold (fun acc (_, cilState) -> executeAllInstructions acc nextOffset cilState) (finishedStates, incompleteStates, errors) list
                 | list -> List.map (fun (ip, cilState) -> {cilState with ip = ip}) list @ finishedStates, incompleteStates, errors
             with
             | :? InsufficientInformationException as iie -> finishedStates, {cilState with iie = Some iie; ip = Instruction offset} :: incompleteStates, errors

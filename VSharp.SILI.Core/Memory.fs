@@ -833,6 +833,9 @@ module internal Memory =
     type stackReading with
         interface IMemoryAccessConstantSource with
             override x.Compose state =
+                match x.key with
+                | ParameterKey _ when x.time = Some [0u] -> ()
+                | _ -> ()
                 let key = x.key.Map (dotNetTypeSubst state)
                 readStackLocation state key
 

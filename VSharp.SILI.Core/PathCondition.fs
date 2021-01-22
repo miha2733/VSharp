@@ -15,7 +15,7 @@ module PC =
     let public toSeq pc = PersistentSet.toSeq pc
 
     let private falsePC = PersistentSet.add empty False
-    let private isFalse pc =
+    let public isFalse pc =
         let isFalsePC = PersistentSet.contains False pc
         if isFalsePC then assert(toSeq pc |> Seq.length = 1)
         isFalsePC
