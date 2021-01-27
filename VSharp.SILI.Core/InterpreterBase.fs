@@ -26,17 +26,17 @@ type public ExplorerBase() =
         | _ -> internalfailf "unexpected entry point: expected regular method, but got %O" id
 
     member x.Explore (funcId : IFunctionIdentifier) (k : codeLocationSummary seq -> 'a) =
-            let k = API.Reset(); fun x -> API.Restore(); k x
-            CurrentlyBeingExploredLocations.Add funcId |> ignore
-            let initialStates = x.FormInitialState funcId
-            let removePCs this thisIsNotNull =
-                List.map (fun (res, state) -> res, if Option.isSome this && thisIsNotNull <> True then Memory.removePathCondition state thisIsNotNull else state)
-            let invoke (state, this, thisIsNotNull) = x.Invoke funcId state (removePCs this thisIsNotNull)
-            let resultsAndStates =
-                initialStates |> List.map invoke |> List.concat
-                |> List.map (fun (result, state) -> {result = result; state = state})
-            CurrentlyBeingExploredLocations.Remove funcId |> ignore
-            k resultsAndStates
+        let k = API.Reset(); fun x -> API.Restore(); k x
+        CurrentlyBeingExploredLocations.Add funcId |> ignore
+        let initialStates = x.FormInitialState funcId
+        let removePCs this thisIsNotNull =
+            List.map (fun (res, state) -> res, if Option.isSome this && thisIsNotNull <> True then Memory.removePathCondition state thisIsNotNull else state)
+        let invoke (state, this, thisIsNotNull) = x.Invoke funcId state (removePCs this thisIsNotNull)
+        let resultsAndStates =
+            initialStates |> List.map invoke |> List.concat
+            |> List.map (fun (result, state) -> {result = result; state = state})
+        CurrentlyBeingExploredLocations.Remove funcId |> ignore
+        k resultsAndStates
 
     member private x.ReproduceEffectOrUnroll areWeStuck body (id : IFunctionIdentifier) state k =
         if areWeStuck then

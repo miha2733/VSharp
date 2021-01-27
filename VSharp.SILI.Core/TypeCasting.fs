@@ -82,23 +82,30 @@ module internal TypeCasting =
 
     let typesEqual x y = typeIsType x y &&& typeIsType y x
 
-    let rec typeIsRef typ ref =
+    let rec typeIsRef state typ ref =
         match ref.term with
-        | HeapRef(addr, rightType) -> typeIsAddress typ addr rightType
-        | Union gvs -> gvs |> List.map (fun (g, v) -> (g, typeIsRef typ v)) |> Merging.merge
+        | HeapRef(addr, _) ->
+            let rightType = Memory.typeOfHeapLocation state addr
+            typeIsAddress typ addr rightType
+        | Union gvs -> gvs |> List.map (fun (g, v) -> (g, typeIsRef state typ v)) |> Merging.merge
         | _ -> internalfailf "Checking subtyping: expected heap reference, but got %O" ref
 
-    let rec refIsType ref typ =
+    let rec refIsType state ref typ =
         match ref.term with
-        | HeapRef(addr, leftType) -> addressIsType addr leftType typ
-        | Union gvs -> gvs |> List.map (fun (g, v) -> (g, refIsType v typ)) |> Merging.merge
+        | HeapRef(addr, _) ->
+            let leftType = Memory.typeOfHeapLocation state addr
+            addressIsType addr leftType typ
+        | Union gvs -> gvs |> List.map (fun (g, v) -> (g, refIsType state v typ)) |> Merging.merge
         | _ -> internalfailf "Checking subtyping: expected heap reference, but got %O" ref
 
-    let rec refIsRef leftRef rightRef =
+    let rec refIsRef state leftRef rightRef =
         match leftRef.term, rightRef.term with
-        | HeapRef(leftAddr, leftType), HeapRef(rightAddr, rightType) -> addressIsAddress leftAddr leftType rightAddr rightType
-        | Union gvs, _ -> gvs |> List.map (fun (g, v) -> (g, refIsRef v rightRef)) |> Merging.merge
-        | _, Union gvs -> gvs |> List.map (fun (g, v) -> (g, refIsRef leftRef v)) |> Merging.merge
+        | HeapRef(leftAddr, _), HeapRef(rightAddr, _) ->
+            let leftType = Memory.typeOfHeapLocation state leftAddr
+            let rightType = Memory.typeOfHeapLocation state rightAddr
+            addressIsAddress leftAddr leftType rightAddr rightType
+        | Union gvs, _ -> gvs |> List.map (fun (g, v) -> (g, refIsRef state v rightRef)) |> Merging.merge
+        | _, Union gvs -> gvs |> List.map (fun (g, v) -> (g, refIsRef state leftRef v)) |> Merging.merge
         | _ -> internalfailf "Checking subtyping: expected heap reference, but got %O" ref
 
     type symbolicSubtypeSource with
@@ -128,25 +135,26 @@ module internal TypeCasting =
 
     let private doCast term targetType =
         match term.term with
-        | Ptr(_, _, _) ->
+        | Ptr _ ->
             match targetType with
             | Pointer typ' -> castReferenceToPointer typ' term
             | _ -> internalfailf "Can't cast pointer %O to type %O" term targetType
-        | HeapRef(addr, typ) -> if Types.isConcreteSubtype typ targetType then term else HeapRef addr targetType
+        | HeapRef(addr, _) -> HeapRef addr targetType
         | Ref _ -> __notImplemented__() // TODO: can this happen? Ref points to primitive type!
         | Struct _ -> term
         | _ -> __unreachable__()
 
-    let canCast term targetType =
+    let canCast state term targetType =
         let castCheck term =
             match term.term with
             | Concrete(value, _) -> canCastConcrete value targetType |> makeBool
             | Ptr(_, typ, _) -> typeIsType (Pointer typ) targetType
             | Ref _ -> typeIsType (typeOfRef term) targetType
-            | HeapRef(address, baseType) -> addressIsType address baseType targetType
+            | HeapRef(address, _) ->
+                let baseType = Memory.typeOfHeapLocation state address
+                addressIsType address baseType targetType
             | _ -> typeIsType (typeOf term) targetType
         Merging.guardedApply castCheck term
-
 
     let cast term targetType =
         let castUnguarded term =

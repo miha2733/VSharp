@@ -313,24 +313,21 @@ module public CFA =
             Prelude.releaseAssert(Map.isEmpty effect.callSiteResults)
         override x.Type = "StepEdge"
         override x.PropagatePath (cilState1 : cilState) =
-//                x.PrintLog "composition left:\n"  <| Memory.Dump cilState1.state
-//                x.PrintLog "composition right:\n" <| Memory.Dump effect
-//                x.PrintLog (sprintf "composition resulted:\n") (Memory.Dump state)
-//                cilState.Make ip state |> List.singleton
-
-            Memory.ComposeStates cilState1.state effect (fun states ->
-
-                assert(List.forall (fun state -> cilState1.state.frames = state.frames) states)
-
-                // Do NOT turn this List.fold into List.exists to be sure that EVERY returned state is propagated
-                let goodStates = List.filter x.CommonFilterStates states
-                List.map (fun state -> cilState.Make ip state) goodStates)
+            let print (state : state) =
+                x.PrintLog "composition left:\n"  <| Memory.Dump cilState1.state
+                x.PrintLog "composition right:\n" <| Memory.Dump effect
+                x.PrintLog "composition resulted:\n" <| Memory.Dump state
+            let states = Memory.ComposeStates cilState1.state effect
+            assert(List.forall (fun state -> cilState1.state.frames = state.frames) states)
+            let goodStates = List.filter x.CommonFilterStates states
+            List.iter print goodStates
+            List.map (fun state -> cilState.Make ip state) goodStates
 
         member x.Effect = effect
         member x.VisibleVariables() = __notImplemented__()
 
         override x.ToString() =
-            sprintf "%s\neffect = %O\npc = %s\n" (base.ToString()) (API.Memory.Dump effect) (toString effect.pc)
+            sprintf "%s\neffect = %O\npc = %s\n" (base.ToString()) (API.Memory.Dump effect) (PC.toString effect.pc)
 
     type CallEdge(src : Vertex, dst : Vertex, callSite : callSite, stateWithArgsOnFrameAndAllocatedType : state, numberToDrop, interpreter : ILInterpreter) =
         inherit Edge(src, dst)
@@ -363,7 +360,7 @@ module public CFA =
                 List.fold propagateStateAfterCall [] states
 //            Prelude.releaseAssert (Option.isSome stepItp)
 //            let interpreter = stepItp |> Option.get
-            let states = Memory.ComposeStates cilState1.state stateWithArgsOnFrameAndAllocatedType id
+            let states = Memory.ComposeStates cilState1.state stateWithArgsOnFrameAndAllocatedType
             match states with
             | [state] ->
                 match callSite.opCode with
@@ -536,7 +533,7 @@ module public CFA =
             if PersistentDict.contains (v, concreteOpStack) vertices then
                 PersistentDict.find vertices (v, concreteOpStack), vertices
             else
-                let dstVertex = Vertex.CreateVertex methodBase v concreteOpStack
+                let dstVertex = Vertex.CreateVertex methodBase v opStack
                 dstVertex, PersistentDict.add (v, concreteOpStack) dstVertex vertices
 
         let updateQueue (cfg : cfg) newU (d : bypassDataForEdges) (q, used) =
@@ -557,17 +554,16 @@ module public CFA =
             | _ -> __notImplemented__()
 
         let addEdgeAndRenewQueue createEdge (d : bypassDataForEdges) (cfg : cfg) (currentTime, vertices, q, used) (cilState' : cilState) =
-//            assert(cilState'.ip = d.v)
+//            assert(cilState'.ip = d.v) TODO: #Kostya
             let s' = cilState'.state
-            let dstVertex, vertices = createVertexIfNeeded cfg.methodBase s'.opStack d.v vertices
+            let dstIp = cilState'.ip
+            let dstVertex, vertices = createVertexIfNeeded cfg.methodBase s'.opStack dstIp vertices
             addEdge <| createEdge cilState' dstVertex
-
-            let bypassData = {d with u = d.v; srcVertex = dstVertex; uOut = d.vOut; opStack = s'.opStack
+            let bypassData = {d with u = dstIp; srcVertex = dstVertex; uOut = d.vOut; opStack = s'.opStack
                                      allocatedTypes = s'.allocatedTypes; lengths = s'.lengths; lowerBounds = s'.lowerBounds }
-
             let newQ, newUsed =
                 match cilState'.iie with
-                | None -> updateQueue cfg d.v bypassData (q, used)
+                | None -> updateQueue cfg dstIp bypassData (q, used)
                 | Some _ -> q, used
             VectorTime.max currentTime s'.currentTime, vertices, newQ, newUsed
 
@@ -619,6 +615,8 @@ module public CFA =
                     else vertices
                 else
                     let finishedStates, incompleteStates, erroredStates = ilInterpreter.ExecuteAllInstructions cfg initialCilState
+                    // filtering out states, which have failed on the first instruction
+                    let incompleteStates = List.filter (fun (cilState : cilState) -> cilState.ip <> srcVertex.Ip) incompleteStates
                     let goodStates = finishedStates |> List.filter (fun (cilState : cilState) -> cilState.ip = d.v)
                     srcVertex.AddErroredStates erroredStates
 
@@ -711,19 +709,21 @@ type StepInterpreter() =
     override x.CreateInstance t args (state : state) =
         List.singleton <| {state with exceptionsRegister = Unhandled Nop}
 
-
     override x.EvaluateOneStep (funcId, cilState : cilState) =
         try
             let cfa : CFA.cfa = CFA.cfaBuilder.computeCFA x funcId
-            let ip = cilState.ip
-            let concreteValuesOnOperationalStack = List.filter IsIdempotent cilState.state.opStack
-            let vertices = cfa.body.vertices.Values |> Seq.filter (fun (v : CFA.Vertex) ->
-                v.Ip = ip && concreteValuesOnOperationalStack = List.filter IsIdempotent v.OpStack) |> List.ofSeq
+            let vertexWithSameOpStack (v : CFA.Vertex) =
+                assert(List.length v.OpStack = List.length cilState.state.opStack)
+                v.OpStack
+                |> List.zip cilState.state.opStack
+                |> List.forall (fun (x, y) -> if IsIdempotent y then x = y else true) // TODO: what if x is idempotent, but y isn't #Kostya
+            let howToNameIt (v : CFA.Vertex) = v.Ip = cilState.ip && v.OutgoingEdges.Count > 0 && vertexWithSameOpStack v // TODO: rename var #Kostya
+            let vertices = cfa.body.vertices.Values |> Seq.filter howToNameIt |> List.ofSeq
             match vertices with
             | [] -> base.EvaluateOneStep (funcId, cilState)
             | _ ->
-                let dealWithVertex (v : CFA.Vertex) =
-                    Seq.fold (fun acc (edge : CFA.Edge) -> acc @ edge.PropagatePath cilState) [] v.OutgoingEdges
-                List.fold (fun acc v -> acc @ dealWithVertex v) [] vertices
+                let propagateThroughEdge acc (edge : CFA.Edge) =
+                    acc @ edge.PropagatePath cilState
+                List.fold (fun acc (v : CFA.Vertex) -> Seq.fold propagateThroughEdge acc v.OutgoingEdges) [] vertices
         with
-        | :? InsufficientInformationException as iie -> base.EvaluateOneStep (funcId, cilState)
+        | :? InsufficientInformationException -> base.EvaluateOneStep (funcId, cilState)

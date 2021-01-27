@@ -49,46 +49,40 @@ type public MethodInterpreter((*ilInterpreter : ILInterpreter, funcId : IFunctio
             | Some t1, Some t2 -> Memory.Merge2Results (t1, x.state) (t2, y.state) |> List.map (fun (r, s) -> (Some r, s))
             | _ -> internalfail "only one state has result"
             |> List.map (fun (r, s) -> {x with state = {s with returnRegister = r}})
-
+        let addResultOrContinue state =
+            if x.IsResultState funcId state then results.[funcId].Add(state)
+            match x.FindSimilar funcId state with
+            | None -> x.Add funcId state
+            | Some similar -> merge state similar |> List.iter (x.Add funcId)
         let rec interpret' (current : cilState) : unit =
             x.Visit (cfg, current.ip)
             let states = x.EvaluateOneStep (funcId, current)
-            states |> List.iter (fun state ->
-                if x.IsResultState funcId state then results.[funcId].Add(state)
-                match x.FindSimilar funcId state with
-                | None -> x.Add funcId state
-                | Some similar -> merge state similar |> List.iter (x.Add funcId))
-            match x.PickNext funcId with
-            | Some newSt -> interpret' newSt
-            | None -> ()
+            states |> List.iter addResultOrContinue
+            x.PickNext funcId |> Option.iter interpret'
         if not <| x.Used cfg start.ip then interpret' start
-        else ()
+
+    member private x.cleanSets funcId =
+        results.[funcId] <- List()
+        incompleteStatesSet.[funcId] <- List()
 
     override x.Invoke funcId state k =
-        workingSet.TryAdd(funcId, List<cilState>())    |> ignore
-        results.TryAdd(funcId, List<cilState>())       |> ignore
+        workingSet.TryAdd(funcId, List<cilState>()) |> ignore
+        results.TryAdd(funcId, List<cilState>()) |> ignore
         exceptionsSet.TryAdd(funcId, List<cilState>()) |> ignore
         incompleteStatesSet.TryAdd(funcId, List<cilState>()) |> ignore
+        visitedVertices.Save()
 
-        let cleanSets () =
-            results.[funcId] <- List()
-            incompleteStatesSet.[funcId] <- List()
-
-        let k =
-            visitedVertices.Save()
-            let k x =
-                visitedVertices.Restore()
-                cleanSets()
-                k x
-            k
+        let k res =
+            visitedVertices.Restore()
+            x.cleanSets funcId
+            k res
 
         let getResultsAndStates () =
             let results = results.[funcId] |> List.ofSeq
             let incompleteStates = incompleteStatesSet.[funcId] |> List.ofSeq
             let errors = exceptionsSet.[funcId] |> List.ofSeq
-
             match incompleteStates, errors, results with
-            | CilStateWithIIE iie :: _ , _, _ -> cleanSets(); raise iie
+            | CilStateWithIIE iie :: _ , _, _ -> x.cleanSets funcId; raise iie
             | _ :: _, _, _ -> __unreachable__()
             | _, _ :: _, _ -> internalfailf "exception handling is not implemented yet"
             | _, _, [] -> internalfailf "No states were obtained. Most likely such a situation is a bug. Check it!"
@@ -104,7 +98,7 @@ type public MethodInterpreter((*ilInterpreter : ILInterpreter, funcId : IFunctio
     default x.EvaluateOneStep (funcId : IFunctionIdentifier, cilState) =
         let cfg = findCfg funcId
         let ilInterpreter = ILInterpreter(x)
-        let goodStates, incompleteStates, errors = ilInterpreter.ExecuteAllInstructions cfg cilState // TODO: what about incompleteStates?
+        let goodStates, incompleteStates, errors = ilInterpreter.ExecuteAllInstructions cfg cilState
         incompleteStatesSet.[funcId].AddRange(incompleteStates)
         exceptionsSet.[funcId].AddRange(errors)
         goodStates
@@ -117,7 +111,7 @@ type public MethodInterpreter((*ilInterpreter : ILInterpreter, funcId : IFunctio
         | Some i -> let res = Some workingSet.[funcId].[i]
                     workingSet.[funcId].RemoveAt i
                     res
-    member x.IsResultState (funcId : IFunctionIdentifier) (cilState : cilState) =
+    member x.IsResultState (_ : IFunctionIdentifier) (cilState : cilState) =
         cilState.ip = ip.Exit && cilState.state.opStack = []
     member x.PickNext (funcId : IFunctionIdentifier) =
         let cfg = findCfg funcId
@@ -338,7 +332,7 @@ and public ILInterpreter(methodInterpreter : MethodInterpreter) as this =
                 x.CallMethodFromTermType state typ ancestorMethod k
             let tryToCallForBaseType (state : state) (k : state list -> 'a) =
                 StatedConditionalExecutionAppendResults state
-                    (fun state k -> k (API.Types.TypeIsRef baseType this, state))
+                    (fun state k -> k (API.Types.TypeIsRef state baseType this, state))
                     (callForConcreteType baseType)
                     (x.CallAbstract methodId)
                     k
@@ -425,7 +419,7 @@ and public ILInterpreter(methodInterpreter : MethodInterpreter) as this =
     member private x.CommonCastClass (state : state) (term : term) (typ : symbolicType) k =
         let term = castReferenceToPointerIfNeeded term typ state
         StatedConditionalExecutionAppendResults state
-            (fun state k -> k (IsNullReference term ||| Types.IsCast typ term, state))
+            (fun state k -> k (IsNullReference term ||| Types.IsCast state typ term, state))
             (fun state k -> k [{state with returnRegister = Some <| Types.Cast term typ}])
             (x.Raise x.InvalidCastException)
             k
@@ -618,7 +612,7 @@ and public ILInterpreter(methodInterpreter : MethodInterpreter) as this =
                     if Types.IsValueType typeOfValue then
                         checkTypeMismatchBasedOnTypeOfValue (Types.TypeIsType typeOfValue baseType) state k
                     else
-                        checkTypeMismatchBasedOnTypeOfValue (Types.RefIsType value baseType) state k
+                        checkTypeMismatchBasedOnTypeOfValue (Types.RefIsType state value baseType) state k
                 let length = Memory.ArrayLengthByDimension state arrayRef (MakeNumber 0)
                 x.AccessArray checkTypeMismatch state length index k
             x.NpeOrInvokeStatement cilState.state arrayRef checkedStElem (List.map (fun state -> cilState |> withState state |> withOpStack stack))
@@ -705,7 +699,7 @@ and public ILInterpreter(methodInterpreter : MethodInterpreter) as this =
         let canCastValueTypeToNullableTargetCase (state : state) =
             let underlyingTypeOfNullableT = System.Nullable.GetUnderlyingType t
             StatedConditionalExecutionAppendResults state
-                (fun state k -> k (Types.RefIsType obj (Types.FromDotNetType state underlyingTypeOfNullableT), state))
+                (fun state k -> k (Types.RefIsType state obj (Types.FromDotNetType state underlyingTypeOfNullableT), state))
                 (fun state k ->
                     let value = Memory.ReadSafe state obj
                     let nullableTerm = Memory.DefaultOf termType
@@ -721,7 +715,7 @@ and public ILInterpreter(methodInterpreter : MethodInterpreter) as this =
                 canCastValueTypeToNullableTargetCase state
             else
                 StatedConditionalExecutionAppendResults state
-                    (fun state k -> k (Types.IsCast termType obj, state)) // TODO: Why not Types.RefIsType method?
+                    (fun state k -> k (Types.IsCast state termType obj, state)) // TODO: Why not Types.RefIsType method?
                     (fun state k ->
                         let res, state = handleRestResults(Types.Cast obj termType |> HeapReferenceToBoxReference, state)
                         k [{state with returnRegister = Some res}])
@@ -1075,12 +1069,11 @@ and public ILInterpreter(methodInterpreter : MethodInterpreter) as this =
                 let allStates = x.ExecuteInstruction cfg offset {cilState with iie = None}
                 let newErrors, goodStates = allStates |> List.partition (fun (_, cilState : cilState) -> cilState.HasException)
                 let errors = errors @ List.map (fun (erroredOffset, (cilState : cilState)) -> {cilState with ip = erroredOffset}) newErrors
-
                 match goodStates with
                 | list when List.forall (fst >> (=) ip.Exit) list ->
                     (List.map (fun (_, cilState : cilState) -> {cilState with ip = ip.Exit})) list @ finishedStates, incompleteStates, errors
                 | (Instruction nextOffset as nextIp, _)::xs as list when isIpOfCurrentBasicBlock nextOffset && List.forall (fst >> (=) nextIp) xs ->
-                    List.fold (fun acc (_, cilState)-> executeAllInstructions acc nextOffset cilState) (finishedStates, incompleteStates, errors) list
+                    List.fold (fun acc (_, cilState) -> executeAllInstructions acc nextOffset cilState) (finishedStates, incompleteStates, errors) list
                 | list -> List.map (fun (ip, cilState) -> {cilState with ip = ip}) list @ finishedStates, incompleteStates, errors
             with
             | :? InsufficientInformationException as iie -> finishedStates, {cilState with iie = Some iie; ip = Instruction offset} :: incompleteStates, errors
