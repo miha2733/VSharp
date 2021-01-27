@@ -99,10 +99,9 @@ module API =
 
         val TypeIsType : symbolicType -> symbolicType -> term
         val TypeIsNullable : symbolicType -> bool
-        val TypeIsRef : symbolicType -> term -> term
-        val RefIsType : term -> symbolicType -> term
-        val RefIsRef : term -> term -> term
-        val IsCast : symbolicType -> term -> term
+        val TypeIsRef :  state -> symbolicType -> term -> term
+        val RefIsType : state -> term -> symbolicType -> term
+        val IsCast : state -> symbolicType -> term -> term
         val Cast : term -> symbolicType -> term
         val CastConcrete : 'a -> System.Type -> term
         val CastReferenceToPointer : state -> term -> term
@@ -181,7 +180,7 @@ module API =
         val StringCtorOfCharArray : state -> term -> term -> state list
 
         // TODO: get rid of all unnecessary stuff below!
-        val ComposeStates : state -> state -> (state list -> 'a) -> 'a
+        val ComposeStates : state -> state -> state list
 
         val Merge2States : state -> state -> state list
         val Merge2Results : term * state -> term * state -> (term * state) list

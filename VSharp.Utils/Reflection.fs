@@ -105,12 +105,18 @@ module public Reflection =
 
     let private concretizeMethod subst (m : MethodBase) getMethod =
         let concreteType = concretizeType subst m.DeclaringType
-        let concreteParameters = m.GetParameters() |> Array.map (fun pi -> pi.ParameterType |> subst)
+        let substTypeIfNeed (pi : ParameterInfo) =
+            let parameterType = pi.ParameterType
+            if parameterType.IsGenericTypeParameter then subst parameterType else parameterType
+        let concreteParameters = m.GetParameters() |> Array.map substTypeIfNeed
         getMethod concreteType m.Name concreteParameters
 
     let private concretizeMethodInfo subst (mi : MethodInfo) =
-        let concretize method =
-            let mi = concretizeMethod subst method (fun t name parameters -> t.GetMethod(name, parameters))
+        let concretize (method : MethodInfo) =
+            let getMethod (t : Type) (name : String) (parameters : Type[]) =
+                let bindingFlags = BindingFlags.NonPublic ||| BindingFlags.Public ||| BindingFlags.Instance ||| BindingFlags.Static
+                t.GetMethod(name, bindingFlags, null, parameters, null)
+            let mi = concretizeMethod subst method getMethod
             assert(mi <> null)
             mi
         let concretizeGeneric (mi : MethodInfo) =
@@ -128,7 +134,7 @@ module public Reflection =
 
     let concretizeMethodBase (m : MethodBase) (subst : Type -> Type) =
         match m with
-        | _ when not m.DeclaringType.IsGenericType -> m
+        | _ when not m.DeclaringType.IsGenericType && not m.IsGenericMethod -> m
         | :? MethodInfo as mi ->
             concretizeMethodInfo subst mi
         | :? ConstructorInfo as ci ->
@@ -137,8 +143,7 @@ module public Reflection =
 
     let concretizeParameter (p : ParameterInfo) (subst : Type -> Type) =
         if not (p.Member :? MethodBase) then __notImplemented__()
-        else
-            (concretizeMethodBase (p.Member :?> MethodBase) subst).GetParameters() |> Array.find (fun pi -> pi.Name = p.Name)
+        else (concretizeMethodBase (p.Member :?> MethodBase) subst).GetParameters() |> Array.find (fun pi -> pi.Name = p.Name)
 
     let concretizeLocalVariable (l : LocalVariableInfo) (m : MethodBase) (subst : Type -> Type) =
         let m = concretizeMethodBase m subst
@@ -153,6 +158,7 @@ module public Reflection =
     // --------------------------------- Fields ---------------------------------
 
     let wrapField (field : FieldInfo) =
+        // TODO: why safeGenericTypeDefinition? #Dima
         {declaringType = safeGenericTypeDefinition field.DeclaringType; name = field.Name; typ = field.FieldType}
 
     let rec private retrieveFields isStatic f (t : System.Type) =
