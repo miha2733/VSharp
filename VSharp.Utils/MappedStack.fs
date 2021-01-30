@@ -22,8 +22,8 @@ module public MappedStack =
         let contents' = Map.add key' value contents
         contents', peaks'
 
-    let reserve key (contents, peaks) =
-        let idx = peakIdx peaks key + 1ul
+    let reserve key n (contents, peaks) =
+        let idx = peakIdx peaks key + n
         let peaks' = Map.add key idx peaks
         contents, peaks'
 
@@ -39,19 +39,13 @@ module public MappedStack =
 
     let remove (contents, peaks) key =
         let idx = peakIdx peaks key
-        if containsKey key (contents, peaks) then
-            assert (idx > defaultPeak)
-            let key' = makeExtendedKey key idx
-            let contents' = Map.remove key' contents
-            let peaks' =
-                if idx = 1ul then Map.remove key peaks
-                else Map.add key (idx - 1ul) peaks
-            contents', peaks'
-        else
-            // this is a case when variable was reserved but never assigned
-            if not (idx = 0u) then __unreachable__() // TODO
-//            assert (idx = 0u) // TODO: crashes only in DEBUG
-            contents, peaks
+        assert (idx > defaultPeak)
+        let key' = makeExtendedKey key idx
+        let contents' = Map.remove key' contents
+        let peaks' =
+            if idx = 1ul then Map.remove key peaks
+            else Map.add key (idx - 1ul) peaks
+        contents', peaks'
 
     let tryFind key (contents, peaks) =
         let idx = peakIdx peaks key
@@ -63,7 +57,6 @@ module public MappedStack =
         | Some term -> term
         | None -> failwith "Attempt get value by key which is not presented in stack"
 
-
     let map f (contents, peaks) =
         Map.fold
             (fun m k v ->
@@ -72,8 +65,7 @@ module public MappedStack =
             contents peaks, peaks
 
     let fold f state (contents, peaks) =
-        Map.fold (fun s k v ->
-            Option.map (f s k) (Map.tryFind (makeExtendedKey k v) contents) |?? s) state peaks
+        Map.fold (fun s k p -> f s k p (Map.tryFind (makeExtendedKey k p) contents)) state peaks
 
     let concat (bottomContents, bottomPeaks) (topContents, topPeaks) =
         let peaks = topPeaks |> Map.fold (fun peaks k idx -> Map.add k (peakIdx bottomPeaks k + idx) peaks) bottomPeaks

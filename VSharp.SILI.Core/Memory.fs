@@ -159,7 +159,7 @@ module internal Memory =
         let pushOne (map : stack) (key, value, typ) =
             match value with
             | Specified term -> { key = key; typ = typ }, MappedStack.push key term map
-            | Unspecified -> { key = key; typ = typ }, MappedStack.reserve key map
+            | Unspecified -> { key = key; typ = typ }, MappedStack.reserve key 1u map
         let locations, newStack = frame |> List.mapFold pushOne s.stack
         let frames' = Stack.push s.frames { func = funcId; entries = locations; isEffect = isEffect }
         { s with stack = newStack; frames = frames' }
@@ -848,10 +848,22 @@ module internal Memory =
             override x.Compose state =
                 x.baseSource.Compose state |> extractAddress
 
-    let private fillAndMutateStackLocation state stack (k : stackKey) v =
-        let k' = k.Map (dotNetTypeSubst state)
-        let v' = fillHoles state v
-        writeStackLocation stack k' v'
+    let private reserveLocation (state : state) key (n : uint) =
+        {state with stack = MappedStack.reserve key n state.stack}
+
+    // state is untouched. It is needed because of this situation:
+    // Effect: x' <- y + 5, y' <- x + 10
+    // Left state: x <- 0, y <- 0
+    // After composition: {x <- 5, y <- 15} OR {y <- 10, x <- 15}
+    // but expected result is {x <- 5, y <- 10}
+    let private fillAndMutateStackLocation isEffect state accState (k : stackKey) p (v : term option) =
+        match v with
+        | Some v ->
+            let k' = k.Map (dotNetTypeSubst state)
+            let v' = fillHoles state v
+            writeStackLocation accState k' v'
+        | None when isEffect -> accState // already reserved
+        | None -> reserveLocation accState k p // new frame, so we need to reserve
 
     let composeRaisedExceptionsOf (state : state) (error : exceptionRegister) =
         error |> exceptionRegister.map (fillHoles state)
@@ -879,7 +891,7 @@ module internal Memory =
                 let pushOne stack (entry : entry) =
                     match MappedStack.tryFind entry.key s.stack with
                     | Some v -> MappedStack.push entry.key v stack
-                    | None -> MappedStack.reserve entry.key stack
+                    | None -> MappedStack.reserve entry.key 1u stack
                 let stack = List.fold pushOne MappedStack.empty locations
                 stack
             let bottom = bottomFrame |> Option.map (entriesOfFrame >> getStackFrame)
@@ -888,10 +900,14 @@ module internal Memory =
 
 
         let state'Bottom, state'RestStack, state'RestFrames = bottomAndRestFrames state'
-        let state2 = Option.fold (MappedStack.fold (fillAndMutateStackLocation state)) state state'Bottom  // apply effect of bottom frame
-        let state3 = {state2 with frames = composeFramesOf state2 state'RestFrames}                            // add rest frames
-        let finalState = MappedStack.fold (fillAndMutateStackLocation state) state3 state'RestStack                         // fill and copy effect of rest frames
+        // apply effect of bottom frame
+        let state2 = Option.fold (MappedStack.fold (fillAndMutateStackLocation true state)) state state'Bottom
+        // add rest frames
+        let state3 = {state2 with frames = composeFramesOf state2 state'RestFrames}
+        // fill and copy effect of rest frames
+        let finalState = MappedStack.fold (fillAndMutateStackLocation false state) state3 state'RestStack
         finalState.stack, finalState.frames
+
 //        // TODO: still, for artificial frames we should mutate it? For instance, consider composition of a state with the effect of a function in the middle of some branch
 //        let stack' = MappedStack.map (fun _ -> fillHoles ctx state) state'.stack
 //        MappedStack.concat state.stack stack'
@@ -1046,8 +1062,9 @@ module internal Memory =
         sprintf "--------------- %s: ---------------" section |> appendLine sb
 
     let private dumpStack (sb : StringBuilder) stack =
-        let print (sb : StringBuilder) k v =
-            sprintf "key = %O, value = %O" k v |> appendLine sb
+        let print (sb : StringBuilder) k _ v =
+            Option.fold (fun sb v -> sprintf "key = %O, value = %O" k v |> appendLine sb) sb v
+        let doNotReserve (sb : StringBuilder) _ _ = sb
         let sb1 = MappedStack.fold print (StringBuilder()) stack
         if sb1.Length = 0 then sb
         else
