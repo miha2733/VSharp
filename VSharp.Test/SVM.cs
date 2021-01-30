@@ -162,7 +162,7 @@ namespace VSharp.Test
             if (summary == null || (count = summary.Summaries.Count()) == 0)
                 return "No states were obtained!";
             var suffix = count > 1 ? "s" : "";
-            return $"Totally {count} state{suffix}:\n{String.Join("\n", summary.Summaries.Select(SummaryToString))}";
+            return $"Totally {count} state{suffix}:\n{String.Join("\n", summary.Summaries.Select(SummaryToString).OrderBy(x => x))}";
         }
 
         public string ExploreOne(MethodInfo m)

@@ -305,8 +305,6 @@ module public CFA =
                 x.body.ToString() + separator +
                 Seq.fold (fun acc block -> acc + block.ToString() + separator) "" (x.finallyHandlers.Values)
 
-
-
     type StepEdge(src : Vertex, dst : Vertex, effect : state, cfg : cfg, ip : ip) =
         inherit Edge(src, dst)
         do
@@ -317,6 +315,8 @@ module public CFA =
                 x.PrintLog "composition left:\n"  <| Memory.Dump cilState1.state
                 x.PrintLog "composition right:\n" <| Memory.Dump effect
                 x.PrintLog "composition resulted:\n" <| Memory.Dump state
+            if ip = Instruction 28 then ()
+            if ip = Instruction 9 then ()
             let states = Memory.ComposeStates cilState1.state effect
             assert(List.forall (fun state -> cilState1.state.frames = state.frames) states)
             let goodStates = List.filter x.CommonFilterStates states
@@ -554,7 +554,6 @@ module public CFA =
             | _ -> __notImplemented__()
 
         let addEdgeAndRenewQueue createEdge (d : bypassDataForEdges) (cfg : cfg) (currentTime, vertices, q, used) (cilState' : cilState) =
-//            assert(cilState'.ip = d.v) TODO: #Kostya
             let s' = cilState'.state
             let dstIp = cilState'.ip
             let dstVertex, vertices = createVertexIfNeeded cfg.methodBase s'.opStack dstIp vertices
@@ -716,7 +715,7 @@ type StepInterpreter() =
                 assert(List.length v.OpStack = List.length cilState.state.opStack)
                 v.OpStack
                 |> List.zip cilState.state.opStack
-                |> List.forall (fun (x, y) -> if IsIdempotent y then x = y else true) // TODO: what if x is idempotent, but y isn't #Kostya
+                |> List.forall (fun (x, y) -> if IsIdempotent y then x = y else true)
             let howToNameIt (v : CFA.Vertex) = v.Ip = cilState.ip && v.OutgoingEdges.Count > 0 && vertexWithSameOpStack v // TODO: rename var #Kostya
             let vertices = cfa.body.vertices.Values |> Seq.filter howToNameIt |> List.ofSeq
             match vertices with

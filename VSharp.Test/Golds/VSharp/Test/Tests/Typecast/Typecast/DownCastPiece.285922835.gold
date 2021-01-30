@@ -1,8 +1,8 @@
 METHOD: System.Int32 VSharp.Test.Tests.Typecast.Typecast.DownCastPiece(VSharp.Test.Tests.Typecast.Piece)
 RESULT: Totally 3 states:
-20
+10
 MEMORY DUMP:
-Path condition: null == piece
+Path condition: !(null == piece) /\ (piece <: VSharp.Test.Tests.Typecast.Pawn)
 Initialized types = { VSharp.Test.Tests.Typecast.Typecast }
 
 20
@@ -10,7 +10,7 @@ MEMORY DUMP:
 Path condition: !(null == piece) /\ !(piece <: VSharp.Test.Tests.Typecast.Pawn)
 Initialized types = { VSharp.Test.Tests.Typecast.Typecast }
 
-10
+20
 MEMORY DUMP:
-Path condition: !(null == piece) /\ (piece <: VSharp.Test.Tests.Typecast.Pawn)
+Path condition: null == piece
 Initialized types = { VSharp.Test.Tests.Typecast.Typecast }

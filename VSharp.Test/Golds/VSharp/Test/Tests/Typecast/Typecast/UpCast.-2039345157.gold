@@ -1,7 +1,37 @@
 METHOD: System.Int32 VSharp.Test.Tests.Typecast.Typecast.UpCast()
-RESULT: Totally 1 state:
+RESULT: Totally 3 states:
 15
 MEMORY DUMP:
+--------------- Fields: ---------------
+Rate ==> {4 <- 1}
+_newField ==> {4 <- 25}
+_xCoord ==> {4 <- 1}
+_yCoord ==> {4 <- 1}
+--------------- Types tokens: ---------------
+4 ==> VSharp.Test.Tests.Typecast.Pawn
+--------------- Stack: ---------------
+key = __loc__0, value = (HeapRef 4 to VSharp.Test.Tests.Typecast.Pawn)
+key = __loc__1, value = (HeapRef 4 to VSharp.Test.Tests.Typecast.Pawn)
+Initialized types = { VSharp.Test.Tests.Typecast.Pawn, VSharp.Test.Tests.Typecast.Typecast, System.Object, VSharp.Test.Tests.Typecast.Piece }
+
+25
+MEMORY DUMP:
+Path condition: False
+--------------- Fields: ---------------
+Rate ==> {4 <- 1}
+_newField ==> {4 <- 25}
+_xCoord ==> {4 <- 1}
+_yCoord ==> {4 <- 1}
+--------------- Types tokens: ---------------
+4 ==> VSharp.Test.Tests.Typecast.Pawn
+--------------- Stack: ---------------
+key = __loc__0, value = (HeapRef 4 to VSharp.Test.Tests.Typecast.Pawn)
+key = __loc__1, value = (HeapRef 4 to VSharp.Test.Tests.Typecast.Pawn)
+Initialized types = { VSharp.Test.Tests.Typecast.Pawn, VSharp.Test.Tests.Typecast.Typecast, System.Object, VSharp.Test.Tests.Typecast.Piece }
+
+25
+MEMORY DUMP:
+Path condition: False
 --------------- Fields: ---------------
 Rate ==> {4 <- 1}
 _newField ==> {4 <- 25}

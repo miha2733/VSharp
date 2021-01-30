@@ -1,6 +1,6 @@
 METHOD: System.Object VSharp.Test.Tests.Generic.SpecializeGenerics.RetConstructedR0()
 RESULT: Totally 1 state:
-(HeapRef 4.3 to System.Object)
+(HeapRef 4.3 to System.Int32)
 MEMORY DUMP:
 --------------- Boxed items: ---------------
 3 ==> 0

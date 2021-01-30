@@ -105,14 +105,17 @@ type public MethodInterpreter((*ilInterpreter : ILInterpreter, funcId : IFunctio
 
     member x.Add (funcId :IFunctionIdentifier) cilState = if cilState.ip <> ip.Exit then workingSet.[funcId].Add cilState
     member x.FindSimilar (funcId : IFunctionIdentifier) cilState =
-        let areCapableForMerge (st1 : cilState) (st2 : cilState) =  st1.state.opStack = st2.state.opStack && st1.ip = st2.ip
+        let areCapableForMerge (st1 : cilState) (st2 : cilState) = st1.state.opStack = st2.state.opStack && st1.ip = st2.ip
         match Seq.tryFindIndex (areCapableForMerge cilState) workingSet.[funcId] with
         | None -> None
-        | Some i -> let res = Some workingSet.[funcId].[i]
-                    workingSet.[funcId].RemoveAt i
-                    res
-    member x.IsResultState (_ : IFunctionIdentifier) (cilState : cilState) =
-        cilState.ip = ip.Exit && cilState.state.opStack = []
+        | Some i ->
+            let res = Some workingSet.[funcId].[i]
+            workingSet.[funcId].RemoveAt i
+            res
+    member x.IsResultState (funcId : IFunctionIdentifier) (cilState : cilState) =
+        // this is a hack, it should be gone with cfa
+        let needToAddResult () = not <| Seq.exists ((=) cilState) results.[funcId]
+        cilState.ip = ip.Exit && cilState.state.opStack = [] && needToAddResult()
     member x.PickNext (funcId : IFunctionIdentifier) =
         let cfg = findCfg funcId
         let rec findState () =
@@ -558,7 +561,7 @@ and public ILInterpreter(methodInterpreter : MethodInterpreter) as this =
                 let k1 value = k [{state with returnRegister = Some value}]
                 let fieldId = Reflection.wrapField fieldInfo
                 if addressNeeded then Memory.ReferenceField target fieldId |> k1
-                else Memory.ReadField state target fieldId |> k1
+                else Memory.ReadField state target fieldId |> k1 // TODO: need to add heapReferenceToBoxReference? #do
             let state = {cilState.state with opStack = stack}
             x.NpeOrInvokeStatement state target loadWhenTargetIsNotNull (pushResultFromStateToCilState cilState)
         | _ -> __corruptedStack__()
@@ -671,9 +674,7 @@ and public ILInterpreter(methodInterpreter : MethodInterpreter) as this =
         let hasValueResults = hasValueResults |> List.map (fun (state : state) -> Option.get state.returnRegister, state)
         Cps.List.mapk boxNullable hasValueResults (List.concat >> pushResultFromStateToCilState cilState)))
 
-
     member x.Box (cfg : cfg) offset (cilState : cilState) =
-
         let t = resolveTypeFromMetadata cfg (offset + OpCodes.Box.Size)
         let termType = Types.FromDotNetType cilState.state t
         match cilState.state.opStack with
@@ -684,6 +685,7 @@ and public ILInterpreter(methodInterpreter : MethodInterpreter) as this =
                 else allocateValueTypeInHeap v cilState
             else [cilState]
         | _ -> __corruptedStack__()
+
     member private x.UnboxCommon (state : state) (obj : term) (t : System.Type) (handleRestResults : term * state -> term * state) (k : state list -> 'a) =
         let termType = Types.FromDotNetType state t
         assert(IsReference obj)

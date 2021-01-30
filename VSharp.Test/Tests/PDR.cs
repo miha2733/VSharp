@@ -481,7 +481,7 @@ namespace VSharp.Test.Tests
         }
 
         // expecting f -> 100, !f -> 20
-        [Ignore("Insufficient information is correct result")]
+        [TestSvm]
         public static int TestLengths_6(bool f)
         {
             Array array = new int[4, 5];

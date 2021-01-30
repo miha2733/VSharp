@@ -176,10 +176,11 @@ module API =
             | _ -> internalfailf "Referencing array index: expected reference, but got %O" arrayRef
         let rec ReferenceField reference fieldId =
             match reference.term with
+            | HeapRef(_, typ) when fieldId.declaringType.IsValueType ->
+                assert(Types.ToDotNetType typ |> fieldId.declaringType.IsAssignableFrom)
+                ReferenceField (HeapReferenceToBoxReference reference) fieldId
             | HeapRef(address, typ) ->
-                let dnt = Types.ToDotNetType typ
-                let dnt = if dnt.IsGenericType then dnt.GetGenericTypeDefinition() else dnt
-                assert(fieldId.declaringType.IsAssignableFrom dnt)
+                assert(Types.ToDotNetType typ |> fieldId.declaringType.IsAssignableFrom)
                 ClassField(address, fieldId) |> Ref
             | Ref addr ->
                 assert(typeOfAddress addr |> Types.isStruct)
@@ -194,9 +195,9 @@ module API =
         let ReadField state term field =
             let doRead target =
                 match target.term with
-                | HeapRef(addr, _) -> Memory.readClassField state addr field
+                | HeapRef _
+                | Ref _ -> ReferenceField target field |> Memory.readSafe state
                 | Struct _ -> Memory.readStruct target field
-                | Ref addr -> StructField(addr, field) |> Ref |> Memory.readSafe state
                 | _ -> internalfailf "Reading field of %O" term
             Merging.guardedApply doRead term
 
@@ -246,7 +247,7 @@ module API =
 
         let BoxValueType state term =
             let address, state = Memory.freshAddress state
-            let reference = HeapRef (ConcreteHeapAddress address) Types.ObjectType
+            let reference = HeapRef (ConcreteHeapAddress address) Types.ObjectType // TODO: why heapRef? mb BoxLocation? #do
             reference, Memory.writeBoxedLocation state address term
 
         let AllocateDefaultStatic state targetType =

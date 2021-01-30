@@ -7,13 +7,6 @@ Path condition: !(2 * x == 50) /\ !(5 == x % 7) /\ -12 + x < 0
 key = __loc__0, value = 0
 Initialized types = { VSharp.Test.Tests.ControlFlow }
 
-1
-MEMORY DUMP:
-Path condition: !(-12 + x < 0) /\ !(2 * x == 50) /\ !(5 == x % 7)
---------------- Stack: ---------------
-key = __loc__0, value = 1
-Initialized types = { VSharp.Test.Tests.ControlFlow }
-
 0
 MEMORY DUMP:
 Path condition: !(2 * x == 50) /\ -12 + x < 0 /\ 5 == x % 7
@@ -21,11 +14,11 @@ Path condition: !(2 * x == 50) /\ -12 + x < 0 /\ 5 == x % 7
 key = __loc__0, value = 0
 Initialized types = { VSharp.Test.Tests.ControlFlow }
 
-100
+1
 MEMORY DUMP:
-Path condition: !(5 == x % 7) /\ -12 + x < 0 /\ 2 * x == 50
+Path condition: !(-12 + x < 0) /\ !(2 * x == 50) /\ !(5 == x % 7)
 --------------- Stack: ---------------
-key = __loc__0, value = 100
+key = __loc__0, value = 1
 Initialized types = { VSharp.Test.Tests.ControlFlow }
 
 1
@@ -33,6 +26,13 @@ MEMORY DUMP:
 Path condition: !(-12 + x < 0) /\ !(2 * x == 50) /\ 5 == x % 7
 --------------- Stack: ---------------
 key = __loc__0, value = 1
+Initialized types = { VSharp.Test.Tests.ControlFlow }
+
+100
+MEMORY DUMP:
+Path condition: !(5 == x % 7) /\ -12 + x < 0 /\ 2 * x == 50
+--------------- Stack: ---------------
+key = __loc__0, value = 100
 Initialized types = { VSharp.Test.Tests.ControlFlow }
 
 101

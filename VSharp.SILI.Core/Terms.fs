@@ -406,28 +406,24 @@ module internal Terms =
         let actualType = if box value = null then t else value.GetType()
         let functionIsCastedToMethodPointer () =
             typedefof<System.Reflection.MethodBase>.IsAssignableFrom(actualType) && typedefof<System.IntPtr>.IsAssignableFrom(t)
-        try
-            if actualType = t then
-                Concrete value (fromDotNetType t)
-            elif t.IsEnum && t.GetEnumUnderlyingType().IsAssignableFrom(actualType) || actualType.IsEnum && actualType.GetEnumUnderlyingType().IsAssignableFrom(t) then
-                Concrete value (fromDotNetType t)
-            elif typedefof<IConvertible>.IsAssignableFrom(actualType) then
-                let casted =
-                    if t.IsPointer then
-                        IntPtr(Convert.ChangeType(value, typedefof<int64>) :?> int64) |> box
-                    //TODO: ability to convert negative integers to UInt32 without overflowException
-                    elif TypeUtils.isIntegral t then
-                        TypeUtils.uncheckedChangeType value t
-                    else Convert.ChangeType(value, t)
-                Concrete casted (fromDotNetType t)
-            elif t.IsAssignableFrom(actualType) then
-                Concrete value (fromDotNetType t)
-            elif functionIsCastedToMethodPointer() then
-                Concrete value (fromDotNetType actualType)
-            else raise(InvalidCastException(sprintf "Cannot cast %s to %s!" t.FullName actualType.FullName))
-        with
-        | _ ->
-            internalfailf "cannot cast %s to %s!" actualType.FullName t.FullName
+        if actualType = t then
+            Concrete value (fromDotNetType t)
+        elif t.IsEnum && t.GetEnumUnderlyingType().IsAssignableFrom(actualType) || actualType.IsEnum && actualType.GetEnumUnderlyingType().IsAssignableFrom(t) then
+            Concrete value (fromDotNetType t)
+        elif typedefof<IConvertible>.IsAssignableFrom(actualType) then
+            let casted =
+                if t.IsPointer then
+                    IntPtr(Convert.ChangeType(value, typedefof<int64>) :?> int64) |> box
+                // TODO: ability to convert negative integers to UInt32 without overflowException
+                elif TypeUtils.isIntegral t && TypeUtils.isIntegral actualType then // TODO: why we need this? Why not just use Convert.ChangeType? #Kostya
+                    TypeUtils.uncheckedChangeType value t
+                else Convert.ChangeType(value, t)
+            Concrete casted (fromDotNetType t)
+        elif t.IsAssignableFrom(actualType) then
+            Concrete value (fromDotNetType t)
+        elif functionIsCastedToMethodPointer() then
+            Concrete value (fromDotNetType actualType)
+        else raise(InvalidCastException(sprintf "Cannot cast %s to %s!" actualType.FullName t.FullName))
 
     let True =
         Concrete (box true) Bool

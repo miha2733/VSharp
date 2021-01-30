@@ -1,8 +1,8 @@
 METHOD: System.Int32 VSharp.Test.Tests.Typecast.Typecast.Unboxing(System.Object)
 RESULT: Totally 3 states:
-23
+13
 MEMORY DUMP:
-Path condition: null == obj
+Path condition: !(null == obj) /\ (obj <: System.Int32)
 Initialized types = { VSharp.Test.Tests.Typecast.Typecast }
 
 23
@@ -10,7 +10,7 @@ MEMORY DUMP:
 Path condition: !(null == obj) /\ !(obj <: System.Int32)
 Initialized types = { VSharp.Test.Tests.Typecast.Typecast }
 
-13
+23
 MEMORY DUMP:
-Path condition: !(null == obj) /\ (obj <: System.Int32)
+Path condition: null == obj
 Initialized types = { VSharp.Test.Tests.Typecast.Typecast }

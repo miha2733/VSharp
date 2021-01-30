@@ -82,7 +82,9 @@ type public ExplorerBase() =
         let locals =
             match methodBase.GetMethodBody() with
             | null -> []
-            | body -> body.LocalVariables |> Seq.map localVarsDecl |> Seq.toList
+            | body ->
+                let res = body.LocalVariables |> Seq.map localVarsDecl |> Seq.toList
+                res
         let valueOrFreshConst (param : ParameterInfo option) value =
             match param, value with
             | None, _ -> internalfail "parameters list is longer than expected!"

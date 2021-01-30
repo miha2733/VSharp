@@ -70,6 +70,33 @@ module public Reflection =
     let public IsDelegateConstructor (methodBase : MethodBase) =
         methodBase.IsConstructor && methodBase.DeclaringType.IsSubclassOf typedefof<System.Delegate>
 
+//    let private getGenericMethodDefinition (methodBase : MethodBase) =
+//        let methodInfo =
+//            assert(not <| methodBase.IsConstructor)
+//            methodBase :?> MethodInfo
+//        let args = methodInfo.GetGenericArguments()
+//        let genericMethodInfo = methodInfo.GetGenericMethodDefinition()
+//        let parameters = genericMethodInfo.GetGenericArguments()
+//        genericMethodInfo :> MethodBase, parameters, args
+//
+//    let private getMethodWithGenericDeclaringType (methodType : Type) =
+//        let args = methodType.GetGenericArguments()
+//        let genericType = methodType.GetGenericTypeDefinition()
+//        let parameters = genericType.GetGenericArguments()
+//        genericType, parameters, args
+//
+//    let public GetGenericArgsAndDefs (methodBase : MethodBase) =
+//        let genericMethod, methodPararms, methodArgs =
+//            if methodBase.IsGenericMethod then getGenericMethodDefinition methodBase
+//            else methodBase, [||], [||]
+//        let genericArgsNumber = Array.length methodArgs
+//        let methodType = genericMethod.DeclaringType
+//        let genericType, typeParams, typeArgs =
+//            if methodType.IsGenericType then getMethodWithGenericDeclaringType methodType
+//            else methodType, [||], [||]
+//        let argumentTypes = // TODO
+//        let fullyGenericMethod = genericType.GetMethod(methodBase.Name, genericArgsNumber, allBindingFlags, null, argumentTypes, null)
+
     let public TryGetGenericMethodDefinition (methodBase : MethodBase) =
         if not <| methodBase.IsGenericMethod then None
         else
@@ -96,7 +123,7 @@ module public Reflection =
 
     // --------------------------------- Concretization ---------------------------------
 
-    let rec public concretizeType (subst : Type -> Type) (typ : Type)=
+    let rec public concretizeType (subst : Type -> Type) (typ : Type) =
         if typ.IsGenericParameter then subst typ
         elif typ.IsGenericType then
             let args = typ.GetGenericArguments()
@@ -109,22 +136,20 @@ module public Reflection =
             let parameterType = pi.ParameterType
             if parameterType.IsGenericTypeParameter then subst parameterType else parameterType
         let concreteParameters = m.GetParameters() |> Array.map substTypeIfNeed
-        getMethod concreteType m.Name concreteParameters
+        let mi = getMethod concreteType m.Name concreteParameters
+        assert(mi <> null)
+        mi
 
     let private concretizeMethodInfo subst (mi : MethodInfo) =
-        let concretize (method : MethodInfo) =
-            let getMethod (t : Type) (name : String) (parameters : Type[]) =
-                let bindingFlags = BindingFlags.NonPublic ||| BindingFlags.Public ||| BindingFlags.Instance ||| BindingFlags.Static
-                t.GetMethod(name, bindingFlags, null, parameters, null)
-            let mi = concretizeMethod subst method getMethod
-            assert(mi <> null)
-            mi
+        let getMethod genericArgsNumber (t : Type) (name : String) (parameters : Type[]) =
+            t.GetMethod(name, genericArgsNumber, allBindingFlags, null, parameters, null)
         let concretizeGeneric (mi : MethodInfo) =
             let args = mi.GetGenericArguments()
+            let num = Array.length args
             let genericMethod = mi.GetGenericMethodDefinition()
-            let mi = concretize genericMethod
+            let mi = concretizeMethod subst genericMethod (getMethod num)
             mi.MakeGenericMethod(args |> Array.map subst)
-        if mi.IsGenericMethod then concretizeGeneric mi else concretize mi
+        if mi.IsGenericMethod then concretizeGeneric mi else concretizeMethod subst mi (getMethod 0)
         :> MethodBase
 
     let private concretizeCtorInfo subst ci =
@@ -159,7 +184,7 @@ module public Reflection =
 
     let wrapField (field : FieldInfo) =
         // TODO: why safeGenericTypeDefinition? #Dima
-        {declaringType = safeGenericTypeDefinition field.DeclaringType; name = field.Name; typ = field.FieldType}
+        {declaringType = field.DeclaringType; name = field.Name; typ = field.FieldType}
 
     let rec private retrieveFields isStatic f (t : System.Type) =
         let staticFlag = if isStatic then BindingFlags.Static else BindingFlags.Instance

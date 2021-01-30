@@ -217,6 +217,7 @@ namespace VSharp.Test.Tests.Typecast
             return Rate;
         }
 
+        [TestSvm]
         [Ignore("Exceptions handling")]
         public int RetRate(object obj)
         {
@@ -322,7 +323,7 @@ namespace VSharp.Test.Tests.Typecast
             return true;
         }
 
-        [Ignore("Calling virtual method is not implemented")]
+        [Ignore("GetType() is not implemented")]
         public static bool ReferenceIdentity()
         {
             var knight = new Knight();
@@ -413,14 +414,14 @@ namespace VSharp.Test.Tests.Typecast
     [TestSvmFixture]
     public static class Helper
     {
-        [Ignore("Calling virtual method is not implemented")]
+        [TestSvm]
         public static double CastStructToInterface(Coord arg)
         {
             INormalize tmp = arg;
             return tmp.Norm();
         }
 
-        [Ignore("Calling virtual method is not implemented")]
+        [TestSvm]
         public static int CastStructToInterfaceAndWriteInBoxed(Coord2 arg)
         {
             INormalize tmp = arg;

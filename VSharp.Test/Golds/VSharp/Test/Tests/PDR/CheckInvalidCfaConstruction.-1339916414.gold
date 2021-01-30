@@ -1,10 +1,10 @@
 METHOD: System.Int32 VSharp.Test.Tests.PDR.CheckInvalidCfaConstruction(System.Boolean)
 RESULT: Totally 2 states:
-40
+100
 MEMORY DUMP:
-Path condition: f
+Path condition: !f
 --------------- Fields: ---------------
-_forty ==> {3 <- 40}
+_forty ==> {3 <- 100}
 _fortyTwo ==> {3 <- 42}
 _pi ==> {3 <- 3.14}
 --------------- Types tokens: ---------------
@@ -13,11 +13,11 @@ _pi ==> {3 <- 3.14}
 key = __loc__0, value = (HeapRef 3 to VSharp.Test.Tests.PDR+ClassWithLotsOFFields)
 Initialized types = { VSharp.Test.Tests.PDR, System.Object, VSharp.Test.Tests.PDR+ClassWithLotsOFFields }
 
-100
+40
 MEMORY DUMP:
-Path condition: !f
+Path condition: f
 --------------- Fields: ---------------
-_forty ==> {3 <- 100}
+_forty ==> {3 <- 40}
 _fortyTwo ==> {3 <- 42}
 _pi ==> {3 <- 3.14}
 --------------- Types tokens: ---------------

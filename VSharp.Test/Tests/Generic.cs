@@ -56,7 +56,7 @@ namespace VSharp.Test.Tests.Generic
             return new List<double>();
         }
 
-        [Ignore("Insufficient information is correct result")]
+        [TestSvm]
         public static T RetT(T t)
         {
             return t;
@@ -72,19 +72,19 @@ namespace VSharp.Test.Tests.Generic
         where N : IKeeper<K>
         where Z : List<int>
     {
-        [Ignore("Insufficient information is correct result")]
+        [TestSvm]
         public static T RetT(T t)
         {
             return t;
         }
 
-        [Ignore("Insufficient information is correct result")]
+        [TestSvm]
         public static U RetU(U u)
         {
             return u;
         }
 
-        [Ignore("Insufficient information is correct result")]
+        [TestSvm]
         public static P RetP(P p)
         {
             return p;
@@ -96,7 +96,7 @@ namespace VSharp.Test.Tests.Generic
             return k;
         }
 
-        [Ignore("Insufficient information is correct result")]
+        [TestSvm]
         public static N RetN(N n)
         {
             return n;
@@ -126,7 +126,7 @@ namespace VSharp.Test.Tests.Generic
             return 0;
         }
 
-        [Ignore("Insufficient information is correct result")]
+        [TestSvm]
         public static V RetV(V v)
         {
             return v;
@@ -263,13 +263,13 @@ namespace VSharp.Test.Tests.Generic
         {
         }
 
-        [Ignore("Insufficient information is correct result")]
+        [TestSvm]
         public T GetFields()
         {
             return _field;
         }
 
-        [Ignore("Insufficient information is correct result")]
+        [TestSvm]
         public void SetField(T f)
         {
             _field = f;

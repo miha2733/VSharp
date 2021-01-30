@@ -111,7 +111,7 @@ namespace VSharp.Test.Tests
             return x;
         }
 
-        [Ignore("expected reference, but got System.Nullable")]
+        [TestSvm]
         public static object BoxNullable(int? x)
         {
             return x;
@@ -157,7 +157,7 @@ namespace VSharp.Test.Tests
     [TestSvmFixture]
     public class UnboxGeneric<T>
     {
-        [Ignore("Insufficient information is correct result")]
+        [TestSvm]
         public static T Cast(object o)
         {
             return (T) o;
@@ -170,7 +170,7 @@ namespace VSharp.Test.Tests
         where T : class, IVirtual
         where U : struct, IVirtual
     {
-        [Ignore("Insufficient information is correct result")]
+        [TestSvm]
         public static object BoxValueOrReference(G t)
         {
             object o = t;
@@ -184,14 +184,14 @@ namespace VSharp.Test.Tests
             return o;
         }
 
-        [Ignore("Insufficient information is correct result")]
+        [TestSvm]
         public static object BoxValue(U t)
         {
             object o = t;
             return o;
         }
 
-        [Ignore("Insufficient information is correct result")]
+        [TestSvm]
         public static object BoxValue(V t)
         {
             object o = t;

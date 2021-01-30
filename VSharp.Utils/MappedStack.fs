@@ -49,7 +49,8 @@ module public MappedStack =
             contents', peaks'
         else
             // this is a case when variable was reserved but never assigned
-            assert (idx = 0u)
+            if not (idx = 0u) then __unreachable__() // TODO
+//            assert (idx = 0u) // TODO: crashes only in DEBUG
             contents, peaks
 
     let tryFind key (contents, peaks) =
