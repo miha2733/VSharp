@@ -848,7 +848,7 @@ module internal Memory =
             override x.Compose state =
                 x.baseSource.Compose state |> extractAddress
 
-    let private reserveLocation (state : state) key (n : uint) =
+    let private reserveLocation (state : state) key (n : uint32) =
         {state with stack = MappedStack.reserve key n state.stack}
 
     // state is untouched. It is needed because of this situation:
