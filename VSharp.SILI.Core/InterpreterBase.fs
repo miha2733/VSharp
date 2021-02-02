@@ -216,26 +216,18 @@ type public ExplorerBase() =
         let message, state = Memory.AllocateString "Specified cast is not valid." state
         x.CreateInstance typeof<System.InvalidCastException> [message] state
 
-
-    member x.ExploreAndCompose (funcId : IFunctionIdentifier) state k =
+    member x.ExploreAndCompose (funcId : IFunctionIdentifier) state k = // TODO: make code better! #do
         let prepareGenericsLessState (methodId : IMethodIdentifier) state =
             let methodBase = methodId.Method
             if not <| Reflection.IsGenericOrDeclaredInGenericType methodBase then methodId :> IFunctionIdentifier, state, false
             else
-                let genericMethod, methodGenericDefs, methodGenericArgs =
-                    match Reflection.TryGetGenericMethodDefinition methodBase with
-                    | None -> methodBase, [||], [||]
-                    | v -> Option.get v
-                let genericMethod1, typeGenericDefs, typeGenericArgs =
-                    match Reflection.TryGetMethodWithGenericDeclaringType genericMethod with
-                    | None -> genericMethod, [||], [||]
-                    | v -> Option.get v
-                let genericDefs = Array.append methodGenericDefs typeGenericDefs |> Seq.map Id |> List.ofSeq
-                let genericArgs = Array.append methodGenericArgs typeGenericArgs |> Seq.map (Types.FromDotNetType state) |> List.ofSeq
+                let fullyGenericMethod, genericArgs, genericDefs = Reflection.GetGenericArgsAndDefs methodBase
+                let genericArgs = genericArgs |> Seq.map (Types.FromDotNetType state) |> List.ofSeq
+                let genericDefs = genericDefs |> Seq.map Id |> List.ofSeq
                 if List.isEmpty genericDefs then methodId :> IFunctionIdentifier, state, false
                 else
                     let state = Memory.NewTypeVariables state (List.zip genericDefs genericArgs)
-                    (x.MakeMethodIdentifier genericMethod1 :> IFunctionIdentifier), state, true
+                    (x.MakeMethodIdentifier fullyGenericMethod :> IFunctionIdentifier), state, true
 
         let newFuncId, state, isSubstitutionNeeded =
             match funcId with
@@ -249,7 +241,6 @@ type public ExplorerBase() =
             let newStates = Memory.composeStates state summary.state
                             |> if isSubstitutionNeeded then List.map (Memory.popTypeVariablesSubstitution) else id
             List.iter (Memory.Dump >> (Logger.trace "ExploreAndCompose: Result after composition %s")) newStates
-
             let result = Memory.fillHoles state summary.result
             List.map (withFst result) newStates) >> List.ofSeq >> List.concat >> k)
 

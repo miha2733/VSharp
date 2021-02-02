@@ -217,7 +217,6 @@ namespace VSharp.Test.Tests.Typecast
             return Rate;
         }
 
-        [TestSvm]
         [Ignore("Exceptions handling")]
         public int RetRate(object obj)
         {
