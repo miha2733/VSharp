@@ -315,8 +315,8 @@ module public CFA =
                 x.PrintLog "composition left:\n"  <| Memory.Dump cilState1.state
                 x.PrintLog "composition right:\n" <| Memory.Dump effect
                 x.PrintLog "composition resulted:\n" <| Memory.Dump state
-            if ip = Instruction 28 then ()
-            if ip = Instruction 9 then ()
+            if ip = Instruction 11 then ()
+            if effect.staticFields.impl.Length <> 0 then ()
             let states = Memory.ComposeStates cilState1.state effect
             assert(List.forall (fun state -> cilState1.state.frames = state.frames) states)
             let goodStates = List.filter x.CommonFilterStates states

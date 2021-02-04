@@ -982,6 +982,7 @@ module internal Memory =
         assert(VectorTime.isDescending state'.currentTime)
         assert(not <| VectorTime.isEmpty state.currentTime)
         // TODO: do nothing if state is empty!
+        if state.currentTime = [4u; 2u] then ()
         list {
             // Hacking return register to propagate starting and current time of state' into composeTime
             let state = {state with returnRegister = Some(Concrete (state'.startingTime, state'.currentTime) (fromDotNetType typeof<vectorTime * vectorTime>))}

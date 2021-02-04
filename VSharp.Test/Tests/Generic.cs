@@ -34,13 +34,11 @@ namespace VSharp.Test.Tests.Generic
         where N : IKeeper<K>
         where Z : List<int>
     {
-        [TestSvmFixture]
         public static class NonGenericClassInsideGenericClass
         {
-            [TestSvm]
-            public static int GenericMethodOfNonGenericType(U a)
+            public static K GenericMethodOfNonGenericType(K k)
             {
-                return 0;
+                return k;
             }
         }
 
