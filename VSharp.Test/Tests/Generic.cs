@@ -118,6 +118,17 @@ namespace VSharp.Test.Tests.Generic
             return r;
         }
 
+        // [TestSvm]
+        // public static R RetR(V t, R r)
+        // {
+        //     return r;
+        // }
+        //
+        // [TestSvm]
+        // public static R RetR(R t, R r)
+        // {
+        //     return r;
+        // }
 
         public static object Ret0(R r)
         {
@@ -139,6 +150,12 @@ namespace VSharp.Test.Tests.Generic
         {
             return GenericClass<object, int>.RetR(0);
         }
+
+        // [TestSvm]
+        // public static object RetConstructedRWithInt2()
+        // {
+        //     return GenericClass<int, int>.RetR(0, 0);
+        // }
 
         [TestSvm]
         public static object RetConstructedR0()
@@ -234,6 +251,11 @@ namespace VSharp.Test.Tests.Generic
         }
 
         public static T MixedGenericParameterAndTypeGenerics_RetT<W>(W w, T t, R r, V v)
+        {
+            return t;
+        }
+
+        public static T MixedGenericParameterAndTypeGenerics_RetT<W>(W w, V r, T t, V v)
         {
             return t;
         }

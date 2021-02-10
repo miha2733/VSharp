@@ -174,18 +174,18 @@ module API =
             | HeapRef(addr, typ) -> ArrayIndex(addr, indices, symbolicTypeToArrayType typ) |> Ref
             | Union gvs -> gvs |> List.map (fun (g, v) -> (g, ReferenceArrayIndex v indices)) |> Merging.merge
             | _ -> internalfailf "Referencing array index: expected reference, but got %O" arrayRef
-        let rec ReferenceField reference fieldId =
+        let rec ReferenceField state reference fieldId =
             match reference.term with
-            | HeapRef(_, typ) when fieldId.declaringType.IsValueType ->
-                assert(Types.ToDotNetType typ |> fieldId.declaringType.IsAssignableFrom)
-                ReferenceField (HeapReferenceToBoxReference reference) fieldId
+            | HeapRef(address, typ) when fieldId.declaringType.IsValueType ->
+                assert(Memory.getStrongestTypeOfHeapRef state address typ |> Types.ToDotNetType |> fieldId.declaringType.IsAssignableFrom)
+                ReferenceField state (HeapReferenceToBoxReference reference) fieldId
             | HeapRef(address, typ) ->
-                assert(Types.ToDotNetType typ |> fieldId.declaringType.IsAssignableFrom)
+                assert(Memory.getStrongestTypeOfHeapRef state address typ |> Types.ToDotNetType |> fieldId.declaringType.IsAssignableFrom)
                 ClassField(address, fieldId) |> Ref
-            | Ref addr ->
-                assert(typeOfAddress addr |> Types.isStruct)
-                StructField(addr, fieldId) |> Ref
-            | Union gvs -> gvs |> List.map (fun (g, v) -> (g, ReferenceField v fieldId)) |> Merging.merge
+            | Ref address ->
+                assert(Memory.baseTypeOfAddress state address |> Types.isStruct)
+                StructField(address, fieldId) |> Ref
+            | Union gvs -> gvs |> List.map (fun (g, v) -> (g, ReferenceField state v fieldId)) |> Merging.merge
             | _ -> internalfailf "Referencing field: expected reference, but got %O" reference
 
         let ReadSafe state reference = Memory.readSafe state reference
@@ -196,15 +196,15 @@ module API =
             let doRead target =
                 match target.term with
                 | HeapRef _
-                | Ref _ -> ReferenceField target field |> Memory.readSafe state
+                | Ref _ -> ReferenceField state target field |> Memory.readSafe state
                 | Struct _ -> Memory.readStruct target field
                 | _ -> internalfailf "Reading field of %O" term
             Merging.guardedApply doRead term
 
         let rec ReadArrayIndex state reference indices =
             match reference.term with
-            | HeapRef(addr, _) ->
-                let (_, dim, _) as arrayType = Memory.typeOfHeapLocation state addr |> symbolicTypeToArrayType
+            | HeapRef(addr, typ) ->
+                let (_, dim, _) as arrayType = Memory.getStrongestTypeOfHeapRef state addr typ |> symbolicTypeToArrayType
                 assert(dim = List.length indices)
                 Memory.readArrayIndex state addr indices arrayType
             | Union gvs -> gvs |> List.map (fun (g, v) -> (g, ReadArrayIndex state v indices)) |> Merging.merge
@@ -215,19 +215,19 @@ module API =
         let WriteLocalVariable state location value = Memory.writeStackLocation state location value
         let WriteSafe state reference value = Memory.writeSafe state reference value
         let WriteStructField structure field value = Memory.writeStruct structure field value
-        let rec WriteClassField state reference field value =
+        let WriteClassField state reference field value =
             Memory.guardedStatedMap
                 (fun state reference ->
                     match reference.term with
                     | HeapRef(addr, _) -> Memory.writeClassField state addr field value
                     | _ -> internalfailf "Writing field of class: expected reference, but got %O" reference)
                 state reference
-        let rec WriteArrayIndex state reference indices value =
+        let WriteArrayIndex state reference indices value =
             Memory.guardedStatedMap
                 (fun state reference ->
                     match reference.term with
-                    | HeapRef(addr, _) ->
-                        let (_, dim, _) as arrayType = Memory.typeOfHeapLocation state addr |> symbolicTypeToArrayType
+                    | HeapRef(addr, typ) ->
+                        let (_, dim, _) as arrayType = Memory.getStrongestTypeOfHeapRef state addr typ |> symbolicTypeToArrayType
                         assert(dim = List.length indices)
                         Memory.writeArrayIndex state addr indices arrayType value
                     | _ -> internalfailf "Writing field of class: expected reference, but got %O" reference)
@@ -247,7 +247,7 @@ module API =
 
         let BoxValueType state term =
             let address, state = Memory.freshAddress state
-            let reference = HeapRef (ConcreteHeapAddress address) Types.ObjectType // TODO: why heapRef? mb BoxLocation? #do
+            let reference = HeapRef (ConcreteHeapAddress address) Types.ObjectType // TODO: mb actual type instead of Object? #do
             reference, Memory.writeBoxedLocation state address term
 
         let AllocateDefaultStatic state targetType =
@@ -270,31 +270,32 @@ module API =
 
         let rec ArrayRank state arrayRef =
             match arrayRef.term with
-            | HeapRef(addr, _) -> Memory.typeOfHeapLocation state addr |> Types.rankOf |> makeNumber
+            | HeapRef(addr, typ) -> Memory.getStrongestTypeOfHeapRef state addr typ |> Types.rankOf |> makeNumber
             | Union gvs -> gvs |> List.map (fun (g, v) -> (g, ArrayRank state v)) |> Merging.merge
             | _ -> internalfailf "Getting rank of array: expected ref, but got %O" arrayRef
         let rec ArrayLengthByDimension state arrayRef index =
             match arrayRef.term with
-            | HeapRef(addr, _) -> Memory.typeOfHeapLocation state addr |> symbolicTypeToArrayType |> Memory.readLength state addr index
+            | HeapRef(addr, typ) -> Memory.getStrongestTypeOfHeapRef state addr typ |> symbolicTypeToArrayType |> Memory.readLength state addr index
             | Union gvs -> gvs |> List.map (fun (g, v) -> (g, ArrayLengthByDimension state v index)) |> Merging.merge
             | _ -> internalfailf "reading array length: expected heap reference, but got %O" arrayRef
         let rec ArrayLowerBoundByDimension state arrayRef index =
             match arrayRef.term with
-            | HeapRef(addr, _) -> Memory.typeOfHeapLocation state addr |> symbolicTypeToArrayType |> Memory.readLowerBound state addr index
+            | HeapRef(addr, typ) -> Memory.getStrongestTypeOfHeapRef state addr typ |> symbolicTypeToArrayType |> Memory.readLowerBound state addr index
             | Union gvs -> gvs |> List.map (fun (g, v) -> (g, ArrayLowerBoundByDimension state v index)) |> Merging.merge
             | _ -> internalfailf "reading array lower bound: expected heap reference, but got %O" arrayRef
 
         let StringLength state strRef = Memory.lengthOfString state strRef
-        let rec StringCtorOfCharArray state arrayRef dstRef =
+        let StringCtorOfCharArray state arrayRef dstRef =
             match dstRef.term with
-            | HeapRef({term = ConcreteHeapAddress dstAddr}, typ) ->
+            | HeapRef({term = ConcreteHeapAddress dstAddr} as addr, typ) ->
                 assert(typ = Types.String)
                 Memory.guardedStatedMap (fun state arrayRef ->
                     match arrayRef.term with
                     | HeapRef(arrayAddr, typ) ->
                         assert(typ = ArrayType(Types.Char, Vector))
                         Memory.copyCharArrayToString state arrayAddr dstAddr
-                    | _ -> internalfailf "constructing string from char array: expected array reference, but got %O" arrayRef) state arrayRef
+                    | _ -> internalfailf "constructing string from char array: expected array reference, but got %O" arrayRef)
+                    state arrayRef
             | HeapRef _
             | Union _ -> __notImplemented__()
             | _ -> internalfailf "constructing string from char array: expected string reference, but got %O" dstRef

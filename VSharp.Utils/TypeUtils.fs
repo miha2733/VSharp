@@ -14,16 +14,16 @@ module TypeUtils =
             else null
 
     let private integralTypes =
-        new HashSet<Type>(
-                          [typedefof<byte>; typedefof<sbyte>;
+        new HashSet<Type>([typedefof<byte>; typedefof<sbyte>;
                            typedefof<int16>; typedefof<uint16>;
                            typedefof<int32>; typedefof<uint32>;
                            typedefof<int64>; typedefof<uint64>;
                            typedefof<char>])
 
+    let private coercingTypes = new HashSet<Type>(Seq.append integralTypes [typedefof<bool>])
+
     let private unsignedTypes =
-        new HashSet<Type>(
-                          [typedefof<byte>; typedefof<uint16>;
+        new HashSet<Type>([typedefof<byte>; typedefof<uint16>;
                            typedefof<uint32>; typedefof<uint64>;])
 
     let private realTypes =
@@ -37,6 +37,8 @@ module TypeUtils =
     let isIntegral = integralTypes.Contains
     let isReal = realTypes.Contains
     let isUnsigned = unsignedTypes.Contains
+    let isCoercing = coercingTypes.Contains
+    let isPrimitive = primitiveTypes.Contains
 
     // returns true, if at least one constraint on type parameter "t" implies that "t" is reference type (for example, "t : class" case)
     // returns false, if "t" is value type or if we have no information about "t" type from constraints
@@ -56,30 +58,39 @@ module TypeUtils =
     let private isLong = (=) typeof<int64>
     let private isULong = (=) typeof<uint64>
 
+    let isConvertible (leftType : Type) rightType =
+        typedefof<IConvertible>.IsAssignableFrom(leftType) && isPrimitive rightType
+
+    let canCast actualType (targetType : Type) =
+        actualType = targetType
+        || targetType.IsAssignableFrom(actualType)
+        || isConvertible actualType targetType
+
     let uncheckedChangeType (value : obj) t =
         let bytes =
             match value with
-            | :? bool    as b  -> (if b then 1L else 0L) |> BitConverter.GetBytes
-            | :? byte    as n  -> n |> int64 |> BitConverter.GetBytes
-            | :? sbyte   as n  -> n |> int64 |> BitConverter.GetBytes
-            | :? int16   as n  -> n |> int64 |> BitConverter.GetBytes
-            | :? uint16  as n  -> n |> int64 |> BitConverter.GetBytes
-            | :? int     as n  -> n |> int64 |> BitConverter.GetBytes
-            | :? uint32  as n  -> n |> uint64 |> BitConverter.GetBytes
-            | :? int64   as n  -> n |> BitConverter.GetBytes
-            | :? uint64  as n  -> n |> BitConverter.GetBytes
+            | :? bool   as b -> (if b then 1L else 0L) |> BitConverter.GetBytes
+            | :? byte   as n -> n |> uint64 |> BitConverter.GetBytes
+            | :? sbyte  as n -> n |> int64 |> BitConverter.GetBytes
+            | :? char   as n -> n |> int64 |> BitConverter.GetBytes
+            | :? int16  as n -> n |> int64 |> BitConverter.GetBytes
+            | :? uint16 as n -> n |> uint64 |> BitConverter.GetBytes
+            | :? int32  as n -> n |> int64 |> BitConverter.GetBytes
+            | :? uint32 as n -> n |> uint64 |> BitConverter.GetBytes
+            | :? int64  as n -> n |> BitConverter.GetBytes
+            | :? uint64 as n -> n |> BitConverter.GetBytes
             | _ -> __notImplemented__()
         match t with
-        | _ when t = typedefof<Boolean>   ->  BitConverter.ToBoolean(bytes, 0) :> obj
-        | _ when t = typedefof<Byte>      ->  bytes.[0]                        :> obj
-        | _ when t = typedefof<SByte>     ->  bytes.[0] |> sbyte               :> obj
-        | _ when t = typedefof<Char>      ->  BitConverter.ToChar(bytes, 0)    :> obj
-        | _ when t = typedefof<Int16>     ->  BitConverter.ToInt16(bytes, 0)   :> obj
-        | _ when t = typedefof<UInt16>    ->  BitConverter.ToUInt16(bytes, 0)  :> obj
-        | _ when t = typedefof<Int32>     ->  BitConverter.ToInt32(bytes, 0)   :> obj
-        | _ when t = typedefof<UInt32>    ->  BitConverter.ToUInt32(bytes, 0)  :> obj
-        | _ when t = typedefof<Int64>     ->  BitConverter.ToInt64(bytes, 0)   :> obj
-        | _ when t = typedefof<UInt64>    ->  BitConverter.ToUInt64(bytes, 0)  :> obj
+        | _ when t = typedefof<Boolean> -> BitConverter.ToBoolean(bytes, 0) :> obj
+        | _ when t = typedefof<Byte>    -> bytes.[0]                        :> obj
+        | _ when t = typedefof<SByte>   -> bytes.[0] |> sbyte               :> obj
+        | _ when t = typedefof<Char>    -> BitConverter.ToChar(bytes, 0)    :> obj
+        | _ when t = typedefof<Int16>   -> BitConverter.ToInt16(bytes, 0)   :> obj
+        | _ when t = typedefof<UInt16>  -> BitConverter.ToUInt16(bytes, 0)  :> obj
+        | _ when t = typedefof<Int32>   -> BitConverter.ToInt32(bytes, 0)   :> obj
+        | _ when t = typedefof<UInt32>  -> BitConverter.ToUInt32(bytes, 0)  :> obj
+        | _ when t = typedefof<Int64>   -> BitConverter.ToInt64(bytes, 0)   :> obj
+        | _ when t = typedefof<UInt64>  -> BitConverter.ToUInt64(bytes, 0)  :> obj
         | _ -> __notImplemented__()
 
     let failDeduceBinaryTargetType op x y =
@@ -107,7 +118,6 @@ module TypeUtils =
 
     let deduceShiftTargetType x y =
         let fail() = failDeduceBinaryTargetType "{<<, >>}" x y
-
         if not <| isInt y then fail()                               // DO NOT REORDER THESE elif's!
         elif isInt x || isUInt x || isLong x || isULong x then x
         elif isIntegral x then typeof<int32>

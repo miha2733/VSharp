@@ -43,8 +43,8 @@ type public ExplorerBase() =
             try
                 x.ReproduceEffect id state k
             with
-            | :? InsufficientInformationException ->
-                body state (List.map (fun (rs, s : state) -> rs, {s with currentTime = state.currentTime}) >> k)
+            | :? InsufficientInformationException as e ->
+                body state k
         else
             /// explicitly unrolling
             body state k
@@ -59,14 +59,25 @@ type public ExplorerBase() =
         | RecursionUnrollingModeType.NeverUnroll -> true
         | RecursionUnrollingModeType.AlwaysUnroll -> false
 
-    member x.ReduceFunction state funcId invoke k =
+    member x.ReduceFunction (methodBase : MethodBase) initialState k =
         // TODO: do concrete invocation if possible!
 //        let canUseReflection = API.Marshalling.CanBeCalledViaReflection state funcId this parameters
 //        if Options.InvokeConcrete () && canUseReflection then
 //            API.Marshalling.CallViaReflection state funcId this parameters k
 //        else
-            x.EnterRecursiveRegion funcId state invoke k
+        let methodId = x.MakeMethodIdentifier methodBase
+        let invoke state k = x.Invoke methodId state k
+        let state = { initialState with opStack = [] }
+        let restoreOpStack state = { state with opStack = initialState.opStack }
+        x.EnterRecursiveRegion methodId state invoke (List.map (fun (t, s) -> t, restoreOpStack s) >> k)
 
+//+    member x.ReduceConcreteCall (methodBase : MethodBase) initialState k =
+//         let methodId = x.MakeMethodIdentifier methodBase
+//         let invoke state k = x.Invoke methodId state k
+//-        x.ReduceFunction state methodId invoke k
+//+        let state = { initialState with opStack = [] }
+//+        let restoreOpStack state = { state with opStack = initialState.opStack }
+//+        x.ReduceFunction state methodId invoke (List.map (fun (t, s) -> t, restoreOpStack s) >> k)
 
     member x.ReduceFunctionSignature state (methodBase : MethodBase) this paramValues isEffect k =
         let funcId = x.MakeMethodIdentifier methodBase
@@ -106,11 +117,6 @@ type public ExplorerBase() =
             | None -> parameters
         Memory.NewStackFrame state funcId (parametersAndThis @ locals) isEffect |> k // TODO: need to change FQL in "parametersAndThis" before adding it to stack frames (ClassesSimplePropertyAccess.TestProperty1) #FQLsNotEqual
 
-    member x.ReduceConcreteCall (methodBase : MethodBase) state k =
-        let methodId = x.MakeMethodIdentifier methodBase
-        let invoke state k = x.Invoke methodId state k
-        x.ReduceFunction state methodId invoke k
-
     member private x.InitStaticFieldWithDefaultValue state (f : FieldInfo) =
         assert(f.IsStatic)
         if f.IsLiteral then
@@ -147,7 +153,7 @@ type public ExplorerBase() =
                             let stateAfterCallingCCtor = Memory.PopStack stateAfterCallingCCtor
                             {stateAfterCallingCCtor with callSiteResults = state.callSiteResults; opStack = state.opStack}
                         x.ReduceFunctionSignature state cctor None (Specified []) false (fun state ->
-                        x.ReduceConcreteCall cctor state (List.map (snd >> removeCallSiteResultAndPopStack)))
+                        x.ReduceFunction cctor state (List.map (snd >> removeCallSiteResultAndPopStack)))
                     | None -> state |> List.singleton
                 k states // TODO: make assumption ``Memory.withPathCondition state (!!typeInitialized)''
 
@@ -184,13 +190,11 @@ type public ExplorerBase() =
                                    |> Seq.forall2(fun p1 p2 -> p2.ParameterType.IsAssignableFrom(p1)) argumentsTypes)
         assert(List.length ctors = 1)
         let ctor = List.head ctors
-        let methodId = x.MakeMethodIdentifier ctor
         assert (not <| exceptionType.IsValueType)
         let reference, state = Memory.AllocateDefaultClass state (Types.FromDotNetType state exceptionType)
-        let invoke = x.Invoke methodId
         let withResult result (state : state) = {state with returnRegister = Some result}
         x.ReduceFunctionSignature state ctor (Some reference) (Specified arguments) false (fun state ->
-        x.ReduceFunction state methodId invoke (fun resultsAndStates ->
+        x.ReduceFunction ctor state (fun resultsAndStates ->
         resultsAndStates |> List.iter (fun (res, _) -> assert (res = Nop))
         resultsAndStates |> List.map (snd >> withResult reference)))) >> List.concat)
 
@@ -238,7 +242,8 @@ type public ExplorerBase() =
         x.Explore newFuncId (Seq.map (fun summary ->
             Logger.trace "ExploreAndCompose: Original CodeLoc = %O New CodeLoc = %O\ngot summary state = %s" funcId newFuncId (Memory.Dump summary.state)
             Logger.trace "ExploreAndCompose: Left state = %s" (Memory.Dump state)
-            let newStates = Memory.composeStates state summary.state
+            let summaryState = {summary.state with currentTime = []}
+            let newStates = Memory.composeStates state summaryState
                             |> if isSubstitutionNeeded then List.map (Memory.popTypeVariablesSubstitution) else id
             List.iter (Memory.Dump >> (Logger.trace "ExploreAndCompose: Result after composition %s")) newStates
             let result = Memory.fillHoles state summary.result

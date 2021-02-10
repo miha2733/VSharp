@@ -232,7 +232,6 @@ module public CFA =
         member x.CommonFilterStates state =
             let newPc = PC.squashPC state.pc
             if newPc <> Terms.False then
-//                if dst.IsMethodExitVertex then ()
 //                dst.Paths.Add {lvl = lvl; state = state}
                 true
             else false
@@ -315,8 +314,6 @@ module public CFA =
                 x.PrintLog "composition left:\n"  <| Memory.Dump cilState1.state
                 x.PrintLog "composition right:\n" <| Memory.Dump effect
                 x.PrintLog "composition resulted:\n" <| Memory.Dump state
-            if ip = Instruction 11 then ()
-            if effect.staticFields.impl.Length <> 0 then ()
             let states = Memory.ComposeStates cilState1.state effect
             assert(List.forall (fun state -> cilState1.state.frames = state.frames) states)
             let goodStates = List.filter x.CommonFilterStates states
@@ -334,33 +331,33 @@ module public CFA =
         do
            assert(List.length stateWithArgsOnFrameAndAllocatedType.frames = 2)
         override x.Type = "Call"
-        override x.PropagatePath (cilState1 : cilState) =
+        override x.PropagatePath (context : cilState) =
             let k states =
                 let propagateStateAfterCall acc state =
-                    assert(cilState1.state.frames = state.frames)
+                    assert(context.state.frames = state.frames)
                     x.PrintLog "propagation through callEdge:\n" callSite
-                    x.PrintLog "call edge: composition left:\n" (Memory.Dump cilState1.state)
+                    x.PrintLog "call edge: composition left:\n" (Memory.Dump context.state)
                     x.PrintLog "call edge: composition result:\n" (Memory.Dump state)
                     let stateAfterCall =
-                        let opStack = List.skip numberToDrop cilState1.state.opStack
+                        let opStack = List.skip numberToDrop context.state.opStack
                         if callSite.HasNonVoidResult then
                             assert(Option.isSome state.returnRegister)
                             { state with
-                                callSiteResults = Map.add callSite state.returnRegister cilState1.state.callSiteResults
+                                callSiteResults = Map.add callSite state.returnRegister context.state.callSiteResults
                                 returnRegister = None
                                 opStack = Option.get state.returnRegister :: opStack }
                         elif callSite.opCode = OpCodes.Newobj then
                             let reference = Memory.ReadThis stateWithArgsOnFrameAndAllocatedType callSite.calledMethod
                             let state = pushNewObjResultOnOpStack {state with opStack = opStack} reference callSite.calledMethod
-                            { state with callSiteResults = cilState1.state.callSiteResults}
-                        else { state with callSiteResults = cilState1.state.callSiteResults; opStack = opStack}
+                            { state with callSiteResults = context.state.callSiteResults}
+                        else { state with callSiteResults = context.state.callSiteResults; opStack = opStack}
 
                     if x.CommonFilterStates stateAfterCall then (cilState.Make dst.Ip stateAfterCall) :: acc
                     else acc
                 List.fold propagateStateAfterCall [] states
 //            Prelude.releaseAssert (Option.isSome stepItp)
 //            let interpreter = stepItp |> Option.get
-            let states = Memory.ComposeStates cilState1.state stateWithArgsOnFrameAndAllocatedType
+            let states = Memory.ComposeStates context.state stateWithArgsOnFrameAndAllocatedType
             match states with
             | [state] ->
                 match callSite.opCode with
@@ -568,12 +565,12 @@ module public CFA =
 
         let private isConcreteHeapRef (term : term) =
             match term.term with
-            | HeapRef (addr, _) -> IsConcreteHeapAddress addr
+            | HeapRef(addr, _) -> IsConcreteHeapAddress addr
             | _ -> false
 
         let private getTermConcreteHeapAddress (term : term) =
             match term.term with
-            | HeapRef (addr, _) -> GetConcreteHeapAddress addr
+            | HeapRef(addr, _) -> GetConcreteHeapAddress addr
             | _ -> __unreachable__()
 
         let private prepareStateWithConcreteInfo (s : state) (d : bypassDataForEdges) =
@@ -608,7 +605,8 @@ module public CFA =
                 let initialCilState = cilState.Make d.u modifiedState
                 if cfg.offsetsDemandingCall.ContainsKey offset then
                     let cilState', callSite, numberToDrop = executeSeparatedOpCode methodInterpreter cfg initialCilState
-                    let createEdge (cilState' : cilState) dstVertex = CallEdge (srcVertex, dstVertex, callSite, cilState'.state, numberToDrop, ilInterpreter)
+                    let createEdge (cilState' : cilState) (dstVertex : Vertex) =
+                        CallEdge (srcVertex, dstVertex, callSite, cilState'.state, numberToDrop, ilInterpreter)
                     let currentTime, vertices, q, used = addEdgeAndRenewQueue createEdge d cfg (currentTime, vertices, q, used) cilState'
                     if not <| PriorityQueue.isEmpty q then bypass cfg q used vertices currentTime
                     else vertices

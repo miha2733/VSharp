@@ -226,11 +226,13 @@ module internal Memory =
     let private substituteTypeVariablesIntoField state (f : fieldId) =
         Reflection.concretizeField f (dotNetTypeSubst state)
 
-    let rec typeOfHeapLocation state (address : heapAddress) =
+    let private typeOfConcreteHeapAddress state address =
+        if address = VectorTime.zero then Null
+        else PersistentDict.find state.allocatedTypes address
+
+    let rec typeOfHeapLocation state (address : heapAddress) = // TODO: unify all code with union of type #do
         match address.term with
-        | ConcreteHeapAddress address ->
-            if address = VectorTime.zero then Null
-            else PersistentDict.find state.allocatedTypes address
+        | ConcreteHeapAddress address -> typeOfConcreteHeapAddress state address
         | Constant(_, (:? IMemoryAccessConstantSource as source), AddressType) -> source.TypeOfLocation
         | Union gvs ->
             match gvs |> List.tryPick (fun (_, v) -> let typ = typeOfHeapLocation state v in if typ = Null then None else Some typ) with
@@ -239,6 +241,18 @@ module internal Memory =
                 assert (gvs |> List.forall (fun (_, v) -> let typ = typeOfHeapLocation state v in typ = Null || typ = result))
                 result
         | _ -> __unreachable__()
+
+    let getStrongestTypeOfHeapRef state address sightType =
+        let baseType = typeOfHeapLocation state address
+        if isConcreteSubtype baseType sightType then baseType
+        else
+            assert(isConcreteSubtype sightType baseType)
+            sightType
+
+    let baseTypeOfAddress state address =
+        match address with
+        | BoxedLocation(addr, _) -> typeOfConcreteHeapAddress state addr
+        | _ -> typeOfAddress address
 
 // ------------------------------- Instantiation -------------------------------
 
@@ -698,8 +712,9 @@ module internal Memory =
         assert (not <| (toDotNetType typ).IsSubclassOf typeof<System.String>)
         assert (not <| (toDotNetType typ).IsSubclassOf typeof<System.Delegate>)
         let concreteAddress, state = freshAddress state
-        let address = ConcreteHeapAddress concreteAddress
+        assert(not <| PersistentDict.contains concreteAddress state.allocatedTypes)
         let state = {state with allocatedTypes = PersistentDict.add concreteAddress typ state.allocatedTypes}
+        let address = ConcreteHeapAddress concreteAddress
         HeapRef address typ, state
 
     let allocateArray state typ lowerBounds lengths =
@@ -861,7 +876,8 @@ module internal Memory =
         | Some v ->
             let k' = k.Map (dotNetTypeSubst state)
             let v' = fillHoles state v
-            writeStackLocation accState k' v'
+//            writeStackLocation accState k' v'
+            { accState with stack = MappedStack.addWithIdx k' v' accState.stack p}
         | None when isEffect -> accState // already reserved
         | None -> reserveLocation accState k p // new frame, so we need to reserve
 
@@ -881,7 +897,6 @@ module internal Memory =
             // TODO: do we really need to substitute type variables?
             let frames' = frames' |> List.map (fun f -> {f with entries = f.entries |> List.map (fun e -> {e with typ = substituteTypeVariables state e.typ})})
             List.append frames' state.frames
-
         let bottomAndRestFrames (s : state) : (stack option * stack * frames) =
             let bottomFrame, restFrames =
                 let bottomFrame, restFrames = Stack.bottomAndRest s.frames
@@ -892,13 +907,10 @@ module internal Memory =
                     match MappedStack.tryFind entry.key s.stack with
                     | Some v -> MappedStack.push entry.key v stack
                     | None -> MappedStack.reserve entry.key 1u stack
-                let stack = List.fold pushOne MappedStack.empty locations
-                stack
+                List.fold pushOne MappedStack.empty locations
             let bottom = bottomFrame |> Option.map (entriesOfFrame >> getStackFrame)
             let rest = restFrames |> List.collect entriesOfFrame |> getStackFrame
             bottom, rest, restFrames
-
-
         let state'Bottom, state'RestStack, state'RestFrames = bottomAndRestFrames state'
         // apply effect of bottom frame
         let state2 = Option.fold (MappedStack.fold (fillAndMutateStackLocation true state)) state state'Bottom
@@ -982,7 +994,6 @@ module internal Memory =
         assert(VectorTime.isDescending state'.currentTime)
         assert(not <| VectorTime.isEmpty state.currentTime)
         // TODO: do nothing if state is empty!
-        if state.currentTime = [4u; 2u] then ()
         list {
             // Hacking return register to propagate starting and current time of state' into composeTime
             let state = {state with returnRegister = Some(Concrete (state'.startingTime, state'.currentTime) (fromDotNetType typeof<vectorTime * vectorTime>))}

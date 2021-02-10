@@ -252,11 +252,11 @@ and public ILInterpreter(methodInterpreter : MethodInterpreter) as this =
             let results : state list = VSharp.System.Runtime_CompilerServices_RuntimeHelpers.InitializeArray state arrayRef handleTerm
             k results) k) id
         | _ -> internalfail "unexpected number of arguments"
-    member private x.ReduceMethodBaseCall (methodBase : MethodBase) (initialState : state) (k : state list -> 'a) =
-        let state = { initialState with opStack = [] }
+    member private x.ReduceMethodBaseCall (methodBase : MethodBase) (state : state) (k : state list -> 'a) =
+//        let state = { initialState with opStack = [] }
         let k =
-            let restoreOpStack state = { state with opStack = initialState.opStack }
-            List.map Memory.PopStack >> List.map restoreOpStack >> k
+//            let restoreOpStack state = { state with opStack = initialState.opStack }
+            List.map Memory.PopStack >> k
         let dealWithResult (term : term, state : state) =
             if term <> Nop then {state with returnRegister = Some term}
             else {state with returnRegister = None}
@@ -275,19 +275,17 @@ and public ILInterpreter(methodInterpreter : MethodInterpreter) as this =
         elif Map.containsKey fullMethodName Loader.concreteExternalImplementations then
             // TODO: check that all parameters were specified
             let methodInfo = Loader.concreteExternalImplementations.[fullMethodName]
-            let methodId = methodInterpreter.MakeMethodIdentifier methodInfo
             let thisOption, args =
                 match thisOption, methodInfo.IsStatic with
                 | Some this, true -> None, this :: args
                 | None, false -> internalfail "Calling non-static concrete implementation for static method"
                 | _ -> thisOption, args
             let state = methodInterpreter.ReduceFunctionSignature state methodInfo thisOption (Specified args) false id
-            let invoke state k = methodInterpreter.Invoke methodId state k
-            methodInterpreter.ReduceFunction state methodId invoke (List.map dealWithResult >> List.map Memory.PopStack >> k)
+            methodInterpreter.ReduceFunction methodInfo state (List.map dealWithResult >> List.map Memory.PopStack >> k)
         elif int (methodBase.GetMethodImplementationFlags() &&& MethodImplAttributes.InternalCall) <> 0 then
             internalfailf "new extern method: %s" fullMethodName
         elif methodBase.GetMethodBody() <> null then
-            methodInterpreter.ReduceConcreteCall methodBase state (List.map dealWithResult >> k)
+            methodInterpreter.ReduceFunction methodBase state (List.map dealWithResult >> k)
         else
             internalfail "nonextern method without body!"
 
@@ -563,7 +561,7 @@ and public ILInterpreter(methodInterpreter : MethodInterpreter) as this =
             let loadWhenTargetIsNotNull (state : state) k =
                 let k1 value = k [{state with returnRegister = Some value}]
                 let fieldId = Reflection.wrapField fieldInfo
-                if addressNeeded then Memory.ReferenceField target fieldId |> k1
+                if addressNeeded then Memory.ReferenceField state target fieldId |> k1
                 else Memory.ReadField state target fieldId |> k1 // TODO: need to add heapReferenceToBoxReference? #do
             let state = {cilState.state with opStack = stack}
             x.NpeOrInvokeStatement state target loadWhenTargetIsNotNull (pushResultFromStateToCilState cilState)
@@ -576,7 +574,7 @@ and public ILInterpreter(methodInterpreter : MethodInterpreter) as this =
             let storeWhenTargetIsNotNull (state : state) k =
                 let fieldType = fieldInfo.FieldType |> Types.FromDotNetType state
                 let fieldId = Reflection.wrapField fieldInfo
-                let reference = Memory.ReferenceField targetRef fieldId
+                let reference = Memory.ReferenceField state targetRef fieldId
                 let value = castUnchecked fieldType value state
                 Memory.WriteSafe state reference value |> k
             let state = {cilState.state with opStack = stack}

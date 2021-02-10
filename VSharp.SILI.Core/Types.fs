@@ -281,7 +281,10 @@ module internal Types =
         | t -> (toDotNetType t).IsValueType
 
     let isConcreteSubtype t1 t2 =
-        (toDotNetType t2).IsAssignableFrom (toDotNetType t1)
+        (toDotNetType t2).IsAssignableFrom(toDotNetType t1)
+
+    let isConvertible t1 t2 =
+        TypeUtils.isConvertible (toDotNetType t1) (toDotNetType t2)
 
 type symbolicType with
     interface IAtomicRegion<symbolicType> with

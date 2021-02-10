@@ -398,9 +398,7 @@ module internal Terms =
     let canCastConcrete (value : obj) targetType =
         let targetType = Types.toDotNetType targetType
         let actualType = if box value = null then targetType else value.GetType()
-        actualType = targetType
-        || targetType.IsAssignableFrom(actualType)
-        || typedefof<IConvertible>.IsAssignableFrom(actualType) && (TypeUtils.isIntegral targetType || TypeUtils.isReal targetType)
+        TypeUtils.canCast actualType targetType
 
     let castConcrete (value : obj) (t : System.Type) =
         let actualType = if box value = null then t else value.GetType()
@@ -410,14 +408,15 @@ module internal Terms =
             Concrete value (fromDotNetType t)
         elif t.IsEnum && t.GetEnumUnderlyingType().IsAssignableFrom(actualType) || actualType.IsEnum && actualType.GetEnumUnderlyingType().IsAssignableFrom(t) then
             Concrete value (fromDotNetType t)
-        elif typedefof<IConvertible>.IsAssignableFrom(actualType) then
+        elif typedefof<IConvertible>.IsAssignableFrom(actualType) && TypeUtils.isPrimitive t then
             let casted =
                 if t.IsPointer then
                     IntPtr(Convert.ChangeType(value, typedefof<int64>) :?> int64) |> box
                 // TODO: ability to convert negative integers to UInt32 without overflowException
-                elif TypeUtils.isIntegral t && TypeUtils.isIntegral actualType then // TODO: why we need this? Why not just use Convert.ChangeType? #Kostya
-                    TypeUtils.uncheckedChangeType value t
-                else Convert.ChangeType(value, t)
+                elif TypeUtils.isCoercing t && TypeUtils.isCoercing actualType then // TODO: why we need this? Why not just use Convert.ChangeType? #Kostya
+                    // TODO: how to do double here? #do
+                    TypeUtils.uncheckedChangeType value t // TODO: comment #do
+                else Convert.ChangeType(value, t) // TODO: overflow can be here, but it is needed for Double (type of value is double in UnboxAny1)
             Concrete casted (fromDotNetType t)
         elif t.IsAssignableFrom(actualType) then
             Concrete value (fromDotNetType t)
@@ -479,7 +478,6 @@ module internal Terms =
     let negate term =
         assert(isBool term)
         makeUnary OperationType.LogicalNeg term Bool
-
 
     let (|True|_|) term = if isTrue term then Some True else None
     let (|False|_|) term = if isFalse term then Some False else None

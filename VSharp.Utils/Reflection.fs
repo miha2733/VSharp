@@ -2,7 +2,6 @@ namespace VSharp
 
 open System
 open System.Reflection
-open VSharp.CSharpUtils
 
 module public Reflection =
 
@@ -75,35 +74,35 @@ module public Reflection =
 
     // --------------------------------- Substitute generics ---------------------------------
 
-    let private substituteMethod argSubst methodType (m : MethodBase) getMethod =
-        let concreteParameters = m.GetParameters() |> Array.map (fun p -> argSubst p.ParameterType)
-        let method = getMethod methodType m.Name concreteParameters
-        assert(method <> null)
-        method
+    let private substituteMethod methodType (m : MethodBase) getMethods =
+        let method = getMethods methodType |> Array.tryFind (fun (x : #MethodBase) -> x.MetadataToken = m.MetadataToken)
+//        Option.defaultWith (fun () -> internalfailf "unable to find method %s token" m.Name) method
+        match method with
+        | Some x -> x
+        | None -> internalfailf "unable to find method %s token" m.Name
 
-    let private substituteMethodInfo argSubst methodType (mi : MethodInfo) groundK genericK =
-        let getMethod genericArgsNumber (t : Type) (name : String) (parameters : Type[]) =
-            t.GetMethod(name, genericArgsNumber, allBindingFlags, null, parameters, null)
+    let private substituteMethodInfo methodType (mi : MethodInfo) groundK genericK =
+        let getMethods (t : Type) = t.GetMethods(allBindingFlags)
         let substituteGeneric (mi : MethodInfo) =
             let args = mi.GetGenericArguments()
             let num = Array.length args
             let genericMethod = mi.GetGenericMethodDefinition()
-            let mi = substituteMethod argSubst methodType genericMethod (getMethod num)
+            let mi = substituteMethod methodType genericMethod getMethods
             genericK mi args
         if mi.IsGenericMethod then substituteGeneric mi
-        else groundK (substituteMethod argSubst methodType mi (getMethod 0) :> MethodBase)
+        else groundK (substituteMethod methodType mi getMethods :> MethodBase)
 
-    let private substituteCtorInfo argSubst methodType ci k =
-        let getCtor (t : Type) _ parameters = t.GetConstructor(parameters)
-        k (substituteMethod methodType argSubst ci getCtor :> MethodBase)
+    let private substituteCtorInfo methodType ci k =
+        let getCtor (t : Type) = t.GetConstructors(allBindingFlags)
+        k (substituteMethod methodType ci getCtor :> MethodBase)
 
-    let private substituteMethodBase<'a> (argSubst : Type -> Type) methodType (m : MethodBase) (groundK : MethodBase -> 'a) genericK =
+    let private substituteMethodBase<'a> methodType (m : MethodBase) (groundK : MethodBase -> 'a) genericK =
         match m with
         | _ when not <| IsGenericOrDeclaredInGenericType m -> groundK m
         | :? MethodInfo as mi ->
-            substituteMethodInfo argSubst methodType mi groundK genericK
+            substituteMethodInfo methodType mi groundK genericK
         | :? ConstructorInfo as ci ->
-            substituteCtorInfo methodType argSubst ci groundK
+            substituteCtorInfo methodType ci groundK
         | _ -> __unreachable__()
 
     // --------------------------------- Generalization ---------------------------------
@@ -118,13 +117,9 @@ module public Reflection =
 
     let generalizeMethodBase (methodBase : MethodBase) =
         let genericType, tArgs, tParams = getGenericTypeDefinition methodBase.DeclaringType
-        let subst (x : Type) =
-            match Array.tryFindIndex ((=) x) tArgs with
-            | Some idx -> tParams.[idx]
-            | None -> x
         let genericCase m args = m :> MethodBase, args, m.GetGenericArguments()
         let groundCase m = m, [||], [||]
-        let genericMethod, mArgs, mParams = substituteMethodBase subst genericType methodBase groundCase genericCase
+        let genericMethod, mArgs, mParams = substituteMethodBase genericType methodBase groundCase genericCase
         let genericArgs = Array.append mArgs tArgs
         let genericDefs = Array.append mParams tParams
         genericMethod, genericArgs, genericDefs
@@ -140,15 +135,14 @@ module public Reflection =
 
     let concretizeMethodBase (m : MethodBase) (subst : Type -> Type) =
         let concreteType = concretizeType subst m.DeclaringType
-        let substGenericTypeArg (parameterType : Type) =
-            if parameterType.IsGenericTypeParameter then subst parameterType else parameterType
         let substArgsIntoMethod (mi : MethodInfo) args =
             mi.MakeGenericMethod(args |> Array.map subst) :> MethodBase
-        substituteMethodBase substGenericTypeArg concreteType m id substArgsIntoMethod
+        substituteMethodBase concreteType m id substArgsIntoMethod
 
     let concretizeParameter (p : ParameterInfo) (subst : Type -> Type) =
         assert(p.Member :? MethodBase)
-        (concretizeMethodBase (p.Member :?> MethodBase) subst).GetParameters() |> Array.find (fun pi -> pi.Name = p.Name)
+        let method = concretizeMethodBase (p.Member :?> MethodBase) subst
+        method.GetParameters() |> Array.find (fun pi -> pi.Name = p.Name)
 
     let concretizeLocalVariable (l : LocalVariableInfo) (m : MethodBase) (subst : Type -> Type) =
         let m = concretizeMethodBase m subst

@@ -16,30 +16,30 @@ module public MappedStack =
 
     let empty = (Map.empty, Map.empty)
 
-    let private addToStack key value (contents, peaks) idx =
+    let addWithIdx key value (contents, peaks) idx =
         let peaks' = Map.add key idx peaks
         let key' = makeExtendedKey key idx
         let contents' = Map.add key' value contents
         contents', peaks'
 
-    let reserve key n (contents, peaks) =
+    let reserve key n (contents, peaks) = // TODO: mb take only peaks? #do
         let idx = peakIdx peaks key + n
         let peaks' = Map.add key idx peaks
         contents, peaks'
 
     let push key value ((_, peaks) as stack) =
         let idx = peakIdx peaks key + 1ul
-        addToStack key value stack idx
+        addWithIdx key value stack idx
 
     let add key value ((_, peaks) as stack) =
         let idx = Dict.tryGetValue peaks key 1ul
-        addToStack key value stack idx
+        addWithIdx key value stack idx
 
     let containsKey key (contents, peaks) = Map.containsKey key peaks && Map.containsKey (makeExtendedKey key peaks.[key]) contents
 
     let remove (contents, peaks) key =
         let idx = peakIdx peaks key
-        assert (idx > defaultPeak)
+        assert(idx > defaultPeak)
         let key' = makeExtendedKey key idx
         let contents' = Map.remove key' contents
         let peaks' =
