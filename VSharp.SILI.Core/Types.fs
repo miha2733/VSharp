@@ -228,7 +228,7 @@ module internal Types =
         and fromDotNetType (dotNetType : Type) =
             match dotNetType with
             | null -> Null
-            | t when t.IsByRef -> internalfail "byref type is not implemented!" // TODO: care about byref type
+            | t when t.IsByRef -> internalfail "byref type is not implemented!" // TODO: care about byref type #do mb delete?
             | p when p.IsPointer -> p.GetElementType() |> fromDotNetType |> Pointer
             | v when v.FullName = "System.Void" -> Void
             | a when a.FullName = "System.Array" -> ArrayType(fromDotNetType typedefof<obj>, SymbolicDimension)
@@ -268,7 +268,7 @@ module internal Types =
         | TypeVariable(Id t) when TypeUtils.isValueTypeParameter t -> true
         | TypeVariable(Id t) when TypeUtils.isReferenceTypeParameter t -> false
         | TypeVariable _ as t -> __insufficientInformation__ "Can't determine if %O is a value type or not!" t
-        | Null -> __unreachable__()
+        | Null -> false // TODO: __unreachable__() #do
         | t -> (toDotNetType t).IsValueType
 
     let private commonCanCast canCast leftType rightType =
