@@ -45,7 +45,7 @@ module API =
         val MakeFunctionResultConstant : state -> callSite -> term
         val MakeNumber : 'a -> term
 
-        val TypeOf : term -> symbolicType
+        val TypeOf : state -> term -> symbolicType
         val MostConcreteTypeOfHeapRef : state -> term -> symbolicType
 
         val IsStruct : term -> bool
@@ -97,7 +97,7 @@ module API =
         val RefIsType : state -> term -> symbolicType -> term
         val RefIsAssignableToType : state -> term -> symbolicType -> term
         val IsCast : state -> term -> symbolicType -> term
-        val CanCastImplicitly : term -> symbolicType -> bool
+        val CanCastImplicitly : state -> term -> symbolicType -> bool
         val Cast : term -> symbolicType -> term
         val CastReferenceToPointer : state -> term -> term
 

@@ -39,13 +39,12 @@ type heapAddressKey =
             let zeroReg = intervals<vectorTime>.Singleton VectorTime.zero
             let newReg =
                 if (reg :> IRegion<vectorTime intervals>).CompareTo zeroReg = Includes then
+                    // if reg contains zero, then it can be in previous block or before // TODO: make better #do
                     let rightBound = mapTime []
                     assert(not <| VectorTime.isEmpty rightBound)
-                    if rightBound.IsEmpty then reg
-                    else
-                        let reg' = (reg :> IRegion<vectorTime intervals>).Subtract zeroReg
-                        let mappedZeroInterval = intervals<vectorTime>.Closed VectorTime.zero rightBound
-                        mappedZeroInterval.Union(reg'.Map mapTime)
+                    let reg' = (reg :> IRegion<vectorTime intervals>).Subtract zeroReg
+                    let mappedZeroInterval = intervals<vectorTime>.Closed VectorTime.zero rightBound
+                    mappedZeroInterval.Union(reg'.Map mapTime)
                 else
                     reg.Map mapTime
             newReg, {address = mapTerm x.address}

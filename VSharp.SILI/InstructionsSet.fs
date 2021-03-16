@@ -60,20 +60,21 @@ module internal TypeUtils =
 
     let isIntegerTermType typ = integers |> List.contains typ
     let isFloatTermType typ = typ = float32Type || typ = float64Type
-    let isInteger = Terms.TypeOf >> isIntegerTermType
-    let isBool = Terms.TypeOf >> IsBool
-    let (|Int8|_|) t = if Terms.TypeOf t = int8Type then Some() else None
-    let (|UInt8|_|) t = if Terms.TypeOf t = uint8Type then Some() else None
-    let (|Int16|_|) t = if Terms.TypeOf t = int16Type then Some() else None
-    let (|UInt16|_|) t = if Terms.TypeOf t = uint16Type then Some() else None
-    let (|Int32|_|) t = if Terms.TypeOf t = int32Type then Some() else None
-    let (|UInt32|_|) t = if Terms.TypeOf t = uint32Type then Some() else None
-    let (|Int64|_|) t = if Terms.TypeOf t = int64Type then Some() else None
-    let (|UInt64|_|) t = if Terms.TypeOf t = uint64Type then Some() else None
+    // TODO: empty state is wrong! we always need state, because the term could be heapRef! (mb make type of location to return Option) #do
+    let isInteger = Terms.TypeOf Memory.EmptyState >> isIntegerTermType
+    let isBool = Terms.TypeOf Memory.EmptyState >> IsBool
+    let (|Int8|_|) t = if Terms.TypeOf Memory.EmptyState t = int8Type then Some() else None
+    let (|UInt8|_|) t = if Terms.TypeOf Memory.EmptyState t = uint8Type then Some() else None
+    let (|Int16|_|) t = if Terms.TypeOf Memory.EmptyState t = int16Type then Some() else None
+    let (|UInt16|_|) t = if Terms.TypeOf Memory.EmptyState t = uint16Type then Some() else None
+    let (|Int32|_|) t = if Terms.TypeOf Memory.EmptyState t = int32Type then Some() else None
+    let (|UInt32|_|) t = if Terms.TypeOf Memory.EmptyState t = uint32Type then Some() else None
+    let (|Int64|_|) t = if Terms.TypeOf Memory.EmptyState t = int64Type then Some() else None
+    let (|UInt64|_|) t = if Terms.TypeOf Memory.EmptyState t = uint64Type then Some() else None
     let (|Bool|_|) t = if isBool t then Some() else None
-    let (|Float32|_|) t = if Terms.TypeOf t = float32Type then Some() else None
-    let (|Float64|_|) t = if Terms.TypeOf t = float64Type then Some() else None
-    let (|Float|_|) t = if Terms.TypeOf t |> isFloatTermType then Some() else None
+    let (|Float32|_|) t = if Terms.TypeOf Memory.EmptyState t = float32Type then Some() else None
+    let (|Float64|_|) t = if Terms.TypeOf Memory.EmptyState t = float64Type then Some() else None
+    let (|Float|_|) t = if Terms.TypeOf Memory.EmptyState t |> isFloatTermType then Some() else None
 
     module Char =
         let Zero = MakeNumber '\000'
@@ -212,8 +213,8 @@ module internal InstructionsSet =
         let variableIndex = numberCreator cfg.ilBytes shiftedOffset
         let right, cilState = pop cilState
         let left = referenceLocalVariable variableIndex cfg.methodBase
-        let typ = TypeOf left
         let state = cilState.state
+        let typ = TypeOf state left
         let value = castUnchecked typ right state
         let states = Memory.WriteSafe state left value
         states |> List.map (fun state -> cilState |> withState state)
@@ -224,7 +225,7 @@ module internal InstructionsSet =
     let performCILUnaryOperation op (cilState : cilState) =
         let x, cilState = pop cilState
         API.PerformUnaryOperation op x (fun interimRes ->
-        let res = if Terms.TypeOf x |> Types.IsBool then simplifyConditionResult cilState.state interimRes id else interimRes
+        let res = if Terms.TypeOf cilState.state x |> Types.IsBool then simplifyConditionResult cilState.state interimRes id else interimRes
         push res cilState |> List.singleton)
 
     let performCILBinaryOperation op operand1Transform operand2Transform resultTransform (cilState : cilState) =
@@ -251,7 +252,7 @@ module internal InstructionsSet =
             else pop cilState |> mapfst Some
         let typ =
             match term with
-            | Some t -> TypeOf t
+            | Some t -> TypeOf cilState.state t
             | None -> Void
         match term, resultTyp with
         | None, Void -> cilState :: []
@@ -260,9 +261,9 @@ module internal InstructionsSet =
             let t = castUnchecked resultTyp t cilState.state
             cilState |> withResult t |> List.singleton
         | _ -> __unreachable__()
-    let transform2BooleanTerm pc (term : term) =
+    let transform2BooleanTerm state (term : term) =
         let check term =
-            match TypeOf term with
+            match TypeOf state term with
             | Bool -> term
             | t when t = TypeUtils.charType -> term !== TypeUtils.Char.Zero
             | t when t = TypeUtils.int8Type -> term !== TypeUtils.Int8.Zero
@@ -277,7 +278,7 @@ module internal InstructionsSet =
                 term !== MakeNumber (t.GetEnumValues().GetValue(0))
             | _ when IsReference term -> !!(IsNullReference term)
             | _ -> __notImplemented__()
-        GuardedApplyExpressionWithPC pc term check
+        GuardedApplyExpressionWithPC state.pc term check
 
     let binaryOperationWithBoolResult op operand1Transformation operand2Transformation (cilState : cilState) =
         performCILBinaryOperation op operand1Transformation operand2Transformation (simplifyConditionResult cilState.state) cilState
@@ -286,7 +287,7 @@ module internal InstructionsSet =
         let y, x, _ = pop2 cilState
         let transform =
             if TypeUtils.isBool x || TypeUtils.isBool y
-            then fun t k -> k (transform2BooleanTerm cilState.state.pc t)
+            then fun t k -> k (transform2BooleanTerm cilState.state t)
             else idTransformation
         binaryOperationWithBoolResult OperationType.Equal transform transform cilState
     let starg numCreator (cfg : cfgData) offset (cilState : cilState) =
@@ -307,7 +308,7 @@ module internal InstructionsSet =
             | [offsetThen; offsetElse] -> offsetThen, offsetElse
             | _ -> __unreachable__()
         StatedConditionalExecutionCIL cilState
-            (fun state k -> k (condTransform <| transform2BooleanTerm state.pc cond, state))
+            (fun state k -> k (condTransform <| transform2BooleanTerm state cond, state))
             (fun cilState k -> k [offsetThen, cilState])
             (fun cilState k -> k [offsetElse, cilState])
             id
@@ -321,7 +322,7 @@ module internal InstructionsSet =
         BranchExpressions (fun k -> k b) (fun k -> k TypeUtils.Int32.One) (fun k -> k TypeUtils.Int32.Zero) id
     let bitwiseOrBoolOperation op (cilState : cilState) =
         let arg2, arg1, _ = pop2 cilState
-        let typ1, typ2 = TypeOf arg1, TypeOf arg2
+        let typ1, typ2 = TypeOf cilState.state arg1, TypeOf cilState.state arg2
         match typ1, typ2 with
         | Bool, Bool ->
             binaryOperationWithBoolResult op idTransformation idTransformation cilState
@@ -346,7 +347,7 @@ module internal InstructionsSet =
         parameters, withOpStack opStack cilState
 
     let makeUnsignedInteger term k =
-        let typ = Terms.TypeOf term
+        let typ = Terms.TypeOf Memory.EmptyState term
         let unsignedTyp = TypeUtils.signed2unsignedOrId typ
         if TypeUtils.isIntegerTermType typ && typ <> unsignedTyp then
             k <| Types.Cast term unsignedTyp // no specs found about overflows
@@ -420,7 +421,7 @@ module internal InstructionsSet =
     let cltun = binaryOperationWithBoolResult OperationType.Less makeUnsignedInteger makeUnsignedInteger
     let bgeHelper (cilState : cilState) =
         let arg1, arg2, _ = pop2 cilState
-        let typ1, typ2 = Terms.TypeOf arg1, Terms.TypeOf arg2
+        let typ1, typ2 = Terms.TypeOf cilState.state arg1, Terms.TypeOf cilState.state arg2
         if Types.IsInteger typ1 && Types.IsInteger typ2 then clt cilState
         elif Types.IsReal typ1 && Types.IsReal typ2 then cltun cilState
         else __notImplemented__()

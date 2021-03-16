@@ -62,7 +62,7 @@ type opStackSource =
         override x.TypeOfLocation = x.typ
         override x.Compose state =
             let result = Memory.GetOpStackItem (int x.shift) state.opStack
-            assert(Types.CanCastImplicitly result x.typ)
+            assert(Types.CanCastImplicitly state result x.typ)
             Types.Cast result x.typ
 
 [<StructuralEquality;NoComparison>]
@@ -507,7 +507,7 @@ module public CFA =
                 if shouldRemainOnOpStack v then v
                 else
                     let shift = index
-                    let typ = TypeOf v
+                    let typ = TypeOf Memory.EmptyState v // TODO: what type do we need here? sight type or most concrete type? #do
                     let source = mkSource shift typ
                     let name = sprintf "opStack.[%d] from top" shift
                     match v.term with
@@ -608,7 +608,7 @@ module public CFA =
         let private prepareStateWithConcreteInfo (s : state) (d : bypassDataForEdges) =
             let concreteHeapAddresses = s.opStack |> Memory.OpStackToList |> List.filter isConcreteHeapRef |> List.map getTermConcreteHeapAddress
             let appendAllocatedTypes acc k v = if List.contains k concreteHeapAddresses then PersistentDict.add k v acc else acc
-            let allocatedTypes = PersistentDict.fold appendAllocatedTypes PersistentDict.empty d.allocatedTypes
+            let allocatedTypes = PersistentDict.fold appendAllocatedTypes PersistentDict.empty d.allocatedTypes // TODO: never copy allocated types into next cfa block #do
             let allocatedTypesValues = PersistentDict.values allocatedTypes
 
             let appendLengths acc ((t,_,_) : arrayType as k) v = if Seq.contains t allocatedTypesValues then PersistentDict.add k v acc else acc

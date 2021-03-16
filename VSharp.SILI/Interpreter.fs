@@ -368,8 +368,8 @@ and public ILInterpreter(methodInterpreter : MethodInterpreter) as this =
             | false, false -> min1, max2
         let canCastWithoutOverflow term targetTermType =
             let (<<=) = API.Arithmetics.(<<=)
-            assert(Terms.TypeOf term |> Types.IsNumeric)
-            let termType = Terms.TypeOf term
+            let termType = Terms.TypeOf Memory.EmptyState term
+            assert(termType |> Types.IsNumeric)
             if isSubset termType targetTermType then True
             elif termType = TypeUtils.int64Type && targetTermType = TypeUtils.uint64Type then
                 let int64Zero = MakeNumber (0 |> int64)
@@ -563,7 +563,7 @@ and public ILInterpreter(methodInterpreter : MethodInterpreter) as this =
     member private x.StElemWithCast cast (cilState : cilState) =
         let value, index, arrayRef, cilState = pop3 cilState
         let checkedStElem (cilState : cilState) (k : cilState list -> 'a) =
-            let typeOfValue = TypeOf value
+            let typeOfValue = TypeOf cilState.state value
             let uncheckedStElem (cilState : cilState) (k : cilState list -> 'a) =
                 let typedValue = cast value cilState.state
                 Memory.WriteArrayIndex cilState.state arrayRef [index] typedValue |> List.map (changeState cilState) |> k
@@ -645,7 +645,7 @@ and public ILInterpreter(methodInterpreter : MethodInterpreter) as this =
         assert(IsReference obj)
         assert(Types.IsValueType termType)
         let nullCase (cilState : cilState) (k : cilState list -> 'a) : 'a = // TODO: mb too complex #do
-            if Types.TypeIsNullable termType then // TODO: here can be type Null #do
+            if Types.TypeIsNullable termType then
                 let nullableTerm = Memory.DefaultOf termType
                 let address, state = Memory.BoxValueType cilState.state nullableTerm
                 let res, state = handleRestResults (HeapReferenceToBoxReference address, state)
@@ -704,7 +704,7 @@ and public ILInterpreter(methodInterpreter : MethodInterpreter) as this =
 
     member private this.CommonDivRem performAction (cilState : cilState) =
         let integerCase (cilState : cilState) x y minusOne minValue =
-            assert(TypeOf x = TypeOf y)
+            assert(TypeOf cilState.state x = TypeOf cilState.state y)
             StatedConditionalExecutionCIL cilState
                 (fun state k -> k (Arithmetics.IsZero y, state))
                 (this.Raise this.InvalidCastException)

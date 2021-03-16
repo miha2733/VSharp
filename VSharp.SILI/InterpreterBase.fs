@@ -111,7 +111,7 @@ type public ExplorerBase() =
             match this with
             | Some thisValue ->
                 let thisKey = ThisKey methodBase
-                (thisKey, Specified thisValue, TypeOf thisValue) :: parameters // TODO: incorrect type when ``this'' is Ref to stack
+                (thisKey, Specified thisValue, TypeOf state thisValue) :: parameters
             | None -> parameters
         Memory.NewStackFrame state funcId (parametersAndThis @ locals) isEffect |> k
 
@@ -179,7 +179,7 @@ type public ExplorerBase() =
         let constructors = exceptionType.GetConstructors()
         let argumentsLength = List.length arguments
         let argumentsTypes =
-            List.map (TypeOf >> Types.ToDotNetType) arguments
+            List.map (TypeOf cilState.state >> Types.ToDotNetType) arguments
         let ctors =
             constructors
             |> List.ofArray

@@ -102,6 +102,7 @@ and state = {
     typeVariables : typeVariables                             // Type variables assignment in the current state
     entireCopies : pdict<concreteHeapAddress, heapAddress * arrayRegion>  // Address and contents of (entirely) copied arrays
     extendedCopies : pdict<concreteHeapAddress, arrayCopyInfo> // Address, contents, source and destination indices and target type of copied arrays
+    // TODO: we should allocate delegates in allocatedTypes, because when type of location is needed, we cannot find it in allocated types #do
     delegates : pdict<concreteHeapAddress, term>               // Subtypes of System.Delegate allocated in heap
     currentTime : vectorTime                                   // Current timestamp (and next allocated address as well) in this state
     startingTime : vectorTime                                  // Timestamp before which all allocated addresses will be considered symbolic
@@ -227,7 +228,9 @@ module internal Memory =
 
     let private typeOfConcreteHeapAddress state address =
         if address = VectorTime.zero then Null
-        else PersistentDict.find state.allocatedTypes address
+        else
+            if PersistentDict.contains address state.allocatedTypes |> not then () // TODO: delete #do
+            PersistentDict.find state.allocatedTypes address
 
     // TODO: use only mostConcreteTypeOfHeapRef someday
     let rec typeOfHeapLocation state (address : heapAddress) =
@@ -694,6 +697,12 @@ module internal Memory =
         let state = {state with currentTime = VectorTime.advance state.currentTime}
         state.currentTime, state
 
+    let allocateType state typ =
+        let concreteAddress, state = freshAddress state
+        assert(not <| PersistentDict.contains concreteAddress state.allocatedTypes)
+        assert(VectorTime.less state.startingTime concreteAddress) // TODO: delete #do
+        ConcreteHeapAddress concreteAddress, {state with allocatedTypes = PersistentDict.add concreteAddress typ state.allocatedTypes}
+
     let allocateOnStack state key term =
         let oldFrame = Stack.peek state.frames
         let newStack = pushToCurrentStackFrame state key term
@@ -705,16 +714,11 @@ module internal Memory =
     let allocateClass state typ =
         assert (not <| (toDotNetType typ).IsSubclassOf typeof<System.String>)
         assert (not <| (toDotNetType typ).IsSubclassOf typeof<System.Delegate>)
-        let concreteAddress, state = freshAddress state
-        assert(not <| PersistentDict.contains concreteAddress state.allocatedTypes)
-        let state = {state with allocatedTypes = PersistentDict.add concreteAddress typ state.allocatedTypes}
-        let address = ConcreteHeapAddress concreteAddress
+        let address, state = allocateType state typ
         HeapRef address typ, state
 
     let allocateArray state typ lowerBounds lengths =
-        let concreteAddress, state = freshAddress state
-        let address = ConcreteHeapAddress concreteAddress
-        let state = {state with allocatedTypes = PersistentDict.add concreteAddress typ state.allocatedTypes}
+        let address, state = allocateType state typ
         let arrayType = symbolicTypeToArrayType typ
         let state =
             let d = List.length lengths
@@ -807,7 +811,7 @@ module internal Memory =
         // this is needed only for heapAddressKey.Map when composing
         | _ when VectorTime.isEmpty addr -> state.currentTime
         // address from other block
-        | Some(ConcreteT(:? (vectorTime * vectorTime) as interval, _)) when VectorTime.lessOrEqual addr (fst interval) -> addr
+        | Some(ConcreteT(:? (vectorTime * vectorTime) as interval, _)) when VectorTime.lessOrEqual addr (fst interval) -> addr // TODO: check #do
         // address of called function
         | Some(ConcreteT(:? (vectorTime * vectorTime) as interval, _)) when VectorTime.isEmpty (snd interval) -> state.currentTime @ addr
         // default case

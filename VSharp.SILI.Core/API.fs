@@ -51,8 +51,15 @@ module API =
         let MakeBool b = makeBool b
         let MakeNumber n = makeNumber n
 
-        let TypeOf term = typeOf term
-        let rec MostConcreteTypeOfHeapRef state ref =
+        let TypeOf state term =
+            let getType term =
+                match term.term with
+                | HeapRef(address, sightType) -> Memory.mostConcreteTypeOfHeapRef state address sightType
+                | Ref(PrimitiveStackLocation key) -> Memory.typeOfStackLocation state key // TODO: typeOfStackLocation vs loc.TypeOfLocation ? #do
+                | _ -> typeOf term
+            commonTypeOf getType term
+
+        let MostConcreteTypeOfHeapRef state ref =
             let getType ref =
                 match ref.term with
                 | HeapRef(address, sightType) -> Memory.mostConcreteTypeOfHeapRef state address sightType
@@ -117,8 +124,8 @@ module API =
         let RefIsAssignableToType state ref typ = TypeCasting.refIsAssignableToType state ref typ
 
         let IsCast state term targetType = TypeCasting.canCast state term targetType
-        let CanCastImplicitly term targetType =
-            let actualType = TypeOf term
+        let CanCastImplicitly state term targetType =
+            let actualType = TypeOf state term
             Types.canCastImplicitly actualType targetType
         let Cast term targetType = TypeCasting.cast term targetType
         let CastReferenceToPointer state reference = TypeCasting.castReferenceToPointer state reference
@@ -139,7 +146,7 @@ module API =
         let (<<=) x y = Arithmetics.simplifyLessOrEqual x y id
         let (>>) x y = Arithmetics.simplifyGreater x y id
         let (>>=) x y = Arithmetics.simplifyGreaterOrEqual x y id
-        let (%%%) x y = Arithmetics.simplifyRemainder (x |> TypeOf |> Types.ToDotNetType) x y id
+        let (%%%) x y = Arithmetics.simplifyRemainder (x |> TypeOf Memory.empty |> Types.ToDotNetType) x y id
 
         let Mul x y = Arithmetics.mul x y
         let IsZero term = Arithmetics.checkEqualZero term id

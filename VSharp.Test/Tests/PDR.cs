@@ -69,6 +69,21 @@ namespace VSharp.Test.Tests
             return assign;
         }
 
+        public static bool CheckIsLambda<T>(object o)
+        {
+            T unbox = (T) o;
+            return o is Action<int>;
+        }
+
+        [TestSvm]
+        public static bool LambdaAsObjectIsLambda(bool flag)
+        {
+            Action<int> nop;
+            nop = x => {};
+            object o = nop;
+            return CheckIsLambda<Action<int>>(o);
+        }
+
         [TestSvm]
         public static int CallIncrementOutside()
         {
@@ -518,6 +533,36 @@ namespace VSharp.Test.Tests
             return result;
         }
 
+        public static int H()
+        {
+            var a = new ClassWithOneStaticField();
+            var b = new ClassWithOneStaticField();
+            var c = new ClassWithOneStaticField();
+            return 1;
+        }
+
+        public static int G<T>(object o)
+        {
+            var a = new ClassWithOneStaticField();
+            var b = new ClassWithOneStaticField();
+            var c = new ClassWithOneStaticField();
+            H();
+            T unbox = (T) o;
+            var d = new ClassWithOneStaticField();
+            var e = new ClassWithOneStaticField();
+            var f = new ClassWithOneStaticField();
+            return 1;
+        }
+
+        [TestSvm]
+        public static int F()
+        {
+            var a = new ClassWithOneStaticField();
+            var b = new ClassWithOneStaticField();
+            var c = new ClassWithOneStaticField();
+            G<int>(1);
+            return 1;
+        }
 
         [Ignore("Exceptions handling")]
         public static int ThrowException(int x)
