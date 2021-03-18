@@ -210,7 +210,7 @@ module public CFA =
             else reference
         push valueOnStack cilState
 
-    type Vertex private(id, m : MethodBase, ip : ip, opStack : operationStack) =
+    type Vertex private(id, m : MethodBase, ip : ip, opStack : operationStack) = // TODO: delete all code with vertex #do
         static let ids : Dictionary<MethodBase, int> = Dictionary<_,_>()
         let lemmas = Lemmas(m, ip)
         let paths = Paths(m, ip)
