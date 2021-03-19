@@ -957,7 +957,7 @@ module internal Memory =
         dict' |> PersistentDict.fold (fun acc k v ->
                         let k = composeConcreteHeapAddress state k
                         if (PersistentDict.contains k dict) then
-                            assert (PersistentDict.find dict k = mapValue v)
+                            assert (PersistentDict.find dict k = mapValue v) // TODO: this falls in test ArrayLength #Kostya check #do
                             acc
                         else PersistentDict.add k (mapValue v) acc
                  ) dict
