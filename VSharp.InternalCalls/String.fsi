@@ -13,3 +13,6 @@ module internal String =
 
     [<Implements("System.Int32 System.String.get_Length(this)")>]
     val GetLength : state -> term list -> (term * state) list
+
+    [<Implements("System.Char System.String.get_Chars(this, System.Int32)")>]
+    val GetChars : state -> term list -> (term * state) list

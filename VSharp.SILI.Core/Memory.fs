@@ -80,9 +80,9 @@ type exceptionRegister =
         | NoException -> NoException
 
 type arrayCopyInfo =
-    {srcAddress : heapAddress; contents : arrayRegion; srcIndex : term; dstIndex : term; length : term; dstType : symbolicType} with
+    {srcAddress : heapAddress; contents : arrayRegion; srcIndex : term; dstIndex : term; length : term; srcSightType : symbolicType; dstSightType : symbolicType} with
         override x.ToString() =
-            sprintf "    source address: %O, from %O ranging %O elements into %O index with cast to %O;\n\r    updates: %O" x.srcAddress x.srcIndex x.length x.dstIndex x.dstType (MemoryRegion.toString "        " x.contents)
+            sprintf "    source address: %O, from %O ranging %O elements into %O index with cast to %O;\n\r    updates: %O" x.srcAddress x.srcIndex x.length x.dstIndex x.dstSightType (MemoryRegion.toString "        " x.contents)
 
 and state = {
     pc : pathCondition
@@ -99,6 +99,7 @@ and state = {
     initializedTypes : symbolicTypeSet                        // Types with initialized static members
     allocatedTypes : pdict<concreteHeapAddress, symbolicType> // Types of heap locations allocated via new
     typeVariables : typeVariables                             // Type variables assignment in the current state
+    // TODO: only for string ctors? if not then it's bug, because we can write full copy and after that write partial copy: so we don't know what order was #do
     entireCopies : pdict<concreteHeapAddress, heapAddress * arrayRegion>  // Address and contents of (entirely) copied arrays
     extendedCopies : pdict<concreteHeapAddress, arrayCopyInfo> // Address, contents, source and destination indices and target type of copied arrays
     delegates : pdict<concreteHeapAddress, term>               // Subtypes of System.Delegate allocated in heap
@@ -367,158 +368,6 @@ module internal Memory =
         if Types.isValueType declaringType then __insufficientInformation__ "Can't execute in isolation methods of value types, because we can't be sure where exactly \"this\" is allocated!"
         else HeapRef (Constant "this" {baseSource = {key = ThisKey m; time = Some VectorTime.zero}} AddressType) declaringType
 
-// ------------------------------- Reading -------------------------------
-
-    let private readConcreteDict = PersistentDict.find
-
-    let private accessRegion (dict : pdict<'a, memoryRegion<'key, 'reg>>) key typ =
-        match PersistentDict.tryFind dict key with
-        | Some value -> value
-        | None -> MemoryRegion.empty typ
-
-    let rec extractAddress reference =
-        match reference.term with
-        | HeapRef(address, _) -> address
-        | Union gvs -> gvs |> List.map (fun (g, v) -> (g, extractAddress v)) |> Merging.merge
-        | _ -> internalfail "Extracting heap address: expected heap reference, but got %O" reference
-
-    let private isHeapAddressDefault state = term >> function
-        | ConcreteHeapAddress addr -> VectorTime.less state.startingTime addr
-        | _ -> false
-
-    let readStackLocation (s : state) key =
-        match MappedStack.tryFind key s.stack with
-        | Some value -> value
-        | None -> makeSymbolicStackRead key (typeOfStackLocation s key) (if Types.isValueType key.TypeOfLocation then None else Some s.startingTime)
-
-    let readStruct (structTerm : term) (field : fieldId) =
-        match structTerm with
-        | { term = Struct(fields, _) } -> fields.[field]
-        | _ -> internalfailf "Reading field of structure: expected struct, but got %O" structTerm
-
-    let rec readArrayCopy state arrayType extractor addr indices =
-        let emptyReg = MemoryRegion.empty (fst3 arrayType)
-        match addr.term with
-        | ConcreteHeapAddress concreteAddr ->
-            match PersistentDict.tryFind state.entireCopies concreteAddr with
-            | None ->
-                match PersistentDict.tryFind state.extendedCopies concreteAddr with
-                | None -> emptyReg
-                | Some copyInfo ->
-                    let copiedValue = readArrayRegionExt state arrayType extractor copyInfo.contents copyInfo.srcAddress indices copyInfo.srcIndex copyInfo.dstIndex copyInfo.length copyInfo.dstType
-                    let key = {address = addr; indices = indices}
-                    MemoryRegion.write emptyReg key copiedValue
-            | Some(srcAddr, reg) ->
-                let copiedValue = readArrayRegion state arrayType extractor reg srcAddr indices
-                let key = {address = addr; indices = indices}
-                MemoryRegion.write emptyReg key copiedValue
-        | _ -> emptyReg
-
-    and readArrayRegion state arrayType extractor region addr indices =
-        let key = {address = addr; indices = indices}
-        let isDefault state (key : heapArrayIndexKey) = isHeapAddressDefault state key.address
-        let instantiate typ memory =
-            let copiedMemory = readArrayCopy state arrayType extractor addr indices
-            let mkname = fun (key : heapArrayIndexKey) -> sprintf "%O[%s]" key.address (List.map toString key.indices |> join ", ")
-            makeSymbolicHeapRead {sort = ArrayIndexSort arrayType; extract = extractor; mkname = mkname; isDefaultKey = isDefault} key state.startingTime typ (MemoryRegion.deterministicCompose copiedMemory memory)
-        MemoryRegion.read region key (isDefault state) instantiate
-
-    and readArrayRegionExt state arrayType extractor region addr indices (*copy info follows*) srcIndex dstIndex length dstType =
-        __notImplemented__()
-
-    let readArrayIndex state addr indices arrayType =
-        let extractor state = accessRegion state.arrays (substituteTypeVariablesIntoArrayType state arrayType) (fst3 arrayType)
-        readArrayRegion state arrayType extractor (extractor state) addr indices
-
-    let readClassField state addr (field : fieldId) =
-        if field = Reflection.stringFirstCharField then
-            readArrayIndex state addr [makeNumber 0] (Char, 1, true)
-        else
-            let symbolicType = fromDotNetType field.typ
-            let extractor state = accessRegion state.classFields (substituteTypeVariablesIntoField state field) (substituteTypeVariables state symbolicType)
-            let mkname = fun (key : heapAddressKey) -> sprintf "%O.%O" key.address field
-            let isDefault state (key : heapAddressKey) = isHeapAddressDefault state key.address
-            let key = {address = addr}
-            MemoryRegion.read (extractor state) key (isDefault state)
-                (makeSymbolicHeapRead {sort = HeapFieldSort field; extract = extractor; mkname = mkname; isDefaultKey = isDefault} key state.startingTime)
-
-    let readStaticField state typ (field : fieldId) =
-        let symbolicType = fromDotNetType field.typ
-        let extractor state = accessRegion state.staticFields (substituteTypeVariablesIntoField state field) (substituteTypeVariables state symbolicType)
-        let mkname = fun (key : symbolicTypeKey) -> sprintf "%O.%O" key.typ field
-        let isDefault _ _ = false // TODO: when statics are allocated? always or never? depends on our exploration strategy
-        let key = {typ = typ}
-        MemoryRegion.read (extractor state) key (isDefault state)
-            (makeSymbolicHeapRead {sort = StaticFieldSort field; extract = extractor; mkname = mkname; isDefaultKey = isDefault} key state.startingTime)
-
-    let readLowerBound state addr dimension arrayType =
-        let extractor state = accessRegion state.lowerBounds (substituteTypeVariablesIntoArrayType state arrayType) lengthType
-        let mkname = fun (key : heapVectorIndexKey) -> sprintf "LowerBound(%O, %O)" key.address key.index
-        let isDefault state (key : heapVectorIndexKey) = isHeapAddressDefault state key.address
-        let key = {address = addr; index = dimension}
-        MemoryRegion.read (extractor state) key (isDefault state)
-            (makeSymbolicHeapRead {sort = ArrayLowerBoundSort arrayType; extract = extractor; mkname = mkname; isDefaultKey = isDefault} key state.startingTime)
-
-    let readLength state addr dimension arrayType =
-        let extractor state = accessRegion state.lengths (substituteTypeVariablesIntoArrayType state arrayType) lengthType
-        let mkname = fun (key : heapVectorIndexKey) -> sprintf "Length(%O, %O)" key.address key.index
-        let isDefault state (key : heapVectorIndexKey) = isHeapAddressDefault state key.address
-        let key = {address = addr; index = dimension}
-        MemoryRegion.read (extractor state) key (isDefault state)
-            (makeSymbolicHeapRead {sort = ArrayLengthSort arrayType; extract = extractor; mkname = mkname; isDefaultKey = isDefault} key state.startingTime)
-
-    let readStackBuffer state (stackKey : stackKey) index =
-        let extractor state = accessRegion state.stackBuffers (stackKey.Map (typeVariableSubst state)) (Numeric typeof<int8>)
-        let mkname = fun (key : stackBufferIndexKey) -> sprintf "%O[%O]" stackKey key.index
-        let isDefault _ _ = true
-        let key = {index = index}
-        MemoryRegion.read (extractor state) key (isDefault state)
-            (makeSymbolicHeapRead {sort = StackBufferSort stackKey; extract = extractor; mkname = mkname; isDefaultKey = isDefault} key state.startingTime)
-
-    let readBoxedLocation state (addr : concreteHeapAddress) =
-        match PersistentDict.tryFind state.boxedLocations addr with
-        | Some value -> value
-        | None -> internalfailf "Boxed location %O was not found in heap: this should not happen!" addr
-
-    let rec readDelegate state reference =
-        match reference.term with
-        | HeapRef(addr, _) ->
-            match addr.term with
-            | ConcreteHeapAddress addr -> state.delegates.[addr]
-            | _ -> __insufficientInformation__ "Can't obtain symbolic delegate %O!" addr
-        | Union gvs -> gvs |> List.map (fun (g, v) -> (g, readDelegate state v)) |> Merging.merge
-        | _ -> internalfailf "Reading delegate: expected heap reference, but got %O" reference
-
-    let rec readAddress state = function
-        | PrimitiveStackLocation key -> readStackLocation state key
-        | ClassField(addr, field) -> readClassField state addr field
-        | ArrayIndex(addr, indices, typ) -> readArrayIndex state addr indices typ
-        | StaticField(typ, field) -> readStaticField state typ field
-        | StructField(addr, field) ->
-            let structTerm = readAddress state addr
-            readStruct structTerm field
-        | ArrayLength(addr, dimension, typ) -> readLength state addr dimension typ
-        | BoxedLocation(addr, _) -> readBoxedLocation state addr
-        | StackBufferIndex(key, index) -> readStackBuffer state key index
-        | ArrayLowerBound(addr, dimension, typ) -> readLowerBound state addr dimension typ
-
-    let rec readSafe state reference =
-        match reference.term with
-        | Ref address -> readAddress state address
-        | Ptr (Some address, viewType, None) when typeOfAddress address = viewType -> readAddress state address
-        | Union gvs -> gvs |> List.map (fun (g, v) -> (g, readSafe state v)) |> Merging.merge
-        | _ -> internalfailf "Safe reading: expected reference, but got %O" reference
-
-    let isTypeInitialized state (typ : symbolicType) =
-        let key : symbolicTypeKey = {typ=typ}
-        let matchingTypes = SymbolicSet.matchingElements key state.initializedTypes
-        match matchingTypes with
-        | [x] when x = key -> True
-        | _ ->
-            let name = sprintf "%O_initialized" typ
-            let source : typeInitialized = {typ = typ; matchingTypes = SymbolicSet.ofSeq matchingTypes}
-            Constant name source Bool
-
 // ------------------------------- Merging -------------------------------
 
     let rec findCommonSuffix common pc1 pc2 =
@@ -591,6 +440,206 @@ module internal Memory =
         commonStatedConditionalExecutionk state conditionInvocation thenBranch elseBranch merge2Results k
     let statedConditionalExecutionWithMerge state conditionInvocation thenBranch elseBranch =
         statedConditionalExecutionWithMergek state conditionInvocation thenBranch elseBranch id
+
+// ------------------------------- Reading -------------------------------
+
+    let private readConcreteDict = PersistentDict.find
+
+    let private accessRegion (dict : pdict<'a, memoryRegion<'key, 'reg>>) key typ =
+        match PersistentDict.tryFind dict key with
+        | Some value -> value
+        | None -> MemoryRegion.empty typ
+
+    let rec extractAddress reference =
+        match reference.term with
+        | HeapRef(address, _) -> address
+        | Union gvs -> gvs |> List.map (fun (g, v) -> (g, extractAddress v)) |> Merging.merge
+        | _ -> internalfail "Extracting heap address: expected heap reference, but got %O" reference
+
+    let private isHeapAddressDefault state = term >> function
+        | ConcreteHeapAddress addr -> VectorTime.less state.startingTime addr
+        | _ -> false
+
+    let readStackLocation (s : state) key =
+        match MappedStack.tryFind key s.stack with
+        | Some value -> value
+        | None -> makeSymbolicStackRead key (typeOfStackLocation s key) (if Types.isValueType key.TypeOfLocation then None else Some s.startingTime)
+
+    let readStruct (structTerm : term) (field : fieldId) =
+        match structTerm with
+        | { term = Struct(fields, _) } -> fields.[field]
+        | _ -> internalfailf "Reading field of structure: expected struct, but got %O" structTerm
+
+    let readLowerBound state addr dimension arrayType =
+        let extractor state = accessRegion state.lowerBounds (substituteTypeVariablesIntoArrayType state arrayType) lengthType
+        let mkname = fun (key : heapVectorIndexKey) -> sprintf "LowerBound(%O, %O)" key.address key.index
+        let isDefault state (key : heapVectorIndexKey) = isHeapAddressDefault state key.address
+        let key = {address = addr; index = dimension}
+        MemoryRegion.read (extractor state) key (isDefault state)
+            (makeSymbolicHeapRead {sort = ArrayLowerBoundSort arrayType; extract = extractor; mkname = mkname; isDefaultKey = isDefault} key state.startingTime)
+
+    let readLength state addr dimension arrayType =
+        let extractor state = accessRegion state.lengths (substituteTypeVariablesIntoArrayType state arrayType) lengthType
+        let mkname = fun (key : heapVectorIndexKey) -> sprintf "Length(%O, %O)" key.address key.index
+        let isDefault state (key : heapVectorIndexKey) = isHeapAddressDefault state key.address
+        let key = {address = addr; index = dimension}
+        MemoryRegion.read (extractor state) key (isDefault state)
+            (makeSymbolicHeapRead {sort = ArrayLengthSort arrayType; extract = extractor; mkname = mkname; isDefaultKey = isDefault} key state.startingTime)
+
+    let private delinearizeArrayIndex ind lens lbs = // TODO: check #do
+        let mapper (acc, lens) lb =
+            let lensProd = List.fold mul (makeNumber 1) (List.tail lens)
+            let curOffset = div acc lensProd
+            let curIndex = add curOffset lb
+            let rest = rem acc lensProd // TODO: (mul and sub) or rem
+            curIndex, (rest, List.tail lens)
+        List.mapFold mapper (ind, lens) lbs |> fst
+
+    let private linearizeArrayIndex (lens : term list) (lbs : term list) (indices : term list) =
+        let length = List.length indices
+        let folder acc i =
+            let a = indices.[i]
+            let lb = lbs.[i]
+            let offset = sub a lb
+            let prod acc j =
+                mul acc lens.[j]
+            let lensProd = List.fold prod (makeNumber 1) [i .. length - 1]
+            let kek = mul offset lensProd
+            add acc kek
+        List.fold folder (makeNumber 0) [0 .. length - 1]
+
+    let rec readArrayCopy state arrayType extractor addr indices =
+        match addr.term with
+        | ConcreteHeapAddress concreteAddr ->
+            // TODO: what if array exists in entireCopies and extendedCopies? #do
+            match PersistentDict.tryFind state.entireCopies concreteAddr with
+            | None ->
+                match PersistentDict.tryFind state.extendedCopies concreteAddr with
+                | None -> None
+                | Some copyInfo -> readArrayRegionExt state arrayType extractor copyInfo addr indices |> Some
+            | Some(srcAddr, reg) -> readArrayRegion state arrayType extractor reg srcAddr indices |> Some
+        | _ -> None
+
+//            let emptyReg = MemoryRegion.empty (fst3 arrayType)
+//                let key = {address = addr; indices = indices}
+//                    MemoryRegion.write emptyReg key copiedValue
+
+    and readArrayRegion state arrayType extractor region addr indices = // TODO: bug: if array is concrete? then we will not go to copies! #do
+        let key = {address = addr; indices = indices}
+        let instantiate typ memory =
+            let copiedValue = readArrayCopy state arrayType extractor addr indices
+            match copiedValue with
+            | Some v when isHeapAddressDefault state addr -> v
+            | None when isHeapAddressDefault state addr -> makeDefaultValue typ
+            | _ ->
+                let isDefault state (key : heapArrayIndexKey) = isHeapAddressDefault state key.address
+                let picker = {sort = ArrayIndexSort arrayType; extract = extractor; mkname = toString; isDefaultKey = isDefault}
+                let key = {address = addr; indices = indices}
+                // TODO: order matters! if we mutated something after copy than we need to read new value (not copy effect) #do
+                let memoryWithCopiedValue = Option.fold (fun m v -> MemoryRegion.write m key v) memory copiedValue
+                makeSymbolicHeapRead picker key state.startingTime typ memoryWithCopiedValue
+        MemoryRegion.read region key (always false) instantiate
+
+    and readArrayRegionExt state arrayType extractor copyInfo dstAddress indices = // TODO: check #do
+        let srcType = mostConcreteTypeOfHeapRef state copyInfo.srcAddress copyInfo.srcSightType |> symbolicTypeToArrayType
+        let dstType = mostConcreteTypeOfHeapRef state dstAddress copyInfo.dstSightType |> symbolicTypeToArrayType
+        assert(arrayType = dstType)
+        let srcDim = snd3 srcType
+        let dstDim = snd3 arrayType
+        let srcLBs = List.init srcDim (fun dim -> readLowerBound state copyInfo.srcAddress (makeNumber dim) srcType)
+        let srcLens = List.init srcDim (fun dim -> readLength state copyInfo.srcAddress (makeNumber dim) srcType)
+        let dstLBs = List.init dstDim (fun dim -> readLowerBound state dstAddress (makeNumber dim) arrayType)
+        let dstLens = List.init dstDim (fun dim -> readLength state dstAddress (makeNumber dim) arrayType)
+        // TODO: if difference if bigger than length then read from dst array #do
+        let difference = sub (linearizeArrayIndex dstLens dstLBs indices) copyInfo.dstIndex
+        statedConditionalExecutionWithMerge
+        let readFromSrc () =
+            let srcIndex = add copyInfo.srcIndex difference
+            let srcIndices = delinearizeArrayIndex srcIndex srcLens srcLBs
+            let key = {address = copyInfo.srcAddress; indices = srcIndices}
+            let isDefault state (key : heapArrayIndexKey) = isHeapAddressDefault state key.address
+            let instantiate typ memory =
+                let copiedMemory = readArrayCopy state arrayType extractor copyInfo.srcAddress indices
+                let picker = {sort = ArrayIndexSort arrayType; extract = extractor; mkname = toString; isDefaultKey = isDefault}
+                makeSymbolicHeapRead picker key state.startingTime typ (MemoryRegion.deterministicCompose copiedMemory memory)
+            MemoryRegion.read copyInfo.contents key (isDefault state) instantiate
+
+    let readArrayIndex state addr indices arrayType =
+        let extractor state = accessRegion state.arrays (substituteTypeVariablesIntoArrayType state arrayType) (fst3 arrayType)
+        readArrayRegion state arrayType extractor (extractor state) addr indices
+
+    let readClassField state addr (field : fieldId) =
+        if field = Reflection.stringFirstCharField then
+            readArrayIndex state addr [makeNumber 0] (Char, 1, true)
+        else
+            let symbolicType = fromDotNetType field.typ
+            let extractor state = accessRegion state.classFields (substituteTypeVariablesIntoField state field) (substituteTypeVariables state symbolicType)
+            let mkname = fun (key : heapAddressKey) -> sprintf "%O.%O" key.address field
+            let isDefault state (key : heapAddressKey) = isHeapAddressDefault state key.address
+            let key = {address = addr}
+            MemoryRegion.read (extractor state) key (isDefault state)
+                (makeSymbolicHeapRead {sort = HeapFieldSort field; extract = extractor; mkname = mkname; isDefaultKey = isDefault} key state.startingTime)
+
+    let readStaticField state typ (field : fieldId) =
+        let symbolicType = fromDotNetType field.typ
+        let extractor state = accessRegion state.staticFields (substituteTypeVariablesIntoField state field) (substituteTypeVariables state symbolicType)
+        let mkname = fun (key : symbolicTypeKey) -> sprintf "%O.%O" key.typ field
+        let isDefault _ _ = false // TODO: when statics are allocated? always or never? depends on our exploration strategy
+        let key = {typ = typ}
+        MemoryRegion.read (extractor state) key (isDefault state)
+            (makeSymbolicHeapRead {sort = StaticFieldSort field; extract = extractor; mkname = mkname; isDefaultKey = isDefault} key state.startingTime)
+
+    let readStackBuffer state (stackKey : stackKey) index =
+        let extractor state = accessRegion state.stackBuffers (stackKey.Map (typeVariableSubst state)) (Numeric typeof<int8>)
+        let mkname = fun (key : stackBufferIndexKey) -> sprintf "%O[%O]" stackKey key.index
+        let isDefault _ _ = true
+        let key = {index = index}
+        MemoryRegion.read (extractor state) key (isDefault state)
+            (makeSymbolicHeapRead {sort = StackBufferSort stackKey; extract = extractor; mkname = mkname; isDefaultKey = isDefault} key state.startingTime)
+
+    let readBoxedLocation state (addr : concreteHeapAddress) =
+        match PersistentDict.tryFind state.boxedLocations addr with
+        | Some value -> value
+        | None -> internalfailf "Boxed location %O was not found in heap: this should not happen!" addr
+
+    let rec readDelegate state reference =
+        match reference.term with
+        | HeapRef(addr, _) ->
+            match addr.term with
+            | ConcreteHeapAddress addr -> state.delegates.[addr]
+            | _ -> __insufficientInformation__ "Can't obtain symbolic delegate %O!" addr
+        | Union gvs -> gvs |> List.map (fun (g, v) -> (g, readDelegate state v)) |> Merging.merge
+        | _ -> internalfailf "Reading delegate: expected heap reference, but got %O" reference
+
+    let rec readAddress state = function
+        | PrimitiveStackLocation key -> readStackLocation state key
+        | ClassField(addr, field) -> readClassField state addr field
+        | ArrayIndex(addr, indices, typ) -> readArrayIndex state addr indices typ // TODO: what if typ if not the most concrete? #do
+        | StaticField(typ, field) -> readStaticField state typ field
+        | StructField(addr, field) ->
+            let structTerm = readAddress state addr
+            readStruct structTerm field
+        | ArrayLength(addr, dimension, typ) -> readLength state addr dimension typ
+        | BoxedLocation(addr, _) -> readBoxedLocation state addr
+        | StackBufferIndex(key, index) -> readStackBuffer state key index
+        | ArrayLowerBound(addr, dimension, typ) -> readLowerBound state addr dimension typ
+
+    let rec readSafe state reference =
+        match reference.term with
+        | Ref address -> readAddress state address
+        | Ptr (Some address, viewType, None) when typeOfAddress address = viewType -> readAddress state address
+        | Union gvs -> gvs |> List.map (fun (g, v) -> (g, readSafe state v)) |> Merging.merge
+        | _ -> internalfailf "Safe reading: expected reference, but got %O" reference
+
+    let isTypeInitialized state (typ : symbolicType) =
+        let key : symbolicTypeKey = {typ=typ}
+        let matchingTypes = SymbolicSet.matchingElements key state.initializedTypes
+        match matchingTypes with
+        | [x] when x = key -> True
+        | _ ->
+            let name = sprintf "%O_initialized" typ
+            let source : typeInitialized = {typ = typ; matchingTypes = SymbolicSet.ofSeq matchingTypes}
+            Constant name source Bool
 
 // ------------------------------- Writing -------------------------------
 
@@ -765,10 +814,19 @@ module internal Memory =
         let contents = MemoryRegion.localizeArray srcAddress (snd3 arrayType) state.arrays.[arrayType]
         {state with entireCopies = PersistentDict.add dstAddress (srcAddress, contents) state.entireCopies}
 
-    let copyArrayExt state srcAddress srcIndices srcType dstAddress dstIndices dstType =
-        // TODO: implement memmove for multidimensional arrays, i.e. consider the case of overlapping src and dest arrays.
-        // TODO: See Array.Copy documentation for detalis.
-        __notImplemented__()
+//    let copyArrayExt state srcAddress srcIndices srcType dstAddress dstIndices dstType =
+//        // TODO: implement memmove for multidimensional arrays, i.e. consider the case of overlapping src and dest arrays.
+//        // TODO: See Array.Copy documentation for detalis.
+//        __notImplemented__()
+
+    // TODO: handle exceptions of this #do
+    let copyArrayExt state srcAddress srcIndex srcSightType dstAddress dstIndex dstSightType length =
+        // TODO: consider the case of overlapping src and dest arrays #do
+        // TODO: think about casting to dstType #do
+        let srcType = mostConcreteTypeOfHeapRef state srcAddress srcSightType |> symbolicTypeToArrayType
+        let contents = MemoryRegion.localizeArray srcAddress (snd3 srcType) state.arrays.[srcType]
+        let copyInfo = {srcAddress = srcAddress; contents = contents; srcIndex = srcIndex; dstIndex = dstIndex; length = length; srcSightType = srcSightType; dstSightType = dstSightType}
+        {state with extendedCopies = PersistentDict.add dstAddress copyInfo state.extendedCopies}
 
     let copyCharArrayToString state arrayAddress dstAddress =
         let arrayType = (Char, 1, true)
@@ -957,11 +1015,11 @@ module internal Memory =
     let private composeArrayCopyInfoExt state info =
         let srcAddress = fillHoles state info.srcAddress
         let contents = fillHolesInMemoryRegion state info.contents
-        let srcIndex = fillHoles state info.srcIndex
-        let dstIndex = fillHoles state info.dstIndex
-        let length = fillHoles state info.length
-        let dstType = substituteTypeVariables state info.dstType
-        {srcAddress=srcAddress; contents=contents; srcIndex=srcIndex; dstIndex=dstIndex; length=length; dstType=dstType}
+//        let srcIndex = fillHoles state info.srcIndex
+//        let dstIndex = fillHoles state info.dstIndex
+//        let length = fillHoles state info.length
+//        let dstType = substituteTypeVariables state info.dstType // TODO: hacky hack #do
+        {srcAddress=srcAddress; contents=contents; fromTo = info.fromTo } // srcIndex=srcIndex; dstIndex=dstIndex; length=length; dstType=dstType}
 
     let composeOpStacksOf state opStack =
         OperationStack.map (fillHoles state) opStack
