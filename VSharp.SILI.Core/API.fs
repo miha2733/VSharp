@@ -264,11 +264,12 @@ module API =
 
         let CopyArrayExt state src srcIndex dst dstIndex (length : term) =
             match src.term, dst.term with
-            | HeapRef(srcAddr, srcSightType), HeapRef({term = ConcreteHeapAddress dstConcreteAddr} as dstAddr, dstSightType) ->
-                let srcType = Memory.mostConcreteTypeOfHeapRef state srcAddr srcSightType |> symbolicTypeToArrayType
-                let dstType = Memory.mostConcreteTypeOfHeapRef state dstAddr dstSightType |> symbolicTypeToArrayType
-                Memory.copyArrayExt state srcAddr srcIndex srcType dstConcreteAddr dstIndex dstType length
-            | _ -> __notImplemented__()
+            | HeapRef(srcAddr, srcSightType), HeapRef({term = ConcreteHeapAddress dstConcreteAddr}, dstSightType) ->
+//                let srcType = Memory.mostConcreteTypeOfHeapRef state srcAddr srcSightType |> symbolicTypeToArrayType // TODO: make better #do
+//                let dstType = Memory.mostConcreteTypeOfHeapRef state dstAddr dstSightType |> symbolicTypeToArrayType
+                Memory.copyArrayExt state srcAddr srcIndex srcSightType dstConcreteAddr dstIndex dstSightType length
+            | HeapRef _, HeapRef _ -> __insufficientInformation__ "Coping to symbolic array"
+            | _ -> internalfailf "Coping arrays: expected heapRefs, but got %O, %O" src dst
 
         let IsTypeInitialized state typ = Memory.isTypeInitialized state typ
         let Dump state = Memory.dump state

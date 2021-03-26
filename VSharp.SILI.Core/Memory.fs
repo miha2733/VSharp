@@ -101,6 +101,7 @@ and state = {
     typeVariables : typeVariables                             // Type variables assignment in the current state
     // TODO: only for string ctors? if not then it's bug, because we can write full copy and after that write partial copy: so we don't know what order was #do
     entireCopies : pdict<concreteHeapAddress, heapAddress * arrayRegion>  // Address and contents of (entirely) copied arrays
+    // TODO: why only concreteHeapAddress? #do
     extendedCopies : pdict<concreteHeapAddress, arrayCopyInfo> // Address, contents, source and destination indices and target type of copied arrays
     delegates : pdict<concreteHeapAddress, term>               // Subtypes of System.Delegate allocated in heap
     currentTime : vectorTime                                   // Current timestamp (and next allocated address as well) in this state
@@ -465,7 +466,7 @@ module internal Memory =
         | Some value -> value
         | None -> makeSymbolicStackRead key (typeOfStackLocation s key) (if Types.isValueType key.TypeOfLocation then None else Some s.startingTime)
 
-    let readStruct (structTerm : term) (field : fieldId) =
+    let readStruct (structTerm : term) (field : fieldId) = // TODO: falls in Conv_Ovf_short_int (native int != IntPtr) #do
         match structTerm with
         | { term = Struct(fields, _) } -> fields.[field]
         | _ -> internalfailf "Reading field of structure: expected struct, but got %O" structTerm
@@ -528,7 +529,7 @@ module internal Memory =
         let key = {address = addr; indices = indices}
         let instantiate typ memory =
             let copiedValue = readArrayCopy state arrayType extractor addr indices
-            match copiedValue with
+            match copiedValue with // TODO: make better #do
             | Some v when isHeapAddressDefault state addr -> v
             | None when isHeapAddressDefault state addr -> makeDefaultValue typ
             | _ ->
@@ -552,17 +553,25 @@ module internal Memory =
         let dstLens = List.init dstDim (fun dim -> readLength state dstAddress (makeNumber dim) arrayType)
         // TODO: if difference if bigger than length then read from dst array #do
         let difference = sub (linearizeArrayIndex dstLens dstLBs indices) copyInfo.dstIndex
-        statedConditionalExecutionWithMerge
-        let readFromSrc () =
-            let srcIndex = add copyInfo.srcIndex difference
-            let srcIndices = delinearizeArrayIndex srcIndex srcLens srcLBs
-            let key = {address = copyInfo.srcAddress; indices = srcIndices}
-            let isDefault state (key : heapArrayIndexKey) = isHeapAddressDefault state key.address
-            let instantiate typ memory =
-                let copiedMemory = readArrayCopy state arrayType extractor copyInfo.srcAddress indices
+        let srcIndex = add copyInfo.srcIndex difference
+        let srcIndices = delinearizeArrayIndex srcIndex srcLens srcLBs
+        let key = {address = copyInfo.srcAddress; indices = srcIndices}
+        let isDefault state (key : heapArrayIndexKey) = isHeapAddressDefault state key.address
+        let instantiate typ memory =
+            let copiedValue = readArrayCopy state arrayType extractor copyInfo.srcAddress srcIndices
+            match copiedValue with // TODO: make better #do
+            | Some v when isHeapAddressDefault state copyInfo.srcAddress -> v
+            | None when isHeapAddressDefault state copyInfo.srcAddress -> makeDefaultValue typ
+            | _ ->
+                let isDefault state (key : heapArrayIndexKey) = isHeapAddressDefault state key.address
                 let picker = {sort = ArrayIndexSort arrayType; extract = extractor; mkname = toString; isDefaultKey = isDefault}
-                makeSymbolicHeapRead picker key state.startingTime typ (MemoryRegion.deterministicCompose copiedMemory memory)
-            MemoryRegion.read copyInfo.contents key (isDefault state) instantiate
+                let key = {address = copyInfo.srcAddress; indices = srcIndices}
+                // TODO: order matters! if we mutated something after copy than we need to read new value (not copy effect) #do
+                let memoryWithCopiedValue = Option.fold (fun m v -> MemoryRegion.write m key v) memory copiedValue
+                makeSymbolicHeapRead picker key state.startingTime typ memoryWithCopiedValue
+        MemoryRegion.read copyInfo.contents key (isDefault state) instantiate
+//        statedConditionalExecutionWithMerge state
+//            (fun state k -> )
 
     let readArrayIndex state addr indices arrayType =
         let extractor state = accessRegion state.arrays (substituteTypeVariablesIntoArrayType state arrayType) (fst3 arrayType)
@@ -1015,11 +1024,12 @@ module internal Memory =
     let private composeArrayCopyInfoExt state info =
         let srcAddress = fillHoles state info.srcAddress
         let contents = fillHolesInMemoryRegion state info.contents
-//        let srcIndex = fillHoles state info.srcIndex
-//        let dstIndex = fillHoles state info.dstIndex
-//        let length = fillHoles state info.length
-//        let dstType = substituteTypeVariables state info.dstType // TODO: hacky hack #do
-        {srcAddress=srcAddress; contents=contents; fromTo = info.fromTo } // srcIndex=srcIndex; dstIndex=dstIndex; length=length; dstType=dstType}
+        let srcIndex = fillHoles state info.srcIndex
+        let dstIndex = fillHoles state info.dstIndex
+        let length = fillHoles state info.length
+        let srcSightType = substituteTypeVariables state info.srcSightType
+        let dstSightType = substituteTypeVariables state info.dstSightType
+        {srcAddress=srcAddress; contents=contents; srcIndex=srcIndex; dstIndex=dstIndex; length=length; dstSightType=dstSightType; srcSightType = srcSightType}
 
     let composeOpStacksOf state opStack =
         OperationStack.map (fillHoles state) opStack

@@ -34,7 +34,15 @@ namespace VSharp.Test.Tests
         }
 
         [TestSvm]
-        public static char GetCharOrString()
+        public static string StringOfConcreteCharArray()
+        {
+            char[] a = new char[5] {'a', 'b', 'c', 'd', 'e'};
+            string str = new string(a);
+            return str;
+        }
+
+        [TestSvm]
+        public static char GetCharOfString()
         {
             char[] a = new char[5] {'a', 'b', 'c', 'd', 'e'};
             string str = new string(a);
