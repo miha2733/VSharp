@@ -155,12 +155,12 @@ namespace VSharp.Test.Tests
         }
 
         [TestSvm]
-        public static int[] CopyConcreteToConcreteArray()
+        public static int CopyConcreteToConcreteArray()
         {
-            int[] arr = new int[5] {1, 2, 3, 4, 5};
+            int[] arr = new int[5] {10, 2, 3, 4, 5};
             int[] a = new int[5] {1, 1, 1, 1, 1};
-            Array.Copy(arr, 2, a, 2, 2);
-            return a;
+            Array.Copy(arr, 1, a, 1, 3);
+            return a[2];
         }
 
         [TestSvm]

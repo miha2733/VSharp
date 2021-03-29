@@ -487,37 +487,12 @@ module internal Memory =
         MemoryRegion.read (extractor state) key (isDefault state)
             (makeSymbolicHeapRead {sort = ArrayLengthSort arrayType; extract = extractor; mkname = mkname; isDefaultKey = isDefault} key state.startingTime)
 
-    let private delinearizeArrayIndex ind lens lbs = // TODO: check #do
-        let mapper (acc, lens) lb =
-            let lensProd = List.fold mul (makeNumber 1) (List.tail lens)
-            let curOffset = div acc lensProd
-            let curIndex = add curOffset lb
-            let rest = rem acc lensProd // TODO: (mul and sub) or rem
-            curIndex, (rest, List.tail lens)
-        List.mapFold mapper (ind, lens) lbs |> fst
-
-    let private linearizeArrayIndex (lens : term list) (lbs : term list) (indices : term list) =
-        let length = List.length indices
-        let folder acc i =
-            let a = indices.[i]
-            let lb = lbs.[i]
-            let offset = sub a lb
-            let prod acc j =
-                mul acc lens.[j]
-            let lensProd = List.fold prod (makeNumber 1) [i .. length - 1]
-            let kek = mul offset lensProd
-            add acc kek
-        List.fold folder (makeNumber 0) [0 .. length - 1]
-
     let rec readArrayCopy state arrayType extractor addr indices =
         match addr.term with
         | ConcreteHeapAddress concreteAddr ->
             // TODO: what if array exists in entireCopies and extendedCopies? #do
             match PersistentDict.tryFind state.entireCopies concreteAddr with
-            | None ->
-                match PersistentDict.tryFind state.extendedCopies concreteAddr with
-                | None -> None
-                | Some copyInfo -> readArrayRegionExt state arrayType extractor copyInfo addr indices |> Some
+            | None -> None
             | Some(srcAddr, reg) -> readArrayRegion state arrayType extractor reg srcAddr indices |> Some
         | _ -> None
 
@@ -540,38 +515,6 @@ module internal Memory =
                 let memoryWithCopiedValue = Option.fold (fun m v -> MemoryRegion.write m key v) memory copiedValue
                 makeSymbolicHeapRead picker key state.startingTime typ memoryWithCopiedValue
         MemoryRegion.read region key (always false) instantiate
-
-    and readArrayRegionExt state arrayType extractor copyInfo dstAddress indices = // TODO: check #do
-        let srcType = mostConcreteTypeOfHeapRef state copyInfo.srcAddress copyInfo.srcSightType |> symbolicTypeToArrayType
-        let dstType = mostConcreteTypeOfHeapRef state dstAddress copyInfo.dstSightType |> symbolicTypeToArrayType
-        assert(arrayType = dstType)
-        let srcDim = snd3 srcType
-        let dstDim = snd3 arrayType
-        let srcLBs = List.init srcDim (fun dim -> readLowerBound state copyInfo.srcAddress (makeNumber dim) srcType)
-        let srcLens = List.init srcDim (fun dim -> readLength state copyInfo.srcAddress (makeNumber dim) srcType)
-        let dstLBs = List.init dstDim (fun dim -> readLowerBound state dstAddress (makeNumber dim) arrayType)
-        let dstLens = List.init dstDim (fun dim -> readLength state dstAddress (makeNumber dim) arrayType)
-        // TODO: if difference if bigger than length then read from dst array #do
-        let difference = sub (linearizeArrayIndex dstLens dstLBs indices) copyInfo.dstIndex
-        let srcIndex = add copyInfo.srcIndex difference
-        let srcIndices = delinearizeArrayIndex srcIndex srcLens srcLBs
-        let key = {address = copyInfo.srcAddress; indices = srcIndices}
-        let isDefault state (key : heapArrayIndexKey) = isHeapAddressDefault state key.address
-        let instantiate typ memory =
-            let copiedValue = readArrayCopy state arrayType extractor copyInfo.srcAddress srcIndices
-            match copiedValue with // TODO: make better #do
-            | Some v when isHeapAddressDefault state copyInfo.srcAddress -> v
-            | None when isHeapAddressDefault state copyInfo.srcAddress -> makeDefaultValue typ
-            | _ ->
-                let isDefault state (key : heapArrayIndexKey) = isHeapAddressDefault state key.address
-                let picker = {sort = ArrayIndexSort arrayType; extract = extractor; mkname = toString; isDefaultKey = isDefault}
-                let key = {address = copyInfo.srcAddress; indices = srcIndices}
-                // TODO: order matters! if we mutated something after copy than we need to read new value (not copy effect) #do
-                let memoryWithCopiedValue = Option.fold (fun m v -> MemoryRegion.write m key v) memory copiedValue
-                makeSymbolicHeapRead picker key state.startingTime typ memoryWithCopiedValue
-        MemoryRegion.read copyInfo.contents key (isDefault state) instantiate
-//        statedConditionalExecutionWithMerge state
-//            (fun state k -> )
 
     let readArrayIndex state addr indices arrayType =
         let extractor state = accessRegion state.arrays (substituteTypeVariablesIntoArrayType state arrayType) (fst3 arrayType)
@@ -828,14 +771,47 @@ module internal Memory =
 //        // TODO: See Array.Copy documentation for detalis.
 //        __notImplemented__()
 
+    let private delinearizeArrayIndex ind lens lbs = // TODO: check #do
+        let mapper (acc, lens) lb =
+            let lensProd = List.fold mul (makeNumber 1) (List.tail lens)
+            let curOffset = div acc lensProd
+            let curIndex = add curOffset lb
+            let rest = rem acc lensProd // TODO: (mul and sub) or rem
+            curIndex, (rest, List.tail lens)
+        List.mapFold mapper (ind, lens) lbs |> fst
+
+    let private linearizeArrayIndex (lens : term list) (lbs : term list) (indices : term list) =
+        let length = List.length indices
+        let folder acc i =
+            let a = indices.[i]
+            let lb = lbs.[i]
+            let offset = sub a lb
+            let prod acc j =
+                mul acc lens.[j]
+            let lensProd = List.fold prod (makeNumber 1) [i .. length - 1]
+            let kek = mul offset lensProd
+            add acc kek
+        List.fold folder (makeNumber 0) [0 .. length - 1]
+
     // TODO: handle exceptions of this #do
-    let copyArrayExt state srcAddress srcIndex srcSightType dstAddress dstIndex dstSightType length =
+    let copyArrayExt state srcAddress srcIndex srcType dstAddress dstIndex dstType length =
         // TODO: consider the case of overlapping src and dest arrays #do
-        // TODO: think about casting to dstType #do
-        let srcType = mostConcreteTypeOfHeapRef state srcAddress srcSightType |> symbolicTypeToArrayType
-        let contents = MemoryRegion.localizeArray srcAddress (snd3 srcType) state.arrays.[srcType]
-        let copyInfo = {srcAddress = srcAddress; contents = contents; srcIndex = srcIndex; dstIndex = dstIndex; length = length; srcSightType = srcSightType; dstSightType = dstSightType}
-        {state with extendedCopies = PersistentDict.add dstAddress copyInfo state.extendedCopies}
+        let srcDim = snd3 srcType
+        let dstDim = snd3 dstType
+        let srcLBs = List.init srcDim (fun dim -> readLowerBound state srcAddress (makeNumber dim) srcType)
+        let srcLens = List.init srcDim (fun dim -> readLength state srcAddress (makeNumber dim) srcType)
+        let dstLBs = List.init dstDim (fun dim -> readLowerBound state dstAddress (makeNumber dim) dstType)
+        let dstLens = List.init dstDim (fun dim -> readLength state dstAddress (makeNumber dim) dstType)
+        let offsets = List.init length id
+        let copyOneElem state offset =
+            let srcIndex = add srcIndex (makeNumber offset)
+            let srcIndices = delinearizeArrayIndex srcIndex srcLens srcLBs
+            let srcElem = readArrayIndex state srcAddress srcIndices srcType
+            let casted = srcElem // TODO: cast to dst elem type here! #do
+            let dstIndex = add dstIndex (makeNumber offset)
+            let dstIndices = delinearizeArrayIndex dstIndex dstLens dstLBs
+            writeArrayIndex state dstAddress dstIndices srcType srcElem
+        List.fold copyOneElem state offsets
 
     let copyCharArrayToString state arrayAddress dstAddress =
         let arrayType = (Char, 1, true)

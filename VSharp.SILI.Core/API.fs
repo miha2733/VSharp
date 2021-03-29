@@ -262,13 +262,14 @@ module API =
 
         let AllocateString string state = Memory.allocateString state string
 
-        let CopyArrayExt state src srcIndex dst dstIndex (length : term) =
-            match src.term, dst.term with
-            | HeapRef(srcAddr, srcSightType), HeapRef({term = ConcreteHeapAddress dstConcreteAddr}, dstSightType) ->
-//                let srcType = Memory.mostConcreteTypeOfHeapRef state srcAddr srcSightType |> symbolicTypeToArrayType // TODO: make better #do
-//                let dstType = Memory.mostConcreteTypeOfHeapRef state dstAddr dstSightType |> symbolicTypeToArrayType
-                Memory.copyArrayExt state srcAddr srcIndex srcSightType dstConcreteAddr dstIndex dstSightType length
-            | HeapRef _, HeapRef _ -> __insufficientInformation__ "Coping to symbolic array"
+        let CopyArrayExt state src srcIndex dst dstIndex length =
+            match src.term, dst.term, length.term with
+            | HeapRef(srcAddress, srcSightType), HeapRef(dstAddress, dstSightType), Concrete(len, _) ->
+                let len = len :?> int
+                let srcType = Memory.mostConcreteTypeOfHeapRef state srcAddress srcSightType |> symbolicTypeToArrayType // TODO: make better #do
+                let dstType = Memory.mostConcreteTypeOfHeapRef state dstAddress dstSightType |> symbolicTypeToArrayType
+                Memory.copyArrayExt state srcAddress srcIndex srcType dstAddress dstIndex dstType len
+            | HeapRef _, HeapRef _, _ -> __insufficientInformation__ "Coping arrays with symbolic length"
             | _ -> internalfailf "Coping arrays: expected heapRefs, but got %O, %O" src dst
 
         let IsTypeInitialized state typ = Memory.isTypeInitialized state typ
