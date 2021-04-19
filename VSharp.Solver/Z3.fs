@@ -174,7 +174,7 @@ module internal Z3 =
             let indicesInRegion = x.KeyInIntPoints keyExpr.[1]
             x.KeyInProductRegion addressInRegion indicesInRegion acc region
 
-        member private x.stackBufferIndexKeyInRegion (encCtx : encodingContext) acc (key : stackBufferIndexKey) keyExpr = // TODO: check #do
+        member private x.stackBufferIndexKeyInRegion acc (key : stackBufferIndexKey) keyExpr = // TODO: check #do
             let region = (key :> IMemoryKey<stackBufferIndexKey, int points>).Region
             x.KeyInIntPoints keyExpr acc region
 
@@ -190,12 +190,7 @@ module internal Z3 =
                 regConst
 
         // TODO: delete all this generics! #do
-        member private x.MemoryReading<'a, 'b, 'c when 'b : equality and 'b :> IMemoryKey<'b, 'c> and 'c :> IRegion<'c> and 'c : equality>
-            (encCtx : encodingContext)
-            (keyInRegion : BoolExpr -> 'b -> 'a -> BoolExpr)
-            keysAreEqual
-            (encodeKey : 'b -> BoolExpr list * 'a)
-            hasDefaultValue sort select (left : 'b) mo source name =
+        member private x.MemoryReading (encCtx : encodingContext) keyInRegion keysAreEqual encodeKey hasDefaultValue sort select left mo source name =
                 let updates = MemoryRegion.flatten mo
                 let memoryRegionConst = GetHeapReadingRegionSort source |> x.GetRegionConstant hasDefaultValue name sort
                 let assumptions, leftExpr = encodeKey left
@@ -234,8 +229,7 @@ module internal Z3 =
             let encodeKey (k : stackBufferIndexKey) = x.EncodeTerm encCtx k.index |> toTuple
             let sort = ctx.MkArraySort(x.Type2Sort AddressType, x.Type2Sort typ)
             let select array (k : Expr) = ctx.MkSelect(array, k)
-            let keyInRegion = x.stackBufferIndexKeyInRegion encCtx
-            x.MemoryReading encCtx keyInRegion x.DefaultEquality encodeKey false sort select key mo source name
+            x.MemoryReading encCtx x.stackBufferIndexKeyInRegion x.DefaultEquality encodeKey false sort select key mo source name
 
         member private x.StaticsReading encCtx (key : symbolicTypeKey) mo typ source name = // TODO: make this, using equality of keys #do
             let encodeKey (k : symbolicTypeKey) = __notImplemented__() // TODO: how to encode symbolicType? Enumerate! #do
@@ -289,58 +283,27 @@ module internal Z3 =
                         x.CreateConstant name typ term
                     else
                         match operator with
-                        | OperationType.LogicalNeg ->
-                            let res = x.MakeUnary stopper encCtx ctx.MkNot args
-                            {expr = res.expr :> Expr; assumptions = res.assumptions}
-                        | OperationType.LogicalAnd ->
-                            let assumptions, expressions = x.EncodeTerms stopper encCtx args
-                            {expr = ctx.MkAnd(expressions) :> Expr; assumptions = assumptions}
-                        | OperationType.LogicalOr ->
-                            let assumptions, expressions = x.EncodeTerms stopper encCtx args
-                            {expr = ctx.MkOr(expressions) :> Expr; assumptions = assumptions}
-                        | OperationType.Equal ->
-                            let res = x.MakeBinary stopper encCtx ctx.MkEq args
-                            {expr = res.expr :> Expr; assumptions = res.assumptions}
-                        | OperationType.Greater ->
-                            let res = x.MakeBinary stopper encCtx ctx.MkGt args
-                            {expr = res.expr :> Expr; assumptions = res.assumptions}
-                        | OperationType.GreaterOrEqual ->
-                            let res = x.MakeBinary stopper encCtx ctx.MkGe args
-                            {expr = res.expr :> Expr; assumptions = res.assumptions}
-                        | OperationType.Less ->
-                            let res = x.MakeBinary stopper encCtx ctx.MkLt args
-                            {expr = res.expr :> Expr; assumptions = res.assumptions}
-                        | OperationType.LessOrEqual ->
-                            let res = x.MakeBinary stopper encCtx ctx.MkLe args
-                            {expr = res.expr :> Expr; assumptions = res.assumptions}
-                        | OperationType.Add ->
-                            let assumptions, expressions = x.EncodeTerms stopper encCtx args
-                            {expr = ctx.MkAdd(expressions) :> Expr; assumptions = assumptions}
-                        | OperationType.Multiply ->
-                            let assumptions, expressions = x.EncodeTerms stopper encCtx args
-                            {expr = ctx.MkMul(expressions) :> Expr; assumptions = assumptions}
-                        | OperationType.Subtract ->
-                            let assumptions, expressions = x.EncodeTerms stopper encCtx args
-                            {expr = ctx.MkSub(expressions) :> Expr; assumptions = assumptions}
-                        | OperationType.Divide ->
-                            let res = x.MakeBinary stopper encCtx ctx.MkDiv args
-                            {expr = res.expr :> Expr; assumptions = res.assumptions}
-                        | OperationType.Remainder ->
-                            let res = x.MakeBinary stopper encCtx ctx.MkRem args
-                            {expr = res.expr :> Expr; assumptions = res.assumptions}
-                        | OperationType.UnaryMinus ->
-                            let res = x.MakeUnary stopper encCtx ctx.MkUnaryMinus args
-                            {expr = res.expr :> Expr; assumptions = res.assumptions}
-                        | OperationType.Not ->
-                            let res = x.MakeUnary stopper encCtx ctx.MkNot args
-                            {expr = res.expr :> Expr; assumptions = res.assumptions}
+                        | OperationType.LogicalNeg -> x.MakeUnary stopper encCtx ctx.MkNot args
+                        | OperationType.LogicalAnd -> x.MakeOperation stopper encCtx ctx.MkAnd args
+                        | OperationType.LogicalOr -> x.MakeOperation stopper encCtx ctx.MkOr args
+                        | OperationType.Equal -> x.MakeBinary stopper encCtx ctx.MkEq args
+                        | OperationType.Greater -> x.MakeBinary stopper encCtx ctx.MkGt args
+                        | OperationType.GreaterOrEqual -> x.MakeBinary stopper encCtx ctx.MkGe args
+                        | OperationType.Less -> x.MakeBinary stopper encCtx ctx.MkLt args
+                        | OperationType.LessOrEqual -> x.MakeBinary stopper encCtx ctx.MkLe args
+                        | OperationType.Add -> x.MakeOperation stopper encCtx ctx.MkAdd args
+                        | OperationType.Multiply -> x.MakeOperation stopper encCtx ctx.MkMul args
+                        | OperationType.Subtract -> x.MakeOperation stopper encCtx (fun x -> ctx.MkSub x) args
+                        | OperationType.Divide -> x.MakeBinary stopper encCtx ctx.MkDiv args
+                        | OperationType.Remainder -> x.MakeBinary stopper encCtx ctx.MkRem args
+                        | OperationType.UnaryMinus -> x.MakeUnary stopper encCtx ctx.MkUnaryMinus args
+                        | OperationType.Not -> x.MakeUnary stopper encCtx ctx.MkNot args
                         | OperationType.ShiftLeft
                         | OperationType.ShiftRight -> __notImplemented__()
                         | _ -> __notImplemented__()
                 | Application sf ->
                     let decl = ctx.MkConstDecl(sf |> toString |> IdGenerator.startingWith, x.Type2Sort typ)
-                    let assumptions, expressions = x.EncodeTerms stopper encCtx args
-                    {expr = ctx.MkApp(decl, expressions); assumptions = assumptions}
+                    x.MakeOperation stopper encCtx (fun x -> ctx.MkApp(decl, x)) args
                 | Cast(Numeric _, Numeric _) ->
                     let res = x.EncodeTermExt stopper encCtx (List.head args)
                     {expr = res.expr :> Expr; assumptions = res.assumptions}
@@ -364,7 +327,7 @@ module internal Z3 =
                 (stopper : OperationType -> term list -> bool)
                 (encCtx : encodingContext)
                 (constructor : 'a -> 'b)
-                (args : term list) : 'b encodingResult =
+                (args : term list) : Expr encodingResult =
             match args with
             | [x] ->
                 let result = this.EncodeTermExt<'a> stopper encCtx x
@@ -375,13 +338,21 @@ module internal Z3 =
                 (stopper : OperationType -> term list -> bool)
                 (encCtx : encodingContext)
                 (constructor : 'a * 'b -> 'c)
-                (args : term list) : 'c encodingResult =
+                (args : term list) : Expr encodingResult =
             match args with
             | [x; y] ->
                 let x' = this.EncodeTermExt<'a> stopper encCtx x
                 let y' = this.EncodeTermExt<'b> stopper encCtx y
                 {expr = constructor(x'.expr, y'.expr); assumptions = x'.assumptions @ y'.assumptions}
             | _ -> internalfail "binary operation should have exactly two arguments"
+
+        member private this.MakeOperation<'a, 'b when 'a :> Expr and 'a : equality and 'b :> Expr and 'b : equality>
+                (stopper : OperationType -> term list -> bool)
+                (encCtx : encodingContext)
+                (constructor : 'a [] -> 'b)
+                (args : term list) : Expr encodingResult =
+            let assumptions, expressions = this.EncodeTerms stopper encCtx args
+            {expr = constructor expressions; assumptions = assumptions}
 
         member internal x.EncodeTerms<'a when 'a :> Expr and 'a : equality> (stopper : OperationType -> term list -> bool) (encCtx : encodingContext) (ts : term seq) : BoolExpr list * 'a array =
             let encodeOne acc term =
