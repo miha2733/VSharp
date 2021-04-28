@@ -530,7 +530,7 @@ module internal Z3 =
                     with
                     | :? Z3Exception
                     | :? EncodingException
-                    | :? TargetInvocationException as e ->
+                    | :? Reflection.TargetInvocationException as e ->
                         printLog Info "SOLVER: exception was thrown: %s" e.Message
                         SmtUnknown (sprintf "Z3 has thrown an exception: %s" e.Message)
                 finally
