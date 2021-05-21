@@ -125,8 +125,8 @@ module internal CallStack =
 
     let toString (stack : callStack) =
         let printEntry (k, v) =
-            Option.map (fun v -> sprintf "key = %O, value = %O" k v) v
-        let keysAndValues = fold (fun acc k v _ -> (k, v) :: acc) List.empty stack
+            Option.map (fun v -> sprintf "key = %s, value = %O" k v) v
+        let keysAndValues = fold (fun acc k v _ -> (toString k, v) :: acc) List.empty stack
         let sorted = List.sortBy fst keysAndValues
         List.choose printEntry sorted
         |> join "\n"

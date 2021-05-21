@@ -893,10 +893,11 @@ module internal Memory =
 // ------------------------------- Pretty-printing -------------------------------
 
     let private dumpStack (sb : StringBuilder) stack =
-        if CallStack.isEmpty stack then sb
+        let stackString = CallStack.toString stack
+        if System.String.IsNullOrEmpty stackString then sb
         else
             let sb = PrettyPrinting.dumpSection "Stack" sb
-            CallStack.toString stack |> PrettyPrinting.appendLine sb
+            PrettyPrinting.appendLine sb stackString
 
     let private dumpDict section sort keyToString valueToString (sb : StringBuilder) d =
         if PersistentDict.isEmpty d then sb
