@@ -31,6 +31,7 @@ module internal CilStateOperations =
 
     let makeInitialState m state = makeCilState (instruction m 0) 0u state
 
+
     let isIIEState (s : cilState) = Option.isSome s.iie
 
     let isExecutable (s : cilState) =
@@ -48,7 +49,10 @@ module internal CilStateOperations =
         | Unhandled _ -> true
         | _ -> false
 
+
+    let levelToInt (lvl : level) = PersistentDict.fold (fun acc _ v -> acc + (int) v) 0 lvl //TODO: remove it when ``level'' subtraction would be generalized
     let currentIp (s : cilState) = List.head s.ipStack
+
 
     // obtaining Method where Execution occurs
     let currentMethod = function

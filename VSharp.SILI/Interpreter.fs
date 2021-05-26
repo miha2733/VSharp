@@ -13,9 +13,35 @@ open Instruction
 
 type cfg = CFG.cfgData
 
-type public MethodInterpreter(searcher : ISearcher (*ilInterpreter : ILInterpreter, funcId : IFunctionIdentifier, cfg : cfg*)) =
+type public MethodInterpreter(searcher : ForwardSearcher (*ilInterpreter : ILInterpreter, funcId : IFunctionIdentifier, cfg : cfg*)) =
     inherit ExplorerBase()
-    member x.Interpret (_ : IFunctionIdentifier) (initialState : cilState) =
+    member x.GetResults initialState (q : IndexedQueue) =
+        let (|CilStateWithIIE|_|) (cilState : cilState) = cilState.iie
+        let isStartingDescender (s : cilState) = s.startingIP = initialState.startingIP
+        let allStates = List.filter isStartingDescender (q.GetStates())
+        let iieStates, nonIIEstates = List.partition isIIEState allStates
+        let isFinished (s : cilState) = s.ipStack = [Exit <| currentMethod initialState.startingIP]
+        let finishedStates = List.filter isFinished nonIIEstates
+        let isValid (cilState : cilState) =
+           match IsValid cilState.state with
+           | SolverInteraction.SmtUnsat _ -> false
+           | _ -> true
+        let validStates = List.filter isValid finishedStates
+        let printInfoForDebug () =
+            let allStatesInQueue = q.GetStates()
+            Logger.info "No states were obtained. Most likely such a situation is a bug. Check it!"
+            Logger.info "Indexed queue size = %d\n" (List.length allStatesInQueue)
+            List.iteri (fun i -> dump >> Logger.info "Queue.[%d]:\n%s\n" i) allStatesInQueue
+            true
+        match iieStates with // TODO: write error states? #do
+        | CilStateWithIIE iie :: _ -> raise iie
+        | _ :: _ -> __unreachable__()
+        | _ when validStates = [] ->
+            assert(printInfoForDebug())
+            internalfailf "No states were obtained. Most likely such a situation is a bug. Check it!"
+        | _ -> validStates
+
+    member x.Interpret (mainId : IFunctionIdentifier) (initialState : cilState) =
         let q = IndexedQueue()
         q.Add initialState
 
@@ -30,20 +56,19 @@ type public MethodInterpreter(searcher : ISearcher (*ilInterpreter : ILInterpret
             | _ -> List.map (compose s) states |> List.concat
             |> List.iter q.Add
 
-        let iter s = // TODO: recursion! #do
+        let iter () = // TODO: recursion! #do
             let mutable b = true
-            let mutable s = s
             while b do
-                q.Remove s
-                step s
-                let x = searcher.PickNext q
-                match x with
-                | Some x -> s <- x
-                | None -> b <- false
+                match (searcher :> INewSearcher).ChooseAction (q.GetStates(), [], mainId) with
+                | Stop -> b <- false
+                | GoForward s ->
+                    q.Remove s
+                    step s
+                | _ -> __unreachable__()
+        iter()
+        x.GetResults initialState q
 
-        Option.iter iter (searcher.PickNext q)
-        searcher.GetResults initialState q
-
+//    override x.AnswerPobs typ initialState k = __notImplemented__()
     override x.Invoke funcId initialState k =
         let cilStates = x.InitializeStatics initialState funcId.Method.DeclaringType List.singleton
         assert(List.length cilStates = 1)
@@ -58,7 +83,7 @@ type public MethodInterpreter(searcher : ISearcher (*ilInterpreter : ILInterpret
 
     override x.MakeMethodIdentifier m = { methodBase = m } :> IMethodIdentifier
 
-and public ILInterpreter(methodInterpreter : MethodInterpreter) as this =
+and public ILInterpreter(methodInterpreter : ExplorerBase) as this =
     do
         opcode2Function.[hashFunction OpCodes.Call]           <- this.Call
         opcode2Function.[hashFunction OpCodes.Callvirt]       <- this.CallVirt

@@ -5,6 +5,8 @@ open VSharp
 open CilStateOperations
 open VSharp.Core
 
+
+
 type IndexedQueue() =
     let q = List<cilState>()
 //    let isRecursiveEffect (s : cilState) =
@@ -26,11 +28,30 @@ type IndexedQueue() =
         if not removed then Logger.trace "CilState was not removed from IndexedQueue:\n%O" s
     member x.GetStates () = List.ofSeq q
 
-[<AbstractClass>]
-type ISearcher() = // TODO: max bound is needed, when we are in recursion, but when we go to one method many time -- it's okay #do
-    let maxBound = 10000u // 10u is caused by number of iterations for tests: Always18, FirstEvenGreaterThen7
-    abstract member PickNext : IndexedQueue -> cilState option
+type SearchDirection =
+    | Stop
+    | Start of ip
+    | GoForward of cilState
+    | GoBackward of pob * cilState
 
+type INewSearcher =
+    abstract member ChooseAction : list<cilState> * list<pob * cilState> * IFunctionIdentifier -> SearchDirection
+
+[<AbstractClass>]
+type ForwardSearcher() = // TODO: max bound is needed, when we are in recursion, but when we go to one method many time -- it's okay #do
+    let maxBound = 10u // 10u is caused by number of iterations for tests: Always18, FirstEvenGreaterThen7
+    interface INewSearcher with
+        override x.ChooseAction(fq, bq, mainId) =
+            match fq, bq with
+            | _, ps :: _ -> GoBackward ps
+            | [], [] -> Start <| Instruction(0, mainId.Method)
+            | _, [] ->
+                match x.PickNext fq with
+                | None -> Stop
+                | Some s -> GoForward s
+
+    abstract member PickNext : cilState list -> cilState option
+    default x.PickNext (qf : cilState list) = None
     member x.Used (cilState : cilState) =
         match currentIp cilState with
         | Instruction(offset, m) ->
@@ -40,38 +61,13 @@ type ISearcher() = // TODO: max bound is needed, when we are in recursion, but w
             | None -> false
         | _ -> false
 
-    member x.GetResults initialState (q : IndexedQueue) =
-        let (|CilStateWithIIE|_|) (cilState : cilState) = cilState.iie
-        let isStartingDescender (s : cilState) = s.startingIP = initialState.startingIP
-        let allStates = List.filter isStartingDescender (q.GetStates())
-        let iieStates, nonIIEstates = List.partition isIIEState allStates
-        let isFinished (s : cilState) = s.ipStack = [Exit <| currentMethod initialState.startingIP]
-        let finishedStates = List.filter isFinished nonIIEstates
-        let isValid (cilState : cilState) =
-           match IsValid cilState.state with
-           | SolverInteraction.SmtUnsat _ -> false
-           | _ -> true
-        let validStates = List.filter isValid finishedStates
-        let printInfoForDebug () =
-            let allStatesInQueue = q.GetStates()
-            Logger.info "No states were obtained. Most likely such a situation is a bug. Check it!"
-            Logger.info "Indexed queue size = %d\n" (List.length allStatesInQueue)
-            List.iteri (fun i -> dump >> Logger.info "Queue.[%d]:\n%s\n" i) allStatesInQueue
-            true
-        match iieStates with // TODO: write error states? #do
-        | CilStateWithIIE iie :: _ -> raise iie
-        | _ :: _ -> __unreachable__()
-        | _ when validStates = [] ->
-            assert(printInfoForDebug())
-            internalfailf "No states were obtained. Most likely such a situation is a bug. Check it!"
-        | _ -> validStates
 
 type DummySearcher() =
-    inherit ISearcher() with
-        override x.PickNext q =
+    inherit ForwardSearcher() with
+        override x.PickNext fq =
             let canBePropagated (s : cilState) =
                 not (isIIEState s || isUnhandledError s) && isExecutable s && not <| x.Used s
-            let states = (q.GetStates()) |> List.filter canBePropagated
+            let states = fq |> List.filter canBePropagated
             match states with
             | x :: _ -> Some x
             | [] -> None

@@ -706,8 +706,8 @@ module public CFA =
 // Most probably won't be used in real testing
 // Aimed to test composition and Interpreter--Searcher feature
 type CFASearcher() =
-    inherit ISearcher() with
-        override x.PickNext q =
+    inherit ForwardSearcher() with
+        override x.PickNext states =
             // 1) should append states to Queue
             // 2) should stop executing states and produce states with proper
             //    a) current time
@@ -717,28 +717,29 @@ type CFASearcher() =
                 let conditions = [isIIEState; isUnhandledError; x.Used; isExecutable >> not]
                 conditions |> List.fold (fun acc f -> acc || f s) false |> not
 
-            let states = (q.GetStates()) |> List.filter canBePropagated
+            let states = states |> List.filter canBePropagated
             match states with
             | x :: _ -> Some x
             | [] -> None
 
 type EffectsFirstSearcher() =
-    inherit ISearcher()
+    inherit ForwardSearcher()
     let effectsFirst (s1 : cilState) (s2 : cilState) =
         match s1, s2 with
         | _ when s1 = s2 -> 0
         | _ when List.length s1.ipStack > List.length s2.ipStack -> 1
         | _ when List.length s1.ipStack < List.length s2.ipStack -> -1
         | _ -> compare s1.ipStack s2.ipStack
-    override x.PickNext q =
+    override x.PickNext all =
         let canBePropagated (s : cilState) =
             let conditions = [isIIEState; isUnhandledError; x.Used; isExecutable >> not]
             conditions |> List.fold (fun acc f -> acc || f s) false |> not
 
-        let states = q.GetStates() |> List.filter canBePropagated
+        let states = all |> List.filter canBePropagated
+
         match states with
         | [] -> None
-        | s :: _ when x.ShouldStartExploringInIsolation(q, s) ->
+        | s :: _ when x.ShouldStartExploringInIsolation (all, s) ->
             try
                 let currentIp = currentIp s
                 let m = currentMethod currentIp
@@ -748,15 +749,14 @@ type EffectsFirstSearcher() =
             with
             | :? InsufficientInformationException -> Some s
         | s :: _ -> Some s
-    abstract member ShouldStartExploringInIsolation: IndexedQueue * cilState -> bool
-    default x.ShouldStartExploringInIsolation(_,_) = false
+    abstract member ShouldStartExploringInIsolation: cilState list  * cilState -> bool
+    default x.ShouldStartExploringInIsolation (_,_) = false
 
 type AllMethodsExplorationSearcher() =
     inherit EffectsFirstSearcher()
-    override x.ShouldStartExploringInIsolation(q, s) =
-        let all = q.GetStates()
+    override x.ShouldStartExploringInIsolation (states, s) =
         match currentIp s with
-        | Instruction(0, _) as ip when all |> List.filter (startingIpOf >> (=) ip) |> List.length = 0 -> true
+        | Instruction(0, _) as ip when states |> List.filter (startingIpOf >> (=) ip) |> List.length = 0 -> true
         | _ -> false
 
 type ParameterlessMethodsExplorationSearcher() =

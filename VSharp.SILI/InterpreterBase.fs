@@ -12,12 +12,20 @@ open System.Collections.Generic
 open System.Reflection
 open ipOperations
 
+type pob = {loc : ip; lvl : int; fml : term}
+type pobStatus =
+    | Unknown
+    | Witnessed of cilState
+    | Unreachable
+
 type codeLocationSummary = { cilState : cilState } // state.returnRegister is used as result
     with
     member x.State = withEvaluationStack emptyEvaluationStack x.cilState |> stateOf
     member x.Result =
-        if EvaluationStack.Length x.cilState.state.evaluationStack = 0 then Nop
-        else pop x.cilState |> fst
+        match EvaluationStack.Length x.cilState.state.evaluationStack with
+        | 0 -> Nop
+        | 1 -> pop x.cilState |> fst
+        | _ -> internalfail "EvaluationStack size was bigger than 1"
 
 type codeLocationSummaries = codeLocationSummary list
 
@@ -37,6 +45,19 @@ type public ExplorerBase() =
             x.Invoke id initialState (List.map (fun cilState -> { cilState = cilState }) >> List.toSeq >> k)
         | _ -> internalfailf "unexpected entry point: expected regular method, but got %O" id
 
+
+//    member x.AnswerPobs (funcId : IFunctionIdentifier) (k : (pob * pobStatus) seq -> 'a) =
+////        let testSuite
+//        let k = API.Reset(); fun x -> API.Restore(); k x
+//        x.Invoke funcId
+//
+//        CurrentlyBeingExploredLocations.Add funcId |> ignore
+//        let initialStates = x.FormInitialState funcId
+//        let invoke cilState = x.Invoke funcId cilState (List.map (fun cilState -> {cilState = cilState}))
+//        let resultsAndStates = initialStates |> List.collect invoke
+//        CurrentlyBeingExploredLocations.Remove funcId |> ignore
+//        k resultsAndStates
+
     member x.Explore (funcId : IFunctionIdentifier) (k : codeLocationSummary seq -> 'a) =
         let k = Reset(); fun x -> Restore(); k x
         CurrentlyBeingExploredLocations.Add funcId |> ignore
@@ -45,6 +66,15 @@ type public ExplorerBase() =
         let resultsAndStates = initialStates |> List.collect invoke
         CurrentlyBeingExploredLocations.Remove funcId |> ignore
         k resultsAndStates
+
+//    member x.AnswerPobs (funcId : IFunctionIdentifier) (k : codeLocationSummary seq -> 'a) =
+//        let k = API.Reset(); fun x -> API.Restore(); k x
+//        CurrentlyBeingExploredLocations.Add funcId |> ignore
+//        let initialStates = x.FormInitialState funcId
+//        let invoke cilState = x.Invoke funcId cilState (List.map (fun cilState -> {cilState = cilState}))
+//        let resultsAndStates = initialStates |> List.collect invoke
+//        CurrentlyBeingExploredLocations.Remove funcId |> ignore
+//        k resultsAndStates
 
     member private x.ReproduceEffectOrUnroll areWeStuck body (id : IFunctionIdentifier) cilState k =
         // every exploration should be made via searcher
@@ -261,6 +291,8 @@ type public ExplorerBase() =
             List.iter (dump >> (Logger.trace "ExploreAndCompose: Result after composition %s")) resultStates
             resultStates) >> List.ofSeq >> List.concat >> k)
 
+    abstract member AnswerPobs : IFunctionIdentifier -> (IDictionary<pob, pobStatus> -> 'a) -> 'a
+    default x.AnswerPobs _ _ = __notImplemented__()
     abstract member Invoke : IFunctionIdentifier -> cilState -> (cilState list -> 'a) -> 'a
 
     abstract member MakeMethodIdentifier : MethodBase -> IMethodIdentifier
