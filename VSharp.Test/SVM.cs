@@ -47,6 +47,7 @@ namespace VSharp.Test
     {
         private readonly ExplorerBase _explorer;
         private readonly Statistics _statistics = new Statistics();
+        private PobsStatistics _pobsStatistics = new PobsStatistics();
 
         public SVM(ExplorerBase explorer)
         {
@@ -215,7 +216,18 @@ namespace VSharp.Test
         {
             var id = FSharpFunc<IDictionary<codeLocation, string>, IDictionary<codeLocation, string>>.FromConverter(x => x);
             var methodId = _explorer.MakeMethodIdentifier(m);
-            return _explorer.AnswerPobs(methodId, Microsoft.FSharp.Collections.ListModule.OfSeq(locs), id);
+            var dict = _explorer.AnswerPobs(methodId, Microsoft.FSharp.Collections.ListModule.OfSeq(locs), id);
+            // _pobsStatistics.CilStatesGenerated = _explorer;
+
+
+            return dict;
         }
+
+        // public void PrintPobsStatistics(MethodInfo m, codeLocation[] locs)
+        // {
+        //     var id = FSharpFunc<IDictionary<codeLocation, string>, IDictionary<codeLocation, string>>.FromConverter(x => x);
+        //     var methodId = _explorer.MakeMethodIdentifier(m);
+        //     return _explorer.AnswerPobs(methodId, Microsoft.FSharp.Collections.ListModule.OfSeq(locs), id);
+        // }
     }
 }
