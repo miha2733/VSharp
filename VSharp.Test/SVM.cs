@@ -211,12 +211,11 @@ namespace VSharp.Test
             return dictionary.ToDictionary(kvp => kvp.Key, kvp => ResultToString(kvp.Value));
         }
 
-        public IDictionary<pob, pobStatus> AnswerPobs(MethodInfo m)
+        public IDictionary<codeLocation, string> AnswerPobs(MethodInfo m, codeLocation[] locs)
         {
-            var id = FSharpFunc<IDictionary<pob, pobStatus>, IDictionary<pob, pobStatus>>.FromConverter(x => x);
+            var id = FSharpFunc<IDictionary<codeLocation, string>, IDictionary<codeLocation, string>>.FromConverter(x => x);
             var methodId = _explorer.MakeMethodIdentifier(m);
-
-            return _explorer.AnswerPobs(methodId, id);
+            return _explorer.AnswerPobs(methodId, Microsoft.FSharp.Collections.ListModule.OfSeq(locs), id);
         }
     }
 }
