@@ -114,6 +114,51 @@ namespace VSharp.Test.Tests.Pobs
             }
         }
 
+        public static int BoundTest(int x)
+        {
+            int sum = 0;
+            for (int i = 0; i < 150; i++)
+            {
+                sum += x;
+            }
+
+            throw null;
+            // return sum;
+        }
+
+
+        public static int LittleExpensiveCalculations(int x)
+        {
+            int sum = 0;
+            for (int i = 0; i < x; i++)
+            {
+                sum++;
+            }
+
+            throw null;
+        }
+
+        public static int TrickyTestForTargetedSearcher(int x)
+        {
+            switch (x)
+            {
+                case 0:
+                    return ExpensiveCalculation(10);
+                case 1:
+                    return ExpensiveCalculation(20);
+                case 2:
+                    return ExpensiveCalculation(30);
+
+                case 3:
+                    return ExpensiveCalculation(40);
+                case 4:
+                    return LittleExpensiveCalculations(50);
+                default:
+                    return ExpensiveCalculation(500);
+            }
+        }
+
+
     }
 
     // [TestPobsFixture]

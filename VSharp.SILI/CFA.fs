@@ -705,8 +705,8 @@ module public CFA =
 
 // Most probably won't be used in real testing
 // Aimed to test composition and Interpreter--Searcher feature
-type CFASearcher() =
-    inherit ForwardSearcher() with
+type CFASearcher(maxBound) =
+    inherit ForwardSearcher(maxBound) with
         override x.PickNext states =
             // 1) should append states to Queue
             // 2) should stop executing states and produce states with proper
@@ -722,8 +722,8 @@ type CFASearcher() =
             | x :: _ -> Some x
             | [] -> None
 
-type EffectsFirstSearcher() =
-    inherit ForwardSearcher()
+type EffectsFirstSearcher(maxBound) =
+    inherit ForwardSearcher(maxBound)
     let effectsFirst (s1 : cilState) (s2 : cilState) =
         match s1, s2 with
         | _ when s1 = s2 -> 0
@@ -752,22 +752,22 @@ type EffectsFirstSearcher() =
     abstract member ShouldStartExploringInIsolation: cilState list  * cilState -> bool
     default x.ShouldStartExploringInIsolation (_,_) = false
 
-type AllMethodsExplorationSearcher() =
-    inherit EffectsFirstSearcher()
+type AllMethodsExplorationSearcher(maxBound) =
+    inherit EffectsFirstSearcher(maxBound)
     override x.ShouldStartExploringInIsolation (states, s) =
         match currentIp s with
         | Instruction(0, _) as ip when states |> List.filter (startingIpOf >> (=) ip) |> List.length = 0 -> true
         | _ -> false
 
-type ParameterlessMethodsExplorationSearcher() =
-    inherit AllMethodsExplorationSearcher()
+type ParameterlessMethodsExplorationSearcher(maxBound) =
+    inherit AllMethodsExplorationSearcher(maxBound)
     override x.ShouldStartExploringInIsolation(q, s) =
         base.ShouldStartExploringInIsolation(q, s) &&
             let m = let func = Memory.GetCurrentExploringFunction s.state in func.Method
             (m.IsConstructor || m.IsStatic) && m.GetParameters().Length = 0
 
-type ExceptionsExplorationSearcher() =
-    inherit ParameterlessMethodsExplorationSearcher()
+type ExceptionsExplorationSearcher(maxBound) =
+    inherit ParameterlessMethodsExplorationSearcher(maxBound)
     override x.ShouldStartExploringInIsolation(q, s) =
         base.ShouldStartExploringInIsolation(q, s) &&
             let m = let func = Memory.GetCurrentExploringFunction s.state in func.Method

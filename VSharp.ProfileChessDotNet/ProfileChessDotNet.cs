@@ -10,7 +10,8 @@ namespace VSharp.ProfileChessDotNet
     {
         static void Main(string[] args)
         {
-            var svm = new SVM(new MethodInterpreter(new ExceptionsExplorationSearcher()));
+            var bound = 15;
+            var svm = new SVM(new MethodInterpreter(new ExceptionsExplorationSearcher(bound)));
             svm.ConfigureSolver();
             // var chessDotNetClass = typeof(Test.Tests.PDR);
             var chessDotNetType = typeof(Test.Tests.PDR);

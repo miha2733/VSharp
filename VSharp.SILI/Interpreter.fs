@@ -59,7 +59,7 @@ type public MethodInterpreter(searcher : ForwardSearcher (*ilInterpreter : ILInt
         let iter () = // TODO: recursion! #do
             let mutable b = true
             while b do
-                match (searcher :> INewSearcher).ChooseAction (q.GetStates(), [], mainId) with
+                match (searcher :> INewSearcher).ChooseAction (q.GetStates(), [], [], mainId) with
                 | Stop -> b <- false
                 | GoForward s ->
                     q.Remove s

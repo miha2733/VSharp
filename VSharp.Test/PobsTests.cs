@@ -65,12 +65,13 @@ namespace VSharp.Test
         [TestCaseSource(nameof(PobsCases))]
         public static void AnswerPobs(Type t, string mainName, CodeLocationProxy[] proxies)
         {
+            int maxBound = 200;
             var entryMethod = t.GetMethod(mainName, All);
             var searchers = new INewSearcher[]
             {
-                new BFSSearcher()
-                , new DFSSearcher()
-                // new TargetedSearcher(entryMethod)
+                new TargetedSearcher(entryMethod, maxBound)
+                , new BFSSearcher(maxBound)
+                , new DFSSearcher(maxBound)
             };
             foreach (var s in searchers)
             {
@@ -135,7 +136,7 @@ namespace VSharp.Test
                 typeof(SwitchWithSequentialCases1), nameof(SwitchWithSequentialCases1.SwitchWithExpensiveCalculations),
                 new []
                 {
-                    new CodeLocationProxy(0x4a, typeof(SwitchWithSequentialCases1), nameof(SwitchWithSequentialCases1.ExpensiveCalculation), DesiredStatus.Witnessed),
+                    new CodeLocationProxy(0x4a, typeof(SwitchWithSequentialCases1), nameof(SwitchWithSequentialCases1.SwitchWithExpensiveCalculations), DesiredStatus.Witnessed),
                 }
             }
 
@@ -147,6 +148,25 @@ namespace VSharp.Test
                     new CodeLocationProxy(0x56, typeof(SwitchWithSequentialCases1), nameof(SwitchWithSequentialCases1.TestForDFS), DesiredStatus.Witnessed),
                 }
             }
+
+            , new object[]
+            {
+                typeof(SwitchWithSequentialCases1), nameof(SwitchWithSequentialCases1.TrickyTestForTargetedSearcher),
+                new []
+                {
+                    new CodeLocationProxy(0x1a, typeof(SwitchWithSequentialCases1), nameof(SwitchWithSequentialCases1.LittleExpensiveCalculations), DesiredStatus.Witnessed),
+                }
+            }
+
+            , new object[]
+            {
+                typeof(SwitchWithSequentialCases1), nameof(SwitchWithSequentialCases1.BoundTest),
+                new []
+                {
+                    new CodeLocationProxy(0x1e, typeof(SwitchWithSequentialCases1), nameof(SwitchWithSequentialCases1.BoundTest), DesiredStatus.Witnessed),
+                }
+            }
+
         };
 
     }
