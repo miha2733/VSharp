@@ -36,11 +36,13 @@ type SearchDirection =
 
 type INewSearcher =
     abstract member ChooseAction : list<cilState> * list<pob * cilState> * IFunctionIdentifier -> SearchDirection
+    abstract member CanReach : cilState * ip * ip list -> bool
 
 [<AbstractClass>]
 type ForwardSearcher() = // TODO: max bound is needed, when we are in recursion, but when we go to one method many time -- it's okay #do
     let maxBound = 10u // 10u is caused by number of iterations for tests: Always18, FirstEvenGreaterThen7
     interface INewSearcher with
+        override x.CanReach(_,_,_) = true
         override x.ChooseAction(fq, bq, mainId) =
             match fq, bq with
             | _, ps :: _ -> GoBackward ps
@@ -62,7 +64,7 @@ type ForwardSearcher() = // TODO: max bound is needed, when we are in recursion,
         | _ -> false
 
 
-type DFSSearcher() =
+type BFSSearcher() =
     inherit ForwardSearcher() with
         override x.PickNext fq =
             let canBePropagated (s : cilState) =
@@ -72,7 +74,7 @@ type DFSSearcher() =
             | x :: _ -> Some x
             | [] -> None
 
-type BFSSearcher() =
+type DFSSearcher() =
     inherit ForwardSearcher() with
         override x.PickNext fq =
             let canBePropagated (s : cilState) =

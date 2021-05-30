@@ -3,6 +3,7 @@ namespace VSharp.Interpreter.IL
 open System.Collections.Generic
 open System.Reflection
 open System.Reflection.Emit
+open System.Text
 open FSharpx.Collections
 
 open VSharp
@@ -29,9 +30,9 @@ type public PobsInterpreter(searcher : INewSearcher) =
     let currentPobs = List<pob>()
     let answeredPobs = Dictionary<pob, pobStatus>()
     let parents = Dictionary<pob, pob>()
-    let canReach source target (blockedLocs : ip list) =
+    let canReach state (loc : ip) (blockedLocs : ip list) =
         //TODO: use CFG-reachability analysis
-        true
+        searcher.CanReach (state, loc, blockedLocs)
     let addToDictionaryWithListValue (d : Dictionary<'a, 'b list>) k elem =
         let v = d.GetValueOrDefault(k, [])
         d.[k] <- (elem :: v)
@@ -48,7 +49,7 @@ type public PobsInterpreter(searcher : INewSearcher) =
     let addWitness(s : cilState, p : pob) =
         let sLvl = levelToInt s.level
         try
-            if sLvl <= p.lvl && canReach (currentIp s) p.loc blockedLocs.[p] then
+            if sLvl <= p.lvl && canReach s p.loc blockedLocs.[p] then
                 addToDictionaryWithListValue witnesses p s
                 addToDictionaryWithListValue sPobs s p
         with
@@ -60,7 +61,7 @@ type public PobsInterpreter(searcher : INewSearcher) =
         | false ->
             addToDictionaryWithListValue blockedLocs p' s'.startingIP
             List.iter (fun (s : cilState) ->
-                if not <| canReach (currentIp s) p'.loc blockedLocs.[p'] then blockWitness(s, p')) witnesses.[p']
+                if not <| canReach s p'.loc blockedLocs.[p'] then blockWitness(s, p')) witnesses.[p']
 
     let addPob(parent : pob, child : pob) =
         assert(parents.ContainsKey(child) |> not)
@@ -211,47 +212,167 @@ type public PobsInterpreter(searcher : INewSearcher) =
 
     override x.MakeMethodIdentifier m = { methodBase = m } :> IMethodIdentifier
 
-type TargetedSearcher(codeLocations : codeLocation list) =
-    inherit ForwardSearcher() with
+type TargetedSearcher(entryMethod : MethodBase) =
+    let reachableLocations = Dictionary<codeLocation, codeLocation list>()
+    let reachableMethods = Dictionary<codeLocation, MethodBase list>()
+    let methodsReachability = Dictionary<MethodBase, MethodBase list>()
+//    let reversedMethodsReachability = Dictionary<MethodBase, MethodBase list>()
+    let methodsReachabilityTransitiveClosure = Dictionary<MethodBase, MethodBase list>()
 
-    let intraReachability = Dictionary<codeLocation, codeLocation list>()
-    let interReachability = Dictionary<codeLocation, MethodBase list>()
+    let appendReachableInfo (cfg : cfg) (reachableLocsForSCC : HashSet<codeLocation>) (reachableMethodsForSCC : HashSet<MethodBase>) (current : offset) =
+        let currentLoc = {offset = current; method = cfg.methodBase}
+        reachableLocsForSCC.Add(currentLoc) |> ignore
+        if cfg.offsetsDemandingCall.ContainsKey current then
+           let _, calledMethod = cfg.offsetsDemandingCall.[current]
+           if calledMethod.DeclaringType.Assembly = entryMethod.DeclaringType.Assembly then
+            reachableMethodsForSCC.Add(calledMethod) |> ignore
 
-    let buildReachability (usedMethods : MethodBase list) methodsQueue (currentMethod : MethodBase) =
+        let helper (target : offset) =
+            let loc = {offset = target; method = cfg.methodBase}
+            if not <| reachableLocations.ContainsKey loc then ()
+            List.iter (reachableLocsForSCC.Add >> ignore) reachableLocations.[loc]
+            List.iter (reachableMethodsForSCC.Add >> ignore) reachableMethods.[loc]
+        let targets = cfg.graph.[current]
+        Seq.iter helper targets
+
+    let commitReachableInfo (cfg : cfg) (reachableLocsForSCC : HashSet<codeLocation>) (reachableMethodsForSCC : HashSet<MethodBase>) (current : offset) =
+        let currentLoc = {offset = current; method = cfg.methodBase}
+        reachableLocations.[currentLoc] <-  List.ofSeq (reachableLocsForSCC)
+        reachableMethods.[currentLoc] <- List.ofSeq (reachableMethodsForSCC)
+
+    let initReachableInfo (cfg : cfg) (current : offset) =
+        let currentLoc = {offset = current; method = cfg.methodBase}
+        reachableLocations.Add(currentLoc, [])
+        reachableMethods.Add(currentLoc, [])
+    let buildReachabilityInfo (currentMethod : MethodBase) : MethodBase list =
         let cfg = CFG.build currentMethod
 
-        let appendComponent acc newOffset =
-            cfg.sccOut.[newOffset] :: acc
-
-        let addReachabilityInfo s t =
-            if intraReachability.ContainsKey s |> not then intraReachability.Add(s, [t])
-            else
-                let old = intraReachability.[s]
-                intraReachability.[s] <- t :: old
-
-        let rec dfsSCC (cfg : cfg) (usedSCC : int list) (v : offset) : int list =
+        let rec dfsSCC (usedSCC : int list) (v : offset) : int list =
             let currentSCC = cfg.sccOut.[v]
             if List.contains currentSCC usedSCC then usedSCC
             else
                 let usedSCC = currentSCC :: usedSCC
                 let currentSCCOffsets = Seq.filter (fun offset -> currentSCC = cfg.sccOut.[offset]) cfg.sortedOffsets
-                let newUsed = Seq.fold (fun acc u1 -> Seq.fold (fun acc u2 -> dfsSCC cfg acc u2) acc cfg.graph.[u1]) usedSCC currentSCCOffsets
-                let reachableOffsets = HashSet<codeLocation>()
-                Seq.iter (fun u -> reachableOffsets.Add({offset = u; method = currentMethod}) |> ignore) currentSCCOffsets
-                let appendRest u1 =
-                    Seq.iter (fun u2 -> List.iter (fun loc -> reachableOffsets.Add(loc) |> ignore) intraReachability.[{offset = u2; method = currentMethod}]) cfg.graph.[u1]
-                Seq.iter appendRest currentSCCOffsets
-                Seq.iter (fun u -> intraReachability.[{offset = u; method = currentMethod}] <- List.ofSeq reachableOffsets) currentSCCOffsets
+                let newUsed = Seq.fold (fun acc u1 -> Seq.fold (fun acc u2 -> dfsSCC acc u2) acc cfg.graph.[u1]) usedSCC currentSCCOffsets
+                let reachableLocsForSCC = HashSet<codeLocation>()
+                let reachableMethodsForSCC = HashSet<MethodBase>()
+                Seq.iter (initReachableInfo cfg) currentSCCOffsets
+                Seq.iter (appendReachableInfo cfg reachableLocsForSCC reachableMethodsForSCC) currentSCCOffsets
+                Seq.iter (commitReachableInfo cfg reachableLocsForSCC reachableMethodsForSCC) currentSCCOffsets
                 newUsed
-//                List.iter (fun offset -> List.iter addReachabilityInfo )
+        let _ = dfsSCC [] 0 //TODO: what about EHC?
+        reachableMethods.[{offset = 0; method = currentMethod}]
 
-        __notImplemented__()
+    let addCall (current : MethodBase) (calledMethods : MethodBase list) =
+        let add m (ms : MethodBase list) (d : Dictionary<_, MethodBase list >) =
+            if d.ContainsKey m then d.[m] <- ms @ d.[m]
+            else d.Add(m, ms)
 
-    override x.PickNext fq =
-        let canBePropagated (s : cilState) =
-            not (isIIEState s || isUnhandledError s) && isExecutable s && not (x.Used s)
-        let states = fq |> List.filter canBePropagated
-        match states with
-        | _ :: _ -> List.last states |> Some
-        | [] -> None
+        add current calledMethods methodsReachability
+//        List.iter (fun k -> add k [current] reversedMethodsReachability) calledMethods
 
+    let buildReachability () =
+        let rec exit processedMethods = function
+                | [] -> ()
+                | m :: q' -> findFixPoint (processedMethods, q') m
+        and findFixPoint (processedMethods : MethodBase list, methodsQueue : MethodBase list) (current : MethodBase) =
+            if List.contains current processedMethods then exit processedMethods methodsQueue
+            else
+                let processedMethods = current :: processedMethods
+                let calledMethods = buildReachabilityInfo current
+                addCall current calledMethods
+
+                exit processedMethods (methodsQueue @ calledMethods)
+        findFixPoint ([],[]) entryMethod
+
+    let makeTransitiveClosure () =
+        let findReachableMethodsForMethod (current : MethodBase) =
+            Logger.info "Iterating for %O" current
+            methodsReachabilityTransitiveClosure.Add(current, [])
+            let used = HashSet<MethodBase>()
+            let rec dfs (v : MethodBase) =
+                if used.Contains v then ()
+                else
+                    used.Add(v) |> ignore
+                    methodsReachabilityTransitiveClosure.[current] <- v :: methodsReachability.[current]
+                    List.iter dfs (methodsReachability.[v])
+            List.iter dfs methodsReachability.[current]
+        Seq.iter findReachableMethodsForMethod (methodsReachability.Keys)
+//        let tOut = Dictionary<MethodBase, int>()
+//        let used = HashSet<MethodBase>()
+//        let rec dfs (methods : MethodBase list, t) (current : MethodBase) =
+//            if used.Contains current then methods, t
+//            else
+//                used.Add(current) |> ignore
+//                let methods, t = List.fold (fun acc m -> dfs acc m) (methods, t) methodsReachability.[current]
+//                tOut.Add(current, t) |> ignore
+//                let usedMethods = current :: usedMethods
+//                newUsed, t + 1
+//
+//        dfs ([],0) entryMethod
+
+//        let rec exit processedMethods = function
+//                | [] -> ()
+//                | m :: q' -> findFixPoint (processedMethods, q') m
+//        and findFixPoint (processedMethods : MethodBase list, methodsQueue : MethodBase list) (current : MethodBase) =
+//            if List.contains current processedMethods then exit processedMethods methodsQueue
+//            else
+//                let processedMethods = current :: processedMethods
+//                let calledMethods = buildReachabilityInfo current
+//                addCall current calledMethods
+//                exit processedMethods (methodsQueue @ calledMethods)
+//        findFixPoint ([],[]) entryMethod
+
+    let print () =
+        Logger.info "Calculated CFG Reachability\n"
+        methodsReachabilityTransitiveClosure |> Seq.iter (fun kvp ->
+            let value = List.fold (fun (sb : StringBuilder) m -> sb.AppendFormat("{0}; ", m.ToString())) (StringBuilder()) kvp.Value
+//            List.jo
+            Logger.info "key = %O; Value = %s" kvp.Key (value.ToString()))
+
+    do
+        buildReachability ()
+        makeTransitiveClosure ()
+        print ()
+    interface INewSearcher with
+        override x.CanReach(cilState,ip : ip, blocked : ip list) = true
+        override x.ChooseAction(_,_,_) = Stop
+
+//        let cfg = CFG.build currentMethod
+//        __notImplemented__()
+
+//        let appendComponent acc newOffset =
+//            cfg.sccOut.[newOffset] :: acc
+//
+//        let addReachabilityInfo s t =
+//            if reachableLocations.ContainsKey s |> not then reachableLocations.Add(s, [t])
+//            else
+//                let old = reachableLocations.[s]
+//                reachableLocations.[s] <- t :: old
+
+//        let rec dfsSCC (cfg : cfg) (usedSCC : int list) (v : offset) : int list =
+//            let currentSCC = cfg.sccOut.[v]
+//            if List.contains currentSCC usedSCC then usedSCC
+//            else
+//                let usedSCC = currentSCC :: usedSCC
+//                let currentSCCOffsets = Seq.filter (fun offset -> currentSCC = cfg.sccOut.[offset]) cfg.sortedOffsets
+//                let newUsed = Seq.fold (fun acc u1 -> Seq.fold (fun acc u2 -> dfsSCC cfg acc u2) acc cfg.graph.[u1]) usedSCC currentSCCOffsets
+//                let reachableLocsForSCC = HashSet<codeLocation>()
+//                Seq.iter (appendReachableLocations cfg reachableLocsForSCC) currentSCCOffsets
+//                Seq.iter (commitReachableLocations cfg reachableLocsForSCC) currentSCCOffsets
+//                newUsed
+
+
+//    override x.PickNext fq =
+//        let canBePropagated (s : cilState) =
+//            not (isIIEState s || isUnhandledError s) && isExecutable s && not (x.Used s)
+//        let states = fq |> List.filter canBePropagated
+//        match states with
+//        | _ :: _ -> List.last states |> Some
+//        | [] -> None
+
+
+//type TargetedSearcher() =
+//    interface INewSearcher with
+//        override x.CanReach(_,_,_) = true
+//        override x.ChooseAction(_,_,_) = Stop
