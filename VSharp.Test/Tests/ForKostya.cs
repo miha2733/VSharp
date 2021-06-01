@@ -190,6 +190,14 @@ namespace VSharp.Test.Tests
         }
 
         [TestSvm]
+        public static IEnumerable<int> SelectTest(string x)
+        {
+            var newList = Suits().Select(id => id);
+            newList.Append(x);
+            return newList.Select(i => i.Length);
+        }
+
+        [TestSvm]
         public static int SequenceLinqTest()
         {
             var startingDeck = (from s in Suits()
