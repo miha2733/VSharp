@@ -58,7 +58,7 @@ namespace VSharp.Test
             foreach (var p in proxies)
             {
                 var loc = new Core.codeLocation(p.Offset, p.Method);
-                Assert.AreEqual(p.DesiredStatus, dict[loc], $"Checking location: {loc}");
+                Assert.AreEqual(p.DesiredStatus, dict[loc], $"Checking location, offset = {loc.offset.ToString("X4")}, method = {loc.method}");
             }
         }
 
@@ -69,7 +69,7 @@ namespace VSharp.Test
             var entryMethod = t.GetMethod(mainName, All);
             var searchers = new INewSearcher[]
             {
-                new TargetedSearcher(entryMethod, maxBound)
+                new TargetedSearcher(maxBound)
                 , new BFSSearcher(maxBound)
                 , new DFSSearcher(maxBound)
             };

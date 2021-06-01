@@ -24,11 +24,14 @@ namespace VSharp.Test
             };
             Thread.CurrentThread.CurrentCulture = ci;
 
+            var bound = 20;
             // var svm = new SVM(new VSharp.Analyzer.StepInterpreter());
             // var svm = new SVM(new MethodInterpreter(new MethodSearcher()));
             Logger.ConfigureWriter(TestContext.Progress);
-            // var svm = new SVM(new PobsInterpreter(new BFSSearcher(200)));
-            var svm = new SVM(new MethodInterpreter(new BFSSearcher(10)));
+            // var svm = new SVM(new PobsInterpreter(new BFSSearcher(bound)));
+            // var svm = new SVM(new PobsInterpreter(new DFSSearcher(bound)));
+            var svm = new SVM(new PobsInterpreter(new TargetedSearcher(bound)));
+            // var svm = new SVM(new MethodInterpreter(new BFSSearcher(bound)));
             svm.ConfigureSolver();
             // SVM.ConfigureSimplifier(new Z3Simplifier()); can be used to enable Z3-based simplification (not recommended)
             TestSvmAttribute.SetUpSVM(svm);
