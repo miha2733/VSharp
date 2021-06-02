@@ -1170,6 +1170,7 @@ and public ILInterpreter(methodInterpreter : ExplorerBase) as this =
         else cilState
 
     member x.MakeStep (cilState : cilState) =
+        let cilState = {cilState with stepsNumber = cilState.stepsNumber + 1u}
         let exit () : cilState =
             match cilState.ipStack with
             | Exit _ :: [] when startsFromMethodBeginning cilState ->
