@@ -182,29 +182,24 @@ namespace VSharp.Test
 
             , new object[]
             {
-                typeof(ForKostya), nameof(ForKostya.SymbolicLinqTest2),
+                typeof(LinqTest), nameof(LinqTest.SymbolicLinqTest2),
                 new []
                 {
                     // new CodeLocationProxy(0x009d, typeof(ForKostya), nameof(ForKostya.SymbolicLinqTest2), DesiredStatus.Witnessed),
-                    new CodeLocationProxy(0x0079, typeof(ForKostya), nameof(ForKostya.SymbolicLinqTest2), DesiredStatus.Witnessed),
+                    new CodeLocationProxy(0x0079, typeof(LinqTest), nameof(LinqTest.SymbolicLinqTest2), DesiredStatus.Witnessed),
                 }
             }
 
             , new object[]
             {
-                typeof(ForKostya), nameof(ForKostya.SymbolicLinqTest),
+                typeof(LinqTest), nameof(LinqTest.SimpleSymbolicLinqTest),
                 new []
                 {
                     // new CodeLocationProxy(0x009d, typeof(ForKostya), nameof(ForKostya.SymbolicLinqTest2), DesiredStatus.Witnessed),
-                    new CodeLocationProxy(0x007b, typeof(ForKostya), nameof(ForKostya.SymbolicLinqTest), DesiredStatus.Witnessed),
-                    new CodeLocationProxy(0x0077, typeof(ForKostya), nameof(ForKostya.SymbolicLinqTest), DesiredStatus.Witnessed),
+                    new CodeLocationProxy(0x007b, typeof(LinqTest), nameof(LinqTest.SimpleSymbolicLinqTest), DesiredStatus.Witnessed),
+                    new CodeLocationProxy(0x0077, typeof(LinqTest), nameof(LinqTest.SimpleSymbolicLinqTest), DesiredStatus.Witnessed),
                 }
             }
-
         };
-
     }
-
-
-
 }

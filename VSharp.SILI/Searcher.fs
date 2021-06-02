@@ -74,7 +74,7 @@ type ForwardSearcher(maxBound) = // TODO: max bound is needed, when we are in re
         | Instruction(offset, m) ->
             let codeLocation = {offset = offset; method = m}
             match PersistentDict.tryFind cilState.level codeLocation with
-            | Some current -> current >= uint maxBound
+            | Some current -> current >= uint32 maxBound
             | None -> false
         | _ -> false
 

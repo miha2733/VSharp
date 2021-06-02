@@ -116,10 +116,6 @@ type public PobsInterpreter(searcher : INewSearcher) =
         qFront.AddRange (goodStates @ incompleteStates @ errors)
         searcher.AppendNewStates(goodStates)
         goodStates |> List.iter (fun (s' : cilState) ->
-//            let s' = {s' with stepsNumber = s'.stepsNumber + 1u}
-            match currentIp s' with
-            | Instruction(0x64, _) -> ()
-            | _ -> ()
             if not <| sPobs.ContainsKey(s') then sPobs.Add(s', [])
             let ip' = currentIp s'
             if Seq.contains ip' possiblePobsLocs then addToDictionaryWithListValue transition ip' s'

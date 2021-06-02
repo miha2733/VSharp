@@ -210,7 +210,7 @@ namespace VSharp.Test.Tests
             return newList.Select(i => i.Length);
         }
 
-        [TestSvm]
+        // [TestSvm]
         public static int SequenceLinqTest()
         {
             var startingDeck = (from s in Suits()

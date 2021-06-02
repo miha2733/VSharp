@@ -15,7 +15,7 @@ type cilState =
       level : level
       startingIP : ip
       initialEvaluationStackSize : uint32
-      stepsNumber : uint
+      stepsNumber : uint32
     }
 
 module internal CilStateOperations =
