@@ -78,7 +78,8 @@ namespace VSharp.Test
             var entryMethod = t.GetMethod(mainName, All);
             var searchers = new INewSearcher[]
             {
-                new TargetedSearcher(maxBound)
+                new BFSSearcher(maxBound)
+                , new TargetedSearcher(maxBound)
                 , new BFSSearcher(maxBound)
                 , new DFSSearcher(maxBound)
             };
@@ -198,6 +199,34 @@ namespace VSharp.Test
                     // new CodeLocationProxy(0x009d, typeof(ForKostya), nameof(ForKostya.SymbolicLinqTest2), DesiredStatus.Witnessed),
                     new CodeLocationProxy(0x007b, typeof(LinqTest), nameof(LinqTest.SimpleSymbolicLinqTest), DesiredStatus.Witnessed),
                     new CodeLocationProxy(0x0077, typeof(LinqTest), nameof(LinqTest.SimpleSymbolicLinqTest), DesiredStatus.Witnessed),
+                }
+            }
+
+            , new object[]
+            {
+                typeof(RegExTest), nameof(RegExTest.OwnImplementationTest),
+                new []
+                {
+                    // new CodeLocationProxy(0x009d, typeof(ForKostya), nameof(ForKostya.SymbolicLinqTest2), DesiredStatus.Witnessed),
+                    new CodeLocationProxy(0x0040, typeof(RegExImplementation), nameof(RegExImplementation.MatchHere), DesiredStatus.Witnessed),
+                    new CodeLocationProxy(0x002e, typeof(RegExImplementation), nameof(RegExImplementation.MatchStar), DesiredStatus.Witnessed),
+                    new CodeLocationProxy(0x0095, typeof(RegExImplementation), nameof(RegExImplementation.MatchHere), DesiredStatus.Witnessed),
+                    new CodeLocationProxy(0x0063, typeof(RegExImplementation), nameof(RegExImplementation.MatchHere), DesiredStatus.Witnessed),
+                    // new CodeLocationProxy(0x0077, typeof(LinqTest), nameof(LinqTest.SimpleSymbolicLinqTest), DesiredStatus.Witnessed),
+                }
+            }
+
+            , new object[]
+            {
+                typeof(RegExTest), nameof(RegExTest.OwnImplementationTest2),
+                new []
+                {
+                    // new CodeLocationProxy(0x009d, typeof(ForKostya), nameof(ForKostya.SymbolicLinqTest2), DesiredStatus.Witnessed),
+                    new CodeLocationProxy(0x0040, typeof(RegExImplementation), nameof(RegExImplementation.MatchHere), DesiredStatus.Witnessed),
+                    new CodeLocationProxy(0x002e, typeof(RegExImplementation), nameof(RegExImplementation.MatchStar), DesiredStatus.Witnessed),
+                    new CodeLocationProxy(0x0095, typeof(RegExImplementation), nameof(RegExImplementation.MatchHere), DesiredStatus.Witnessed),
+                    new CodeLocationProxy(0x0063, typeof(RegExImplementation), nameof(RegExImplementation.MatchHere), DesiredStatus.Witnessed),
+                    // new CodeLocationProxy(0x0077, typeof(LinqTest), nameof(LinqTest.SimpleSymbolicLinqTest), DesiredStatus.Witnessed),
                 }
             }
         };

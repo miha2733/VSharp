@@ -4,7 +4,7 @@ namespace VSharp.Test.Tests
 {
     public static class RegExImplementation
     {
-        private static bool MatchStar(char c, string re, int repos, string text, int textpos)
+        public static bool MatchStar(char c, string re, int repos, string text, int textpos)
         {
             do
             {
@@ -17,7 +17,7 @@ namespace VSharp.Test.Tests
             return false;
         }
 
-        private static bool MatchHere(string re, int repos, string text, int textpos)
+        public static bool MatchHere(string re, int repos, string text, int textpos)
         {
             if (repos >= re.Length)
                 return textpos >= text.Length;
@@ -53,6 +53,13 @@ namespace VSharp.Test.Tests
         {
             string pattern = new string(new char[] {c1, c2, c3});
             return RegExImplementation.Match(pattern, "hello");
+        }
+
+        [TestSvm]
+        public static bool OwnImplementationTest2(char c1, char c2, char c3, char c4, char c5, char c6)
+        {
+            string text = new string(new char[] {c1, c2, c3});
+            return RegExImplementation.Match("kek", text);
         }
 
         [TestSvm]
