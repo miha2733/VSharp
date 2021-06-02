@@ -6,6 +6,7 @@ using System.Linq;
 using NUnit.Framework;
 
 using VSharp.Interpreter.IL;
+using VSharp.Test.Tests;
 using VSharp.Test.Tests.Pobs;
 
 namespace VSharp.Test
@@ -73,7 +74,7 @@ namespace VSharp.Test
         [TestCaseSource(nameof(PobsCases))]
         public static void AnswerPobs(Type t, string mainName, CodeLocationProxy[] proxies)
         {
-            int maxBound = 200;
+            int maxBound = 1000;
             var entryMethod = t.GetMethod(mainName, All);
             var searchers = new INewSearcher[]
             {
@@ -176,6 +177,27 @@ namespace VSharp.Test
                 new []
                 {
                     new CodeLocationProxy(0x1e, typeof(SwitchWithSequentialCases1), nameof(SwitchWithSequentialCases1.BoundTest), DesiredStatus.Witnessed),
+                }
+            }
+
+            , new object[]
+            {
+                typeof(ForKostya), nameof(ForKostya.SymbolicLinqTest2),
+                new []
+                {
+                    // new CodeLocationProxy(0x009d, typeof(ForKostya), nameof(ForKostya.SymbolicLinqTest2), DesiredStatus.Witnessed),
+                    new CodeLocationProxy(0x0079, typeof(ForKostya), nameof(ForKostya.SymbolicLinqTest2), DesiredStatus.Witnessed),
+                }
+            }
+
+            , new object[]
+            {
+                typeof(ForKostya), nameof(ForKostya.SymbolicLinqTest),
+                new []
+                {
+                    // new CodeLocationProxy(0x009d, typeof(ForKostya), nameof(ForKostya.SymbolicLinqTest2), DesiredStatus.Witnessed),
+                    new CodeLocationProxy(0x007b, typeof(ForKostya), nameof(ForKostya.SymbolicLinqTest), DesiredStatus.Witnessed),
+                    new CodeLocationProxy(0x0077, typeof(ForKostya), nameof(ForKostya.SymbolicLinqTest), DesiredStatus.Witnessed),
                 }
             }
 
