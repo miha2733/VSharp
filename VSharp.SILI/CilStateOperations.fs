@@ -99,7 +99,7 @@ module internal CilStateOperations =
 
     let incrementLevel (cilState : cilState) k =
         let lvl = cilState.level
-        let newValue = if PersistentDict.contains k lvl then PersistentDict.find lvl k + 1u else 1u
+        let newValue = if PersistentDict.contains k lvl then (PersistentDict.find lvl k) + 1u else 1u
         {cilState with level = PersistentDict.add k newValue lvl}
 
     // ------------------------------- Helper functions for cilState and state interaction -------------------------------
