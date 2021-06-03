@@ -1,134 +1,101 @@
 using System.Collections.Generic;
-using NBlockchain.Models;
-using NBlockchain.Services;
-using System;
-using System.Text;
-using NBlockchain.Interfaces;
-using NBlockchain.Services.PeerDiscovery;
-using Microsoft.Extensions.DependencyInjection;
+using System.Linq;
 
 namespace VSharp.Test.Tests
 {
+    public class Transaction
+    {
+
+        public Transaction() { }
+        public Transaction(string from, string to, int amount)
+        {
+            // From = from;
+            // To = to;
+            Amount = amount;
+        }
+        // public string From { get; set; }
+        // public string To { get; set; }
+        public int Amount { get; set; }
+    }
+    public class Block
+    {
+        public long Index { get; set; }
+        public long TimeStamp { get; set; }
+        public long Hash { get; set; }
+        public long PrevHash { get; set; }
+        public long Nounce { get; set; }
+        public List<Transaction> TransactionList { get; set; }
+    }
+
+    public class BlockMiner
+    {
+        public List<Block> Blockchain { get; }
+        private readonly List<Transaction> _transactionPool;
+        private static int MINING_REWARD = 2;
+
+        public BlockMiner()
+        {
+            Blockchain = new List<Block>();
+            _transactionPool = new List<Transaction>();
+        }
+
+        public void Mine(long startTime)
+        {
+            var time = 0;
+            while (time < 2)
+            {
+                GenerateBlock(startTime + time);
+                time++;
+            }
+        }
+
+        private void GenerateBlock(long time)
+        {
+            var lastBlock = Blockchain.LastOrDefault();
+            var transactionList = _transactionPool;
+            transactionList.Add(new Transaction()
+            {
+                Amount = MINING_REWARD
+            });
+            var block = new Block()
+            {
+                TimeStamp = time,
+                Nounce = 0,
+                TransactionList = transactionList,
+                Index = lastBlock?.Index + 1 ?? 0,
+                PrevHash = lastBlock?.Hash ?? 0
+            };
+            MineBlock(block);
+            Blockchain.Add(block);
+        }
+
+        private void MineBlock(Block block)
+        {
+            var merkleRootHash = block.TransactionList.Aggregate(0, (x, y) => x + y.Amount, res => res);
+            long nounce = -1;
+            var hash = 0;
+            do
+            {
+                nounce++;
+                var rowData = block.Index + block.PrevHash + block.TimeStamp + nounce + merkleRootHash;
+                hash = rowData.GetHashCode();
+            } while (hash >= 10000000);
+
+            block.Hash = hash;
+            block.Nounce = nounce;
+        }
+    }
+
     [TestSvmFixture]
     public class Blockchain
     {
-        [InstructionType("txn-v1")]
-        public class TestInstruction : Instruction
-        {
-            public string Data { get; set; }
-
-            public override ICollection<byte[]> ExtractSignableElements()
-            {
-                return new List<byte[]>() { Encoding.UTF8.GetBytes(Data) };
-            }
-
-            public override int GetHashCode()
-            {
-                return Data.GetHashCode();
-            }
-        }
-
-        class BaseBuilder : BlockbaseTransactionBuilder
-        {
-            public BaseBuilder(IAddressEncoder addressEncoder, ISignatureService signatureService, ITransactionBuilder transactionBuilder)
-                : base(addressEncoder, signatureService, transactionBuilder)
-            {
-            }
-
-            protected override ICollection<Instruction> BuildInstructions(KeyPair builderKeys, ICollection<Transaction> transactions)
-            {
-                var instructions = new HashSet<Instruction>();
-                var i1 = new TestInstruction();
-                i1.Data = "test";
-                i1.PublicKey = builderKeys.PublicKey;
-                SignatureService.SignInstruction(i1, builderKeys.PrivateKey);
-                instructions.Add(i1);
-
-                return instructions;
-            }
-        }
-
-        private static Block GenerateBlock(byte[] id, byte[] prevBlock, uint height)
-        {
-            var block = new Block();
-            block.Header.BlockId = id;
-            block.Header.Height = height;
-            block.Header.Status = BlockStatus.Confirmed;
-            //block.Header.Timestamp
-            block.Header.PreviousBlock = prevBlock;
-            return block;
-        }
-
-
         [TestSvm]
-        public static void PopulateInitialData(IBlockRepository repo)
+        public static int test(long time)
         {
-            var prevBlock = new byte[0];
-            var block = GenerateBlock(new byte[] { 0 }, prevBlock, 0);
-            repo.AddBlock(block);
-            prevBlock = block.Header.BlockId;
-
-            // for (byte i = 0; i < 1; i++)
-            // {
-            //     var block = GenerateBlock(new byte[] { i }, prevBlock, i);
-            //     repo.AddBlock(block);
-            //     prevBlock = block.Header.BlockId;
-            // }
-        }
-
-        private static IServiceProvider ConfigureNode(uint port, ICollection<string> peers)
-        {
-            IServiceCollection services = new ServiceCollection();
-            services.AddBlockchain(x =>
-            {
-                x.UseTcpPeerNetwork(port);
-                x.AddPeerDiscovery(sp => new StaticPeerDiscovery(peers));
-                // x.AddInstructionType<TestInstruction>();
-                x.UseBlockbaseProvider<BaseBuilder>();
-                x.UseParameters(new StaticNetworkParameters()
-                {
-                BlockTime = TimeSpan.FromSeconds(10),
-                HeaderVersion = 1
-                });
-            });
-
-            var serviceProvider = services.BuildServiceProvider();
-            return serviceProvider;
-            // return null;
-        }
-
-        [TestSvm]
-        public static void  should_sync_data_over_mesh()
-        {
-            uint port1 = 1001;//Helpers.GetFreePort();
-            uint port2 = 1002; //Helpers.GetFreePort();
-            uint port3 = 1003; //Helpers.GetFreePort();
-            var node1 = ConfigureNode(port1, new string[0]);
-            // var node2 = ConfigureNode(port2, new string[] { $"tcp://localhost:{port1}" });
-            // var node3 = ConfigureNode(port3, new string[] { $"tcp://localhost:{port2}" });
-            var repo1 = node1.GetService<IBlockRepository>();
-            // var repo2 = node2.GetService<IBlockRepository>();
-            // var repo3 = node3.GetService<IBlockRepository>();
-            // var net1 = node1.GetService<IPeerNetwork>();
-            // var net2 = node2.GetService<IPeerNetwork>();
-            // var net3 = node3.GetService<IPeerNetwork>();
-            PopulateInitialData(repo1);
-        }
-
-        [TestSvm]
-        public static ICollection<Instruction> BuildInstructions(KeyPair builderKeys, ICollection<Transaction> transactions)
-        {
-            var instructions = new HashSet<Instruction>();
-            var i1 = new TestInstruction {Data = "test", PublicKey = builderKeys.PublicKey};
-            instructions.Add(i1);
-
-            return instructions;
-        }
-
-        [TestSvm]
-        public static int Test1()
-        {
-            // new NBlockchain.Models.;
+            var a = new BlockMiner();
+            a.Mine(time);
+            // a.Blockchain.First();
+            a.Blockchain.OrderBy(block => block.Hash).First();
             return 0;
         }
     }

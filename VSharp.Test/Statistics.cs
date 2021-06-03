@@ -195,12 +195,12 @@ namespace VSharp.Test
             //     Console.WriteLine($"{s.GetType()} answered right to {loc}, time = {timeSpan}");
             // }
 
-            Console.Write($"{timeSpan.TotalSeconds} {accuracy} ");
+            Console.WriteLine($"{s.GetType()} {timeSpan.TotalSeconds} {accuracy} ");
 
-            // foreach (var loc in _wrong[s])
-            // {
-            //     Console.WriteLine($"{s.GetType()} NO loc =[{loc}]");
-            // }
+            foreach (var loc in _wrong[s])
+            {
+                Console.WriteLine($"{s.GetType()} NO loc =[{loc}]");
+            }
         }
 
         public int CilStatesGenerated { get; set; }

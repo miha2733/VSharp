@@ -119,10 +119,10 @@ namespace VSharp.Test
 
         public static void PrintStats()
         {
-            var searchers = new INewSearcher[] {_searchers[1], _searchers[2], _searchers[3]};
+            //var searchers = new INewSearcher[] {_searchers[1], _searchers[2], _searchers[3]};
             foreach (var m in _pobsStatistics.Keys)
             {
-                foreach (var s in searchers)
+                foreach (var s in _searchers)
                 {
                     _pobsStatistics[m].PrintStats(s);
                 }
@@ -214,10 +214,13 @@ namespace VSharp.Test
                 _pobsStatistics.Add(entryMethod, new PobsStatistics(_searchers));
                 bool res = true;
 
+
                 foreach (var s in _searchers)
                 {
                     res &= AnswerPobs(entryMethod, s, codeLocations);
                 }
+                PrintStats();
+
                 context.CurrentResult.SetResult(res ? ResultState.Success : ResultState.Failure);
                 return context.CurrentResult;
             }

@@ -124,7 +124,9 @@ type public PobsInterpreter(searcher : INewSearcher) =
         let removed = qFront.Remove(s) in assert(removed)
         let goodStates, incompleteStates, errors = ILInterpreter(x).ExecuteOnlyOneInstruction s
         let goodStates = goodStates |> List.filter (fun s -> levelToInt s.level <= curLvl)
+        if List.isEmpty goodStates then ()
         qFront.AddRange (goodStates @ incompleteStates @ errors)
+
         searcher.AppendNewStates(goodStates)
         goodStates |> List.iter (fun (s' : cilState) ->
             if not <| sPobs.ContainsKey(s') then sPobs.Add(s', [])

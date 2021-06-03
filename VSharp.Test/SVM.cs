@@ -218,8 +218,6 @@ namespace VSharp.Test
             var methodId = _explorer.MakeMethodIdentifier(m);
             var dict = _explorer.AnswerPobs(methodId, Microsoft.FSharp.Collections.ListModule.OfSeq(locs), id);
             // _pobsStatistics.CilStatesGenerated = _explorer;
-
-
             return dict;
         }
 
