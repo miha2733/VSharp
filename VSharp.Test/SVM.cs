@@ -212,7 +212,7 @@ namespace VSharp.Test
             return dictionary.ToDictionary(kvp => kvp.Key, kvp => ResultToString(kvp.Value));
         }
 
-        public IDictionary<codeLocation, string> AnswerPobs(MethodInfo m, codeLocation[] locs)
+        public IDictionary<codeLocation, string> AnswerPobs(MethodInfo m, List<codeLocation> locs)
         {
             var id = FSharpFunc<IDictionary<codeLocation, string>, IDictionary<codeLocation, string>>.FromConverter(x => x);
             var methodId = _explorer.MakeMethodIdentifier(m);
