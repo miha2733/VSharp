@@ -15,7 +15,7 @@ struct ILInstr;
 
 class Instrumenter {
 private:
-    ICorProfilerInfo9 &m_profilerInfo;  // Does not have ownership
+    ICorProfilerInfo8 &m_profilerInfo;  // Does not have ownership
     IMethodMalloc *m_methodMalloc;  // Does not have ownership
 
     mdMethodDef m_jittedToken;
@@ -52,7 +52,7 @@ private:
 
 
 public:
-    explicit Instrumenter(ICorProfilerInfo9 &profilerInfo);
+    explicit Instrumenter(ICorProfilerInfo8 &profilerInfo);
     ~Instrumenter();
 
     const char *signatureTokens() const { return m_signatureTokens; }
